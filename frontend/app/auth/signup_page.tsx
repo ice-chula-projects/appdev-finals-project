@@ -10,64 +10,67 @@ export const styles = StyleSheet.create({
   inner: { 
     flex: 1, 
     justifyContent: 'center', 
-    paddingHorizontal: 24,
-
+    paddingHorizontal: 25,
   },
   logo: {
     width: 200,
     height: 200,
-    marginBottom: 24,
+    marginBottom: 20,
     alignSelf: 'center'
   },
   title: { 
     fontSize: 30, 
     fontWeight: '700', 
-    marginBottom: 4,
-    alignSelf: 'center'
+    alignSelf: 'center',
+    fontFamily: 'RobotoSlab-Regular'
   },
   subtitle: { 
     fontSize: 15, 
     color: '#666', 
-    marginBottom: 32,
-    alignSelf: 'center'
+    marginBottom: 30,
+    alignSelf: 'center',
+    fontFamily: 'RobotoSlab-Regular'
   },
   form: { 
-    gap: 12, 
+    gap: 10, 
     marginBottom: 12,
-  
+    fontFamily: 'RobotoSlab-Regular'
   },
   input: {
-    maxWidth: '30%',
+    maxWidth: '70%',
     maxHeight: '20%',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     fontSize: 15,
     alignSelf: 'center',
+    fontFamily: 'RobotoSlab-Regular',
+    opacity: 0.7,
   },
   inputError: { 
     borderColor: '#e53e3e' 
   },
   error: { 
     color: '#e53e3e', 
-    fontSize: 13, 
+    fontSize: 15, 
     marginBottom: 8,
     alignSelf: 'center'
   },
   link: { 
     color: '#4f46e5', 
-    fontSize: 14, 
+    fontSize: 15, 
     fontWeight: '500' 
   },
   button: {
     backgroundColor: '#4f46e5',
-    maxWidth: '30%',
+    maxWidth: '70%',
     maxHeight: '20%',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
+    alignSelf: 'center',
     marginTop: 16,
   },
   buttonDisabled: { 
@@ -76,14 +79,14 @@ export const styles = StyleSheet.create({
   buttonText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: '600' 
+    fontWeight: '700' 
   },
-  footer: { 
+  login: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
     marginTop: 24 
   },
-  footerText: { 
+  loginText: { 
     color: '#666', 
     fontSize: 14 
   },
@@ -177,8 +180,8 @@ export default function SignupPage() {
           }
         </Pressable>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+        <View style={styles.login}>
+          <Text style={styles.loginText}>Already have an account? </Text>
           <Pressable onPress={() => router.push('/auth/login_page')}>
             <Text style={styles.link}>Log in</Text>
           </Pressable>
