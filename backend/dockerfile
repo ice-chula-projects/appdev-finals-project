@@ -1,0 +1,28 @@
+# Start the image with a base image
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+PYTHONUNBUFFERED=1 \
+PIP_NO_CACHE_DIR=1
+
+# The /app directory should act as the main application directory
+WORKDIR /app
+
+# create a non root user
+RUN useradd --create-home --shell /usr/sbin/nologin appuser
+
+# Copy everything to the current local directory of our docker image (/app)
+COPY ./app/ .
+
+# Install required packages
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# change the ownership of all the files to the non root user and switch users
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# tells docker that we will be using port 5000
+EXPOSE 5000
+
+# Start the app
+CMD ["python", "app.py"]
