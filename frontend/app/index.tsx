@@ -82,6 +82,7 @@ export default function Index() {
             value={username}
             onChangeText={setUsername}
             style={{
+              backgroundColor: "lightgray",
               position: "absolute",
               top: 10,
               left: 100,
@@ -96,6 +97,7 @@ export default function Index() {
             onChangeText={setPassword}
             secureTextEntry={true}
             style={{
+              backgroundColor: "lightgray",
               position: "absolute",
               top: 10,
               left: 300,
