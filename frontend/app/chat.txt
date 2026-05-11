@@ -3,3 +3,5 @@ Pong 2317-10-5-2026-1 Its working perfectly fine but its a pain in the ass to co
 Pong 2310-10-5-2026-0 Also yes its named Sam Altman  branch cus i used ChatGPT to help with debugging and some formatting.
 Pong 2310-10-5-2026-1 Sam Altman huh?
 Pong 2310-10-5-2026-2 Sounds like a Kojima villain.
+
+Pong 1235-15-5-2026-0 Nvm the red line goes away after a reboot.
