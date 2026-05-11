@@ -113,7 +113,7 @@ export default function SignupPage() {
   }
 
   // Check if account exists
-  const handleLogin = () => {
+  const handleSignup = () => {
     const err = validate();
     if (err) return setError(err);
 

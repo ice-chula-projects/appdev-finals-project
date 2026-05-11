@@ -95,7 +95,7 @@ export const styles = StyleSheet.create({
   },
 })
 
-export default function SignupPage() {
+export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,7 +109,7 @@ export default function SignupPage() {
   }
 
   // Check if requirements are met
-  const handleSignup = () => {
+  const handleLogin = () => {
     const err = validate();
     if (err) return setError(err);
 
@@ -122,7 +122,7 @@ export default function SignupPage() {
     }, 1000);
   }
 
-  // Signup Page UI
+  // Login Page UI
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -161,7 +161,7 @@ export default function SignupPage() {
 
         <Pressable
           style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSignup}
+          onPress={handleLogin}
           disabled={loading}
         >
           {loading
