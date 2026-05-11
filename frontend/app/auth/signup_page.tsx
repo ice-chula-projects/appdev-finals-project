@@ -1,40 +1,95 @@
 import { useState } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
+import { router } from 'expo-router'
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#666', marginBottom: 32 },
-  form: { gap: 12, marginBottom: 12 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#ffffff',
+  },
+  inner: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    paddingHorizontal: 24,
+
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginBottom: 24,
+    alignSelf: 'center'
+  },
+  title: { 
+    fontSize: 30, 
+    fontWeight: '700', 
+    marginBottom: 4,
+    alignSelf: 'center'
+  },
+  subtitle: { 
+    fontSize: 15, 
+    color: '#666', 
+    marginBottom: 32,
+    alignSelf: 'center'
+  },
+  form: { 
+    gap: 12, 
+    marginBottom: 12,
+  
+  },
   input: {
+    maxWidth: '30%',
+    maxHeight: '20%',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 10,
+    borderRadius: 5,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
+    alignSelf: 'center',
   },
-  inputError: { borderColor: '#e53e3e' },
-  error: { color: '#e53e3e', fontSize: 13, marginBottom: 8 },
-  link: { color: '#4f46e5', fontSize: 14, fontWeight: '500' },
+  inputError: { 
+    borderColor: '#e53e3e' 
+  },
+  error: { 
+    color: '#e53e3e', 
+    fontSize: 13, 
+    marginBottom: 8,
+    alignSelf: 'center'
+  },
+  link: { 
+    color: '#4f46e5', 
+    fontSize: 14, 
+    fontWeight: '500' 
+  },
   button: {
     backgroundColor: '#4f46e5',
+    maxWidth: '30%',
+    maxHeight: '20%',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  footerText: { color: '#666', fontSize: 14 },
+  buttonDisabled: { 
+    opacity: 0.6 
+  },
+  buttonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    marginTop: 24 
+  },
+  footerText: { 
+    color: '#666', 
+    fontSize: 14 
+  },
 })
 
-export const SignupPage = () => {
-  const navigation = useNavigation()
-
+export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,13 +99,14 @@ export const SignupPage = () => {
 
   // User account must meet requirements
   const validate = () => {
-    if (username.length < 3) return 'Username must be at least 3 characters';
-    if (!email.includes('@')) return 'Enter a valid email';
-    if (password.length < 6) return 'Password must be at least 6 characters';
-    if (password !== confirmPassword) return 'Passwords do not match';
+    if (username.length < 3) return 'Username must be at least 3 characters.';
+    if (!email.includes('@')) return 'Please enter a valid e-mail address.';
+    if (password.length < 6) return 'Password must be at least 6 characters.';
+    if (password !== confirmPassword) return 'Passwords do not match.';
     return null; // No errors
   }
 
+  // Check if requirements are met
   const handleSignup = () => {
     const err = validate();
     if (err) return setError(err);
@@ -60,19 +116,21 @@ export const SignupPage = () => {
 
     setTimeout(() => {
       setLoading(false);
-      navigation.navigate('Main')
+      router.push('/')
     }, 1000);
   }
 
+  // Signup Page UI
   return (
     <KeyboardAvoidingView
       style={styles.container}
       //behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
-
-        <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>Join the conversation</Text>
+        <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>An account is required to interact with threads.</Text>
+        
 
         <View style={styles.form}>
           <TextInput
@@ -84,7 +142,7 @@ export const SignupPage = () => {
           />
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="E-mail"
             value={email}
             onChangeText={(v) => { setEmail(v); setError('') }}
             autoCapitalize="none"
@@ -121,8 +179,8 @@ export const SignupPage = () => {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already have an account? </Text>
-          <Pressable onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.link}>Sign in</Text>
+          <Pressable onPress={() => router.push('/auth/login_page')}>
+            <Text style={styles.link}>Log in</Text>
           </Pressable>
         </View>
 
