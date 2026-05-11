@@ -34,7 +34,7 @@ export default function Index() {
   ];
 
   const [fontsLoaded] = useFonts({
-    'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
+    'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf')
   })
 
   useEffect(() => {

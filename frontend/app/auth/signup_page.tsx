@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     fontFamily: 'RobotoSlab-Regular'
   },
   subtitle: { 
-    fontSize: 15, 
+    fontSize: 20, 
     color: '#666', 
     marginBottom: 30,
     alignSelf: 'center',
@@ -33,21 +33,21 @@ export const styles = StyleSheet.create({
   },
   form: { 
     gap: 10, 
-    marginBottom: 12,
     fontFamily: 'RobotoSlab-Regular'
   },
   input: {
     maxWidth: '70%',
     maxHeight: '20%',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#707070',
+    backgroundColor: '#e6e6e6',
     borderRadius: 5,
     paddingHorizontal: 10,
     paddingVertical: 10,
     fontSize: 15,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular',
-    opacity: 0.7,
+    opacity: 0.67,
   },
   inputError: { 
     borderColor: '#e53e3e' 
@@ -55,23 +55,25 @@ export const styles = StyleSheet.create({
   error: { 
     color: '#e53e3e', 
     fontSize: 15, 
-    marginBottom: 8,
-    alignSelf: 'center'
+    marginBottom: 20,
+    alignSelf: 'center',
+    fontFamily: 'RobotoSlab-Regular' 
   },
   link: { 
-    color: '#4f46e5', 
-    fontSize: 15, 
-    fontWeight: '500' 
+    color: '#2f5ae9', 
+    fontSize: 14, 
+    fontWeight: '600',
+    fontFamily: 'RobotoSlab-Regular' 
   },
   button: {
-    backgroundColor: '#4f46e5',
-    maxWidth: '70%',
+    backgroundColor: '#2f5ae9',
+    maxWidth: '50%',
     maxHeight: '20%',
     borderRadius: 10,
-    paddingVertical: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 16,
+    alignSelf: 'center'
   },
   buttonDisabled: { 
     opacity: 0.6 
@@ -79,16 +81,17 @@ export const styles = StyleSheet.create({
   buttonText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: '700' 
+    fontWeight: '600',
+    fontFamily: 'RobotoSlab-Regular' 
   },
   login: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
-    marginTop: 24 
+    marginTop: 35,
   },
   loginText: { 
-    color: '#666', 
-    fontSize: 14 
+    color: '#666',
+    fontFamily: 'RobotoSlab-Regular'
   },
 })
 
@@ -109,8 +112,8 @@ export default function SignupPage() {
     return null; // No errors
   }
 
-  // Check if requirements are met
-  const handleSignup = () => {
+  // Check if account exists
+  const handleLogin = () => {
     const err = validate();
     if (err) return setError(err);
 
@@ -123,7 +126,7 @@ export default function SignupPage() {
     }, 1000);
   }
 
-  // Signup Page UI
+  // Login Page UI
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -131,8 +134,8 @@ export default function SignupPage() {
     >
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>An account is required to interact with threads.</Text>
+        <Text style={styles.title}>Login</Text>
+        <Text style={styles.subtitle}>Welcome back!</Text>
         
 
         <View style={styles.form}>
@@ -141,14 +144,12 @@ export default function SignupPage() {
             placeholder="Username"
             value={username}
             onChangeText={(v) => { setUsername(v); setError('') }}
-            autoCapitalize="none"
           />
           <TextInput
             style={styles.input}
             placeholder="E-mail"
             value={email}
             onChangeText={(v) => { setEmail(v); setError('') }}
-            autoCapitalize="none"
             keyboardType="email-address"
           />
           <TextInput
@@ -176,14 +177,14 @@ export default function SignupPage() {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Create account</Text>
+            : <Text style={styles.buttonText}>Sign Up</Text>
           }
         </Pressable>
 
         <View style={styles.login}>
           <Text style={styles.loginText}>Already have an account? </Text>
           <Pressable onPress={() => router.push('/auth/login_page')}>
-            <Text style={styles.link}>Log in</Text>
+            <Text style={styles.link}>Login</Text>
           </Pressable>
         </View>
 
