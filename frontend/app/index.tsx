@@ -1,15 +1,11 @@
 import { Text, View } from "react-native";
+import { NavigationContainer } from '@react-navigation/native'
+import { AuthNavigator } from '@/app/navigation/AuthNavigator'
 
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>HOME SCREEN</Text>
-    </View>
+      <NavigationContainer>
+         <AuthNavigator />
+      </NavigationContainer>
   );
 }
