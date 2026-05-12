@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import {Text, View, TouchableOpacity, TextInput, ScrollView, Linking} from "react-native";
+import {Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Button } from "@react-navigation/elements";
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
+
 
 export default function Index() {
   const [username, setUsername] = useState("");
@@ -12,24 +13,28 @@ export default function Index() {
 
   const links = [
     {
-      title: "Project Hail Mary",
-      description: "Amaze Amaze Amaze",
+      title: "Yall gotta see this",
+      description: "Quintuple thumbs down.",
       url: "https://www.bilibili.tv/en/video/4799492271643648?bstar_from=bstar-web.homepage.recommend.all",
+      image: require("../assets/images/HG2RsZhbIAAbpWj.jpg"),
     },
     {
       title: "Band of Brothers",
       description: "Don't grab the luger.",
       url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
+      image: require("../assets/images/images.jpg"),
     },
     {
       title: "The Martian",
-      description: "How is there storm on mars?",
+      description: "Matt Damian gets tuck in space. Again.",
       url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
+      image: require("../assets/images/18007564.jpg"),
     },
     {
       title: "Expo Router Docs",
       description: "Official documentation for Expo Router navigation.",
       url: "https://docs.expo.dev/router/introduction/",
+      image: require("../assets/images/icon.png"),
     },
   ];
 
@@ -58,7 +63,6 @@ export default function Index() {
           ),
         }}
       />
-
 
       <SafeAreaView style={{ flex: 1 }}>
         <TouchableOpacity
@@ -160,9 +164,27 @@ export default function Index() {
                   marginBottom: 15,
                 }}
               >
+                <View 
+                  style={{ 
+                  flexDirection: "row", 
+                  alignItems: "center" 
+                  }}>
+                  <Image
+                    source={link.image}
+                    style={{ 
+                      width: 100, 
+                      height: 100, 
+                      marginRight: 15 
+                    }}
+                  />
+              <View style={{ 
+                width: 500,
+                height: 50,
+                justifyContent: "center", 
+                }}>
                 <Text
                   style={{
-                    fontSize: 18,
+                    fontSize: 25,
                     fontWeight: "bold",
                     color: "#007AFF",
                     marginBottom: 5,
@@ -179,6 +201,8 @@ export default function Index() {
                 >
                   {link.description}
                 </Text>
+              </View>
+              </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
