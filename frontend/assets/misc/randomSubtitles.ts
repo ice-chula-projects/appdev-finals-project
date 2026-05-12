@@ -82,7 +82,22 @@ export const SUBTITLES = [
     "Say my name.",
     "You're goddamn right.",
     "Clearly, you don't own an air fryer.",
-    "I am the one who knocks."
+    "I am the one who knocks.",
+    "The return of the king.",
+    "I bet you look good on the dancefloor.",
+    "Freaking out the neighborhood.",
+    "Thank you, Chainsaw Man.",
+    "Everybody wants to rule the world.",
+    "うっせぇうっせぇうっせぇわ",
+    "We'll carry on.",
+    "Don't look back in anger.",
+    "Sally can wait.",
+    "Don't forget, I'm with you in the dark.",
+    "It's been so long.",
+    "Where are you now?",
+    "I see a little silhouetto of a man.",
+    "Galileo Figaro, magnifico!",
+    "Umapyoi, umapyoi!"
 ]
 
 export const randomSubtitles = (subtitles: string[] = SUBTITLES) => {
