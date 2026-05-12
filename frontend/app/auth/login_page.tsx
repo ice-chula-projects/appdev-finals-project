@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
+import { randomSubtitles } from '../../assets/misc/randomSubtitles'
 
 export const styles = StyleSheet.create({
   container: { 
@@ -36,14 +37,14 @@ export const styles = StyleSheet.create({
     fontFamily: 'RobotoSlab-Regular'
   },
   input: {
-    maxWidth: '30%',
+    maxWidth: '70%',
     maxHeight: '20%',
     borderWidth: 1,
     borderColor: '#707070',
     backgroundColor: '#e6e6e6',
     borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
     fontSize: 15,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular',
@@ -87,7 +88,7 @@ export const styles = StyleSheet.create({
   login: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
-    marginTop: 20,
+    marginTop: 35,
   },
   loginText: { 
     color: '#666',
@@ -99,9 +100,9 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [subtitle] = useState(() => randomSubtitles())
 
   // User account must meet requirements
   const validate = () => {
@@ -148,22 +149,15 @@ export default function LoginPage() {
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
         <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>Some subtitle here</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text> {/*Random subtitles planned, kinda like Minecraft splash text*/}
         
 
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Username"
+            placeholder="Username or E-mail"
             value={username}
             onChangeText={(v) => { setUsername(v); setError('') }}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            value={email}
-            onChangeText={(v) => { setEmail(v); setError('') }}
-            keyboardType="email-address"
           />
           <TextInput
             style={styles.input}
@@ -188,7 +182,7 @@ export default function LoginPage() {
         </Pressable>
 
         <View style={styles.login}>
-          <Text style={styles.loginText}>New user? </Text>
+          <Text style={styles.loginText}>New to the service? </Text>
           <Pressable onPress={() => router.push('/auth/signup_page')}>
             <Text style={styles.link}>Sign Up</Text>
           </Pressable>
