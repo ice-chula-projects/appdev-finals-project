@@ -26,7 +26,7 @@ export default function Index() {
     },
     {
       title: "The Martian",
-      description: "Matt Damian gets tuck in space. Again.",
+      description: "Matt Damian gets stuck in space. Again.",
       url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
       image: require("../assets/images/18007564.jpg"),
     },
@@ -54,7 +54,7 @@ export default function Index() {
           headerTitle: () => (
             <Text
               style={{
-                fontSize: 20,
+                fontSize: 40,
                 fontWeight: "bold",
               }}
             >

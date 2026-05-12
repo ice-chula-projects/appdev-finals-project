@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
-import { router } from 'expo-router'
+import { Stack, router } from 'expo-router'
 
 export const styles = StyleSheet.create({
   container: { 
@@ -124,6 +124,23 @@ export default function LoginPage() {
 
   // Login Page UI
   return (
+
+  <>
+    <Stack.Screen
+      options={{
+        headerTitle: () => (
+          <Text
+            style={{
+              fontSize: 40,
+              fontWeight: "bold",
+            }}
+          >
+            Threads
+          </Text>
+        ),
+      }}
+    />
+
     <KeyboardAvoidingView
       style={styles.container}
       //behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -179,5 +196,6 @@ export default function LoginPage() {
 
       </View>
     </KeyboardAvoidingView>
+    </>
   )
 }
