@@ -6,11 +6,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "${PORT}:${PORT}"
     environment:
       - MONGO_URI=mongodb://mongodb:27017
+      - PORT=${PORT}
     depends_on:
       - mongodb
+    volumes:
+      - ./settings.json:/app/settings.json:ro
     #allows docker to automatically update the image during developmnt
     develop:
       watch:
@@ -21,7 +24,7 @@ services:
   mongodb:
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
 
