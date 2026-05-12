@@ -96,9 +96,10 @@ export const styles = StyleSheet.create({
   },
 })
 
+const isEmail = (value: String) => value.includes("@") && value.includes(".");
+
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Username or email for login
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -106,8 +107,12 @@ export default function LoginPage() {
 
   // User account must meet requirements
   const validate = () => {
+    if (identifier.trim().length < 3) return "Please enter a valid username or e-mail address.";
+    if (isEmail(identifier)) return "Please enter a valid e-mail address.";
+    if (password.length < 6) return "Password must be at least 6 characters long.";
     return null; // No errors
   }
+
 
   // Check if requirements are met
   const handleLogin = () => {
@@ -118,6 +123,25 @@ export default function LoginPage() {
     setLoading(true);
 
     setTimeout(() => {
+      const accountInput = identifier.trim().toLowerCase();
+
+      // Account does not exist case
+      if (!account) {
+        setError(
+          isEmail(identifier) ? "No account found with that e-mail address, try again." : "No account found with that username, try again."
+        )
+        setLoading(false);
+        return
+      }
+
+      // Incorrect password case
+      if (account.password !== password) {
+        setError("Incorrect password, try again.");
+        setLoading(false);
+        return
+      }
+
+      // Successful login
       setLoading(false);
       router.push('/')
     }, 1000);
