@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   logo: {
     width: 200,
     height: 200,
-    marginBottom: 20,
+    marginBottom: 10,
     alignSelf: 'center'
   },
   title: { 
@@ -37,14 +37,14 @@ export const styles = StyleSheet.create({
     fontFamily: 'RobotoSlab-Regular'
   },
   input: {
-    maxWidth: '70%',
-    maxHeight: '20%',
+    width: 250,
+    margin: 1,
     borderWidth: 1,
     borderColor: '#707070',
     backgroundColor: '#e6e6e6',
     borderRadius: 5,
-    paddingHorizontal: 15,
-    paddingVertical: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     fontSize: 15,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular',
@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
   error: { 
     color: '#e53e3e', 
     fontSize: 15, 
-    marginBottom: 20,
+    margin: 10,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular' 
   },
@@ -68,6 +68,7 @@ export const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#2f5ae9',
+    margin: 15,
     maxWidth: '50%',
     maxHeight: '20%',
     borderRadius: 10,
@@ -85,18 +86,17 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'RobotoSlab-Regular' 
   },
-  login: { 
+  signup: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
-    marginTop: 35,
   },
-  loginText: { 
+  signupText: { 
     color: '#666',
     fontFamily: 'RobotoSlab-Regular'
   },
 })
 
-const isEmail = (value: String) => value.includes("@") && value.includes(".");
+const isEmail = (value: String) => value.includes("@");
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState(''); // Username or email for login
@@ -108,7 +108,7 @@ export default function LoginPage() {
   // User account must meet requirements
   const validate = () => {
     if (identifier.trim().length < 3) return "Please enter a valid username or e-mail address.";
-    if (isEmail(identifier)) return "Please enter a valid e-mail address.";
+    if (isEmail(identifier) && !identifier.includes(".")) return "Please enter a valid e-mail address.";
     if (password.length < 6) return "Password must be at least 6 characters long.";
     return null; // No errors
   }
@@ -175,7 +175,7 @@ export default function LoginPage() {
 
     <KeyboardAvoidingView
       style={styles.container}
-      //behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
@@ -212,8 +212,8 @@ export default function LoginPage() {
           }
         </Pressable>
 
-        <View style={styles.login}>
-          <Text style={styles.loginText}>New to the service? </Text>
+        <View style={styles.signup}>
+          <Text style={styles.signupText}>New to the service? </Text>
           <Pressable onPress={() => router.push('/auth/signup_page')}>
             <Text style={styles.link}>Sign Up</Text>
           </Pressable>

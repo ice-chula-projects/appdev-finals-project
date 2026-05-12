@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
   logo: {
     width: 200,
     height: 200,
-    marginBottom: 20,
+    marginBottom: 10,
     alignSelf: 'center'
   },
   title: { 
@@ -32,12 +32,10 @@ export const styles = StyleSheet.create({
     fontFamily: 'RobotoSlab-Regular'
   },
   form: { 
-    gap: 10, 
-    fontFamily: 'RobotoSlab-Regular'
+    gap: 10
   },
   input: {
-    maxWidth: '70%',
-    maxHeight: '20%',
+    width: 250,
     borderWidth: 1,
     borderColor: '#707070',
     backgroundColor: '#e6e6e6',
@@ -55,7 +53,7 @@ export const styles = StyleSheet.create({
   error: { 
     color: '#e53e3e', 
     fontSize: 15, 
-    marginBottom: 20,
+    margin: 10,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular' 
   },
@@ -72,6 +70,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
+    margin: 15,
     alignItems: 'center',
     alignSelf: 'center'
   },
@@ -87,7 +86,6 @@ export const styles = StyleSheet.create({
   login: { 
     flexDirection: 'row', 
     justifyContent: 'center', 
-    marginTop: 35,
   },
   loginText: { 
     color: '#666',
@@ -150,7 +148,7 @@ export default function SignupPage() {
     
     <KeyboardAvoidingView
       style={styles.container}
-      //behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
