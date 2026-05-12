@@ -128,7 +128,7 @@ export default function SignupPage() {
 
   
 
-  // Login Page UI
+  // Signup Page UI
   return (
 
   <>
@@ -154,8 +154,8 @@ export default function SignupPage() {
     >
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
-        <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Sign up today to join the communities!</Text>
         
 
         <View style={styles.form}>
