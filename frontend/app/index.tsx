@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
+import { Button } from "@react-navigation/elements";
+import * as SplashScreen from 'expo-splash-screen'
+import { useFonts } from 'expo-font'
+
 
 export default function Index() {
   const [username, setUsername] = useState("");
@@ -34,6 +38,15 @@ export default function Index() {
     },
   ];
 
+  const [fontsLoaded] = useFonts({
+    'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf')
+  })
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded]);
+  if (!fontsLoaded) return null;
+
   return (
     <>
       <Stack.Screen
@@ -64,11 +77,6 @@ export default function Index() {
             zIndex: 1,
           }}
           onPress={() => {
-            if (username.trim() === "" || password.trim() === "") {
-              alert("Please enter both username and password.");
-              router.push("/login_page");
-              return;
-            }
             console.log("Login pressed");
             console.log("Username:", username);
             console.log("Password:", password);
@@ -76,6 +84,26 @@ export default function Index() {
         >
           <Text style={{ color: "white", fontWeight: "bold" }}>
             Login
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 500,
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            backgroundColor: "#34C759",
+            borderRadius: 8,
+            zIndex: 1,
+          }}
+          onPress={() => {
+            router.push('/auth/signup_page');
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>
+            Signup
           </Text>
         </TouchableOpacity>
 
@@ -91,7 +119,6 @@ export default function Index() {
             value={username}
             onChangeText={setUsername}
             style={{
-              backgroundColor: "lightgray",
               position: "absolute",
               top: 10,
               left: 100,
@@ -106,7 +133,6 @@ export default function Index() {
             onChangeText={setPassword}
             secureTextEntry={true}
             style={{
-              backgroundColor: "lightgray",
               position: "absolute",
               top: 10,
               left: 300,
