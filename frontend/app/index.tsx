@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import {Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image} from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Button } from "@react-navigation/elements";
-import * as SplashScreen from 'expo-splash-screen'
-import { useFonts } from 'expo-font'
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
 
 
 export default function Index() {
@@ -175,7 +175,8 @@ export default function Index() {
                     style={{ 
                       width: 100, 
                       height: 100, 
-                      marginRight: 15 
+                      marginRight: 15,
+                      borderRadius: 8
                     }}
                   />
               <View style={{ 

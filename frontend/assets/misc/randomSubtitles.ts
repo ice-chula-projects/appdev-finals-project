@@ -97,7 +97,12 @@ export const SUBTITLES = [
     "Where are you now?",
     "I see a little silhouetto of a man.",
     "Galileo Figaro, magnifico!",
-    "Umapyoi, umapyoi!"
+    "Umapyoi, umapyoi!",
+    "Wake up, get up, get out there.",
+    "Wake me up before you go, go.",
+    "Wake me up when September ends",
+    "Good day.",
+    "Everyday is a good day."
 ]
 
 export const randomSubtitles = (subtitles: string[] = SUBTITLES) => {
