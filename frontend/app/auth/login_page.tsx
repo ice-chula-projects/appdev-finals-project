@@ -113,6 +113,11 @@ export default function LoginPage() {
     return null; // No errors
   }
 
+  // Dummy accounts for testing before Backend API
+  const dummyAccounts = [
+  { username: 'john_doe', email: 'john@example.com', password: 'password123' },
+  { username: 'jane_doe', email: 'jane@example.com', password: 'password456' },
+  ];
 
   // Check if requirements are met
   const handleLogin = () => {
@@ -124,6 +129,8 @@ export default function LoginPage() {
 
     setTimeout(() => {
       const accountInput = identifier.trim().toLowerCase();
+
+      const account = dummyAccounts.find(acc => (acc.username.toLowerCase() === accountInput) || (acc.email.toLowerCase() === accountInput) );
 
       // Account does not exist case
       if (!account) {
@@ -180,8 +187,8 @@ export default function LoginPage() {
           <TextInput
             style={styles.input}
             placeholder="Username or E-mail"
-            value={username}
-            onChangeText={(v) => { setUsername(v); setError('') }}
+            value={identifier}
+            onChangeText={(v) => { setIdentifier(v); setError('') }}
           />
           <TextInput
             style={styles.input}
