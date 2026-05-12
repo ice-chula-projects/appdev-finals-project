@@ -149,7 +149,7 @@ export default function LoginPage() {
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
         <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text> {/*Random subtitles planned, kinda like Minecraft splash text*/}
+        <Text style={styles.subtitle}>{subtitle}</Text>
         
 
         <View style={styles.form}>
