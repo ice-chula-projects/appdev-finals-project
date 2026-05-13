@@ -6,6 +6,7 @@ from pymongo.collection import Collection
 from settings import Settings
 from session import SessionManager
 from attachment import validate_base64_image, InvalidBase64ImageError
+from dataclasses import dataclass
 #contains code related to user management
 class UserManager:
     users_collection: Collection
@@ -30,7 +31,29 @@ class UserManager:
             raise UserDoesNotExistError()
         
         return User.from_database_representation(user)
+    
+    # meant for use when client needs names and pfps to display in messages
+    def get_display_users(self, uuids: list[str]) -> list[DisplayUser]:
+        users = self.users_collection.find({"_id":{"$in": uuids}})
 
+        display_users = []
+        for user in users:
+            user: User = User.from_database_representation(user)
+
+            print(user.profile_picture_base64)
+            if user.profile_picture_base64 == None:
+                user.profile_picture_base64 = self.settings.default_profile_picture
+            print(self.settings.default_profile_picture)
+
+            display_user = DisplayUser(
+                uuid = user.uuid,
+                name = user.name,
+                profile_picture_base64 = user.profile_picture_base64 
+            )
+            display_users.append(display_user)
+        
+        return display_users
+    
     # creates a user and adds them to the database
     def create_user(self, name: str, password: str) -> str:
         users_collection = self.users_collection
@@ -140,6 +163,7 @@ class User:
         return database_representation
 
 # user information that gets sent to the client when someone visits a specific profile
+@dataclass
 class PublicUser:
     uuid: str
     name: str
@@ -151,6 +175,7 @@ class PublicUser:
     thread_history: list[str]
 
 # user information that gets sent to the client for use when viewing a message from them
+@dataclass
 class DisplayUser:
     uuid: str
     name: str

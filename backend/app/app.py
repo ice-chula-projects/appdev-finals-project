@@ -2,6 +2,7 @@ import os
 from flask import Flask, jsonify, request, Request
 from flask_cors import CORS
 from pymongo import MongoClient
+from dataclasses import asdict
 
 from settings import Settings
 from user import UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
@@ -54,6 +55,16 @@ def home():
 @app.route("/ping")
 def ping():
     return jsonify({"message": "pong"}), 200
+
+@app.route("/get_users", methods=["GET"])
+def get_users():
+    user_uuids = request.args.getlist('uuid')
+    display_users = user_manager.get_display_users(user_uuids)
+    dict_display_users = {}
+    for display_user in display_users:
+        dict_display_users[display_user.uuid] = asdict(display_user)
+
+    return jsonify(({"message": "Success.", "users": dict_display_users})), 200
 
 @app.route("/create_user", methods=["POST"])
 def create_user():
@@ -191,15 +202,6 @@ def get_thread():
     thread = thread_manager.get_thread_from_uuid(thread_uuid)
 
     return jsonify({"message": "Success.", "thread": thread.to_database_representation()}), 200
-
-@app.route("/get_users")
-def get_users():
-
-    users = []
-    for user in user_manager.get_users():
-        users.append(user.to_database_representation())
-
-    return jsonify({"message": "Success.", "users": users}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
