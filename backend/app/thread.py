@@ -11,7 +11,7 @@ from attachment import Attachement, validate_base64_image, InvalidBase64ImageErr
 class ThreadManager:
     threads_collection: Collection
     settings: Settings
-    
+
     def __init__(self, threads_collection: Collection, settings: Settings):
         self.threads_collection = threads_collection
         self.settings = settings
@@ -22,6 +22,36 @@ class ThreadManager:
             raise ThreadDoesNotExistError()
 
         return Thread.from_database_representation(thread)
+
+    def get_display_threads(self, query_str:str = None) -> list[DisplayThread]:
+        if query_str != None:
+            filter = {
+                "$or":[
+                    {"name":{"$regex":query_str.lower(), "$options": "i"}},
+                    {"description":{"$regex":query_str.lower(), "$options": "i"}}
+                ]
+            }
+        else:
+            filter = None
+
+        displayThreads = []
+        for thread in self.threads_collection.find(filter):
+            thread: Thread = Thread.from_database_representation(thread)
+
+            displayThread = DisplayThread(
+                uuid = thread.uuid,
+                name = thread.name,
+                description = thread.description,
+                thumbnail_base64 = thread.thumbnail_base64,
+                author_user_uuid = thread.author_user_uuid,
+                creation_date = thread.creation_date,
+                last_modified_date = thread.last_modified_date,
+                last_message_date = thread.last_message_date,
+                private = thread.private
+            )
+            displayThreads.append(displayThread)
+        
+        return displayThreads
 
     def create_thread(self, name: str, description: str, author: User, thumbnail_base64: str = None, password: str = None):
         threads_collection = self.threads_collection
@@ -157,6 +187,20 @@ class Thread:
 
 class ThreadDoesNotExistError(Exception):
     pass
+
+@dataclass
+class DisplayThread:
+    uuid: str = ""
+    name: str = ""
+    description: str = ""
+    thumbnail_base64: str | None = None
+    author_user_uuid: str = ""
+
+    creation_date: datetime = None
+    last_modified_date: datetime = None
+    last_message_date: datetime = None
+
+    private: bool = None
 
 @dataclass
 class Message:

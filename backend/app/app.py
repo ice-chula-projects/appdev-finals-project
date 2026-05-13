@@ -34,7 +34,7 @@ user_manager = UserManager(db["users"], session_manager, settings)
 # validates that the request contains JSON and that it contains a valid session token
 # returns the user if successful
 # otherwise returns the error message and status code
-def authenticate_session_token(request: Request):
+def authenticate_body_session_token(request: Request):
     if not request.is_json:
         return None, "Missing JSON in request.", 400
     data: dict = request.get_json()
@@ -90,7 +90,7 @@ def create_user():
 
 @app.route("/update_user", methods=["UPDATE"])
 def update_user():
-    user, message, status_code = authenticate_session_token(request)
+    user, message, status_code = authenticate_body_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -138,7 +138,7 @@ def login():
 def logout():
     if not request.is_json:
         return jsonify({"error": "Missing JSON in request."}), 400
-    data = request.get_json()
+    data: dict = request.get_json()
     session_token = data.get("session_token")
     
     if session_token == None:
@@ -149,7 +149,7 @@ def logout():
 
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
-    user, message, status_code = authenticate_session_token(request)
+    user, message, status_code = authenticate_body_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -173,7 +173,7 @@ def create_thread():
 
 @app.route("/post_message", methods=["POST"])
 def post_message():
-    user, message, status_code = authenticate_session_token(request)
+    user, message, status_code = authenticate_body_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -187,21 +187,15 @@ def post_message():
     thread_manager.post_message(thread_uuid, user, message)
     return jsonify({"message": "Success."}), 200
 
-@app.route("/get_thread", methods=["GET"])
-def get_thread():
-    user, message, status_code = authenticate_session_token(request)
-    if user == None:
-        return jsonify({"error": message}), status_code
-    
-    data: dict = request.get_json()
-    thread_uuid = data.get("thread_uuid")
+@app.route("/get_threads", methods=["GET"])
+def get_threads():
+    search_str = request.args.get("search")
+    display_threads = thread_manager.get_display_threads(search_str)
+    display_threads.sort(key=lambda thread: thread.creation_date, reverse=True)
 
-    if thread_uuid == None:
-        return jsonify({"error": "Missing thread uuid."}), 400
+    dict_display_threads = list(map(asdict, display_threads))
 
-    thread = thread_manager.get_thread_from_uuid(thread_uuid)
-
-    return jsonify({"message": "Success.", "thread": thread.to_database_representation()}), 200
+    return jsonify({"message": "Success.", "threads": dict_display_threads}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
