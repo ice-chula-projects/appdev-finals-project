@@ -13,12 +13,6 @@ export default function Index() {
 
   const links = [
     {
-      title: "Yall gotta see this",
-      description: "Quintuple thumbs down.",
-      url: "https://www.bilibili.tv/en/video/4799492271643648?bstar_from=bstar-web.homepage.recommend.all",
-      image: require("../assets/images/HG2RsZhbIAAbpWj.jpg"),
-    },
-    {
       title: "Band of Brothers",
       description: "Don't grab the luger.",
       url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
@@ -29,12 +23,6 @@ export default function Index() {
       description: "Matt Damian gets stuck in space. Again.",
       url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
       image: require("../assets/images/18007564.jpg"),
-    },
-    {
-      title: "Expo Router Docs",
-      description: "Official documentation for Expo Router navigation.",
-      url: "https://docs.expo.dev/router/introduction/",
-      image: require("../assets/images/icon.png"),
     },
   ];
 
@@ -153,7 +141,7 @@ export default function Index() {
             }}
           >
             <Image
-              source={require("../assets/images/18007564.jpg")}
+              source={require("../assets/images/HG2RsZhbIAAbpWj.jpg")}
               style={{
                 width: 120,
                 height: 120,
