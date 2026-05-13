@@ -57,12 +57,29 @@ class ThreadManager:
         threads_collection.insert_one(thread.to_database_representation())
         return thread.uuid
     
-    def post_message(self, thread_uuid: str, author: User, message: str, attachment: Attachement = None):
+    def post_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
-        message = thread.post_message(author, message, attachment)
+        message = thread.post_message(author, message_body, attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
 
+    def update_message(self, thread_uuid: str, message_uuid: str, actor: User,  message_body: str, attachment: Attachement = None):
+        thread = self.get_thread_from_uuid(thread_uuid)
+
+        message = thread.update_message(actor, message_uuid, message_body, attachment)
+        self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
+
+    def delete_message(self, thread_uuid: str, message_uuid: str, actor: User):
+        thread = self.get_thread_from_uuid(thread_uuid)
+        message = thread.messages.get(message_uuid, None)
+        if message == None:
+            raise MessageDoesNotExistError
+        
+        if message.author_user_uuid != actor.uuid:
+            raise MessageAuthenticationError
+        
+        self.threads_collection.update_one({"_id": thread_uuid}, {"$unset":{f"messages.{message_uuid}": ""}})
+        
 class Thread:
     uuid: str = ""
     name: str = ""
@@ -97,7 +114,7 @@ class Thread:
         database_representation["_id"] = database_representation.pop("uuid")
         return database_representation
     
-    def post_message(self, author: User, message: str, attachment: Attachement = None) -> Message:
+    def post_message(self, author: User, message_body: str, attachment: Attachement = None) -> Message:
         messages = self.messages
         
         while True:
@@ -106,19 +123,33 @@ class Thread:
             if messages.get(uuid) == None:
                 break
         
-        if message == None:
-            message = ""
+        if message_body == None:
+            message_body = ""
 
         message = Message(
             uuid = uuid,
             author_user_uuid = author.uuid,
-            message = message,
+            message = message_body,
             attachment = attachment,
             creation_date = datetime.now(),
             last_modified_date = datetime.now()
         )
 
         messages[uuid] = message
+
+        return message
+    
+    def update_message(self, author: User, message_uuid: str, message_body: str, attachment: Attachement = None) -> Message:
+        message = self.messages.get(message_uuid, None)
+        if message == None:
+            raise MessageDoesNotExistError
+        
+        if message.author_user_uuid != author.uuid:
+            raise MessageAuthenticationError
+        
+        message.message = message_body
+        message.attachment = attachment
+        message.last_modified_date = datetime.now()
 
         return message
 
@@ -134,6 +165,12 @@ class Message:
 
     creation_date: datetime = None
     last_modified_date: datetime = None
+
+class MessageDoesNotExistError(Exception):
+    pass
+
+class MessageAuthenticationError(Exception):
+    pass
 
 class AttachmentMediaTypes(Enum):
     FILE = "file"
