@@ -113,11 +113,11 @@ class ThreadManager:
         self.threads_collection.update_one({"_id": thread_uuid}, {"$unset":{f"messages.{message_uuid}": ""}})
         
 class Thread:
-    uuid: str = ""
-    name: str = ""
-    description: str = ""
+    uuid: str = None
+    name: str = None
+    description: str = None
     thumbnail_base64: str | None = None
-    author_user_uuid: str = ""
+    author_user_uuid: str = None
 
     creation_date: datetime = None
     last_modified_date: datetime = None
@@ -127,7 +127,7 @@ class Thread:
     password_salt: str | None = None
     password_hash: str | None = None
     
-    messages: dict[str, Message]
+    messages: dict[str, Message] = None
 
     def from_database_representation(database_representation: dict) -> Thread:
         thread = Thread()
@@ -138,6 +138,8 @@ class Thread:
 
             setattr(thread, key, value)
         
+        if thread.messages == None:
+            thread.messages = {}
 
         for message_uuid, message_dict in thread.messages.items():
             message = Message()

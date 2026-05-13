@@ -53,6 +53,18 @@ def authenticate_header_session_token(request: Request):
 
     return user, "Success", 200
 
+#pages system
+def calculate_indexes_from_page(page: int, item_count:int):
+    if page < 1: page = 1
+
+    if page * items_per_page > item_count:
+        page = (item_count // items_per_page) + 1
+    
+    start_index = (page - 1) * items_per_page
+    end_index = min(page * items_per_page, item_count) #is exclusive
+
+    return (start_index, end_index)
+
 @app.route("/")
 def home():
     return jsonify({"message": "Hello World!"}), 200
@@ -205,15 +217,24 @@ def post_message():
 @app.route("/get_threads", methods=["GET"])
 def get_threads():
     search_str = request.args.get("search")
+    page = request.args.get("page")
+
+    try:
+        page = int(page)
+    except:
+        page = 1
+
     display_threads = thread_manager.get_display_threads(search_str)
     display_threads.sort(key=lambda thread: thread.creation_date, reverse=True)
-
     dict_display_threads = list(map(asdict, display_threads))
 
-    if len(dict_display_threads) == 1:
+    threads_count = len(dict_display_threads)
+    
+    if threads_count == 1:
         return jsonify({"message": "Success.", "thread": dict_display_threads[0]}), 200
     else:
-        return jsonify({"message": "Success.", "threads": dict_display_threads}), 200
+        start_index, end_index = calculate_indexes_from_page(page, threads_count)  
+        return jsonify({"message": "Success.", "threads": dict_display_threads[start_index:end_index], "total_threads": threads_count, "page": page}), 200
 
 @app.route("/get_thread_messages", methods=["GET"])
 def get_thread_messages():
@@ -224,6 +245,11 @@ def get_thread_messages():
     thread_uuid = request.args.get("uuid")
     page = request.args.get("page")
 
+    try:
+        page = int(page)
+    except:
+        page = 1
+    
     try:    
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
@@ -240,20 +266,9 @@ def get_thread_messages():
 
     #pages system
     messages_count = len(dict_messages)
-    try:
-        page = int(page)
-    except:
-        page = 1
     
-    if page < 1: page = 1
-
-    if page * items_per_page > messages_count:
-        page = (messages_count // items_per_page) + 1
-    
-    start_index = (page - 1) * items_per_page
-    end_index = min(page * items_per_page, messages_count) #is exclusive
-    print( start_index, end_index)
-    return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count}), 200
+    start_index, end_index = calculate_indexes_from_page(page, messages_count) 
+    return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count, "page": page}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
