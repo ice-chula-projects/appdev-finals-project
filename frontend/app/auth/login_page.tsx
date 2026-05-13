@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   logo: {
     width: 200,
     height: 200,
-    marginBottom: 10,
+    marginBottom: 15,
     alignSelf: 'center'
   },
   title: { 
@@ -173,7 +173,7 @@ export default function LoginPage() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
-        <Image style={styles.logo} source={require('../../assets/images/react-logo.png')} /> {/*Temporary logo*/}
+        <Image style={styles.logo} source={require('../../assets/images/message_logo.png')} />
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subtitle}>{subtitle}</Text>
         
