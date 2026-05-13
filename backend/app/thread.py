@@ -193,6 +193,9 @@ class Thread:
         message.last_modified_date = datetime.now()
 
         return message
+    
+    def authenticate(self, password: str) -> bool:
+        return Security.compare_hash(password, self.password_salt, self.password_hash)
 
 class ThreadDoesNotExistError(Exception):
     pass

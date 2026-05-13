@@ -1,5 +1,6 @@
 from math import floor
 import os
+from urllib import response
 from flask import Flask, jsonify, request, Request
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -256,6 +257,16 @@ def get_thread_messages():
         return jsonify({"error": "Thread does not exist"}), 404
     except:
         return jsonify({"error": "Something went wrong."}), 500
+    
+    if thread.private:
+        password = request.headers.get("thread-password")
+
+        if password == None:
+            return jsonify({"error": "Missing thread-password in header"}), 401
+        
+        if not thread.authenticate(password):
+            return jsonify({"error": "Invalid Password"}), 403
+    
     
     # update thread history
     user_manager.update_thread_history(user.uuid, thread.uuid)
