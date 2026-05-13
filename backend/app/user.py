@@ -5,7 +5,7 @@ from uuid import uuid4
 from pymongo.collection import Collection
 from settings import Settings
 from session import SessionManager
-
+from attachment import validate_base64_image, InvalidBase64ImageError
 #contains code related to user management
 class UserManager:
     users_collection: Collection
@@ -71,6 +71,8 @@ class UserManager:
             user.motd = motd
         
         if profile_picture_base64 != None:
+            if not validate_base64_image(profile_picture_base64):
+                raise InvalidBase64ImageError
             user.profile_picture_base64 = profile_picture_base64
 
         if password != None:

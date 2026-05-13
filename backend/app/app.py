@@ -7,6 +7,7 @@ from settings import Settings
 from user import UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
 from session import SessionManager, SessionExpiredError, SessionDoesNotExistError
 from thread import ThreadManager
+from attachment import InvalidBase64ImageError
 
 app = Flask(__name__)
 CORS(app)
@@ -92,6 +93,8 @@ def update_user():
         user_manager.update_user(user.uuid, name, motd, profile_picture_base64, password)
     except UserNameAlreadyExistsError:
         return jsonify({"error": "User name has already been taken."}), 409
+    except InvalidBase64ImageError:
+        return jsonify({"error": "Provided image is invalid"}), 400
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
@@ -133,8 +136,6 @@ def logout():
     user_manager.logout(session_token)
     return jsonify({"message": "Success."}), 200
 
-
-
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
     user, message, status_code = authenticate_session_token(request)
@@ -142,16 +143,21 @@ def create_thread():
         return jsonify({"error": message}), status_code
     
     data: dict = request.get_json()
-    thread_name = data.get("name")
-    thread_description = data.get("description")
+    thread_name = data.get("name", None)
+    thread_description = data.get("description", None)
+    thread_thumbnail_base64 = data.get("thumbnail_base64", None)
+    thread_password = data.get("password", None)
 
     if thread_name == None:
         thread_name = "Untitled Thread"
     if thread_description == None:
         thread_description = ""
     
-    thread_uuid = thread_manager.create_thread(thread_name, thread_description, user)
-
+    try:
+        thread_uuid = thread_manager.create_thread(thread_name, thread_description, user, thumbnail_base64=thread_thumbnail_base64, password=thread_password)
+    except InvalidBase64ImageError:
+        return jsonify({"error": "Provided image is invalid"}), 400
+    
     return jsonify({"message": "Success.", "thread_uuid": thread_uuid}), 200
 
 @app.route("/post_message", methods=["POST"])
@@ -166,8 +172,6 @@ def post_message():
 
     if thread_uuid == None:
         return jsonify({"error": "Missing thread uuid."}), 400
-
-    print(1, user.uuid, 1)
 
     thread_manager.post_message(thread_uuid, user, message)
     return jsonify({"message": "Success."}), 200

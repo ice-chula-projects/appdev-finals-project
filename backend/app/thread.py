@@ -1,12 +1,12 @@
 from __future__ import annotations
 from datetime import datetime
-from enum import Enum
 from security import Security
 from uuid import uuid4
 from pymongo.collection import Collection
 from settings import Settings
 from user import User
 from dataclasses import dataclass, asdict
+from attachment import Attachement, validate_base64_image, InvalidBase64ImageError
 
 class ThreadManager:
     threads_collection: Collection
@@ -40,6 +40,8 @@ class ThreadManager:
         thread.name = name
         thread.description = description
         if thumbnail_base64 != None:
+            if not validate_base64_image(thumbnail_base64):
+                raise InvalidBase64ImageError
             thread.thumbnail_base64 = thumbnail_base64
         thread.author_user_uuid = author.uuid
 
@@ -171,17 +173,3 @@ class MessageDoesNotExistError(Exception):
 
 class MessageAuthenticationError(Exception):
     pass
-
-class AttachmentMediaTypes(Enum):
-    FILE = "file"
-    IMAGE = "image"
-    AUDIO = "audio"
-    VIDEO = "video"
-
-@dataclass
-class Attachement:
-    data_base64: str = ""
-    # png/jpg etc
-    extension_type: str = ""
-    media_type: AttachmentMediaTypes = None
-
