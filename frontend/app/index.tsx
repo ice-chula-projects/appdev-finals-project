@@ -55,91 +55,25 @@ export default function Index() {
           headerTitle: () => (
             <Text
               style={{
-                fontSize: 40,
+                fontSize: 35,
                 fontWeight: "bold",
+                marginLeft: 10,
               }}
             >
-              Threads
+              Messaging Board
             </Text>
           ),
         }}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 20,
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            backgroundColor: "#007AFF",
-            borderRadius: 8,
-            zIndex: 1,
-          }}
-          onPress={() => {
-            console.log("Login pressed");
-            console.log("Username:", username);
-            console.log("Password:", password);
-          }}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>
-            Login
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 500,
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            backgroundColor: "#34C759",
-            borderRadius: 8,
-            zIndex: 1,
-          }}
-          onPress={() => { router.push('/auth/signup_page') }}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>
-            Signup
-          </Text>
-        </TouchableOpacity>
-
-        <View
-          style={{
+        <View style={{
             flex: 1,
-            paddingTop: 100,
+            paddingTop: 30,
             paddingHorizontal: 30,
           }}
         >
-          <TextInput
-            placeholder="Username"
-            value={username}
-            onChangeText={setUsername}
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 100,
-              paddingVertical: 10,
-              paddingHorizontal: 15,
-            }}
-          />
-
-          <TextInput
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={true}
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 300,
-              paddingVertical: 10,
-              paddingHorizontal: 15,
-            }}
-          />
-
+          
           <Text
             style={{
               fontSize: 24,
