@@ -56,7 +56,8 @@ def create_user():
     except:
         return jsonify({"error": "Something went wrong"}), 500
     
-    return jsonify({"message": "Success"}), 200
+    session_token = user_manager.login(name, passsword)
+    return jsonify({"message": "Success", "session_token": session_token}), 200
 
 @app.route("/login", methods=["POST"])
 def login():
