@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import string
-import secrets
-import hashlib
+from security import Security
 from uuid import uuid4
 from pymongo.collection import Collection
 from settings import Settings
@@ -34,7 +32,7 @@ class UserManager:
         return User.from_database_representation(user)
 
     # creates a user and adds them to the database
-    def create_user(self, name: str, password: str) -> User:
+    def create_user(self, name: str, password: str) -> str:
         users_collection = self.users_collection
         user = User()
         
@@ -55,11 +53,11 @@ class UserManager:
         
         user.uuid = uuid
         user.name = name
-        user.password_salt = UserManager.generate_random_salt()
-        user.password_hash = UserManager.calculate_password_hash(password, user.password_salt)
+        user.password_salt = Security.generate_random_salt()
+        user.password_hash = Security.calculate_password_hash(password, user.password_salt)
 
         users_collection.insert_one(user.to_database_representation())
-        return user
+        return user.uuid
 
     def get_users(self) -> list[User]:
         users: list[User] = []
@@ -72,29 +70,13 @@ class UserManager:
     def login(self, name: str, password: str) -> str:
         user = self.get_user_from_name(name)
 
-        password_hash = UserManager.calculate_password_hash(password, user.password_salt)
-
-        if password_hash != user.password_hash:
-            raise InvalidPasswordError
+        if not Security.compare_hash(password, user.password_salt, user.password_hash):
+            raise InvalidUserCredentialsError
         
         return self.session_manager.create_session(user)
 
     def logout(self, session_token: str):
         self.session_manager.delete_session(session_token)
-
-
-    # simple hashing and salting to increase security
-    # note: this is not secure against brute force attacks as sha256 is a fast algorithm to compute
-    # but this is better than storing everything in plain text
-    def calculate_password_hash(password:str, password_salt:str) -> str:
-        sha256 = hashlib.sha256()
-        sha256.update((password + password_salt).encode("utf-8"))
-        return sha256.hexdigest()
-    
-    # returns a random salt of length 16
-    def generate_random_salt() -> str:
-        valid_letters = string.ascii_letters + string.digits
-        return "".join([secrets.choice(valid_letters) for i in range(16)])
 
 class UserNameAlreadyExistsError(Exception):
     pass
@@ -102,7 +84,7 @@ class UserNameAlreadyExistsError(Exception):
 class UserDoesNotExistError(Exception):
     pass
 
-class InvalidPasswordError(Exception):
+class InvalidUserCredentialsError(Exception):
     pass
 
 class User:
@@ -110,7 +92,7 @@ class User:
 
     name: str = ""
     motd: str = ""
-    profile_picture: str | None = None
+    profile_picture_base64: str | None = None
     
     password_salt: str = ""
     password_hash: str = ""
@@ -119,38 +101,36 @@ class User:
     saved_threads: list[str] = []
     thread_history: list[str] = []
 
-    def from_database_representation(database_representation:dict) -> User:
+    def from_database_representation(database_representation: dict) -> User:
         user = User()
+        for key, value in database_representation.items():
+            # rename id
+            if key == "_id":
+                key = "uuid"
 
-        user.uuid = database_representation.get("_id")
-        user.name = database_representation.get("name")
-        user.motd = database_representation.get("motd")
-        user.profile_picture = database_representation.get("profile_picture")
-        user.password_salt = database_representation.get("password_salt")
-        user.password_hash = database_representation.get("password_hash")
-        user.saved_threads = database_representation.get("saved_threads")
-        user.thread_history = database_representation.get("thread_history")
-
+            setattr(user, key, value)
+        
         return user
 
     def to_database_representation(self) -> dict:
-        return {
-            "_id": self.uuid,
-            "name": self.name,
-            "motd": self.motd,
-            "profile_picture": self.profile_picture,
-            "password_salt": self.password_salt,
-            "password_hash": self.password_hash,
-            "saved_threads": self.saved_threads,
-            "thread_history": self.thread_history
-        }
+        database_representation = vars(self).copy()
+        # mongodb excepts the id to be named _id
+        database_representation["_id"] = database_representation.pop("uuid")
+        return database_representation
 
-# user information that gets sent to the client
+# user information that gets sent to the client when someone visits a specific profile
 class PublicUser:
     uuid: str
     name: str
     motd: str
-    profile_picture:str
+    profile_picture_base64:str
 
-    saved_threads: str
-    thread_history: str
+    #list of uuids
+    saved_threads: list[str]
+    thread_history: list[str]
+
+# user information that gets sent to the client for use when viewing a message from them
+class DisplayUser:
+    uuid: str
+    name: str
+    profile_picture_base64:str

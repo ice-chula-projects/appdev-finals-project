@@ -65,7 +65,7 @@ class SessionManager:
         return session.user
     
     def delete_session(self, session_token: str):
-        self.sessions.pop(session_token)
+        self.sessions.pop(session_token, None)
         
 class Session:
     user: User
