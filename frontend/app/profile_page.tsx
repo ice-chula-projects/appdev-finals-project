@@ -26,6 +26,33 @@ export default function Index() {
     },
   ];
 
+  const comments = [
+    {
+      thread: "Rate my battalion setup",
+      comment: "Honestly the logistics section looks pretty solid.",
+      date: "13 May 2026 12:48",
+    },
+
+    {
+      thread: "React Native Help",
+      comment: "You forgot to close the ScrollView tag.",
+      date: "13 May 2026 13:02",
+    },
+
+    {
+      thread: "Movie Recommendations",
+      comment: "The Martian is peak engineering propaganda.",
+      date: "13 May 2026 13:17",
+    },
+
+    {
+      thread: "Forum Lore",
+      comment: "This thread is becoming historically significant.",
+      date: "13 May 2026 13:44",
+    },
+  ];
+
+
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
     'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
@@ -133,20 +160,20 @@ export default function Index() {
           <View
             style={{
               alignItems: "center",
-              marginBottom: 25,
+              marginBottom: 5,
               borderWidth: 1,
               borderColor: "#ccc",
               borderRadius: 8,
-              padding: 20,
+              padding: 5,
             }}
           >
             <Image
               source={require("../assets/images/HG2RsZhbIAAbpWj.jpg")}
               style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                marginBottom: 15,
+                width: 100,
+                height: 100,
+                borderRadius: 30,
+                marginBottom: 5,
               }}
             />
 
@@ -179,16 +206,25 @@ export default function Index() {
               Why are you here.
             </Text>
             </View>
-          <Text
+
+        <Text
             style={{
-              fontSize: 36,
+              fontSize: 20,
               fontWeight: "bold",
-              marginBottom: 20,
-              textAlign: "center",
+              marginBottom: 5,
             }}
           >
-            Profile
+            Post  History
           </Text>
+            <View
+            style={{
+                height: 180,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                overflow: "hidden",
+            }}
+            >
 
         <ScrollView>
             {links.map((link, index) => (
@@ -245,7 +281,71 @@ export default function Index() {
               </View>
               </TouchableOpacity>
             ))}
+        </ScrollView>
+        </View>
+
+        <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              marginBottom: 5,
+            }}
+          >
+            Comment History
+          </Text>
+            <View
+            style={{
+                height: 180,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                overflow: "hidden",
+            }}
+            >
+          <ScrollView>
+            {comments.map((comment, index) => (
+              <View
+                key={index}
+                style={{
+                  padding: 5,
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 2,
+                  marginBottom: 5,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: "#007AFF",
+                    marginBottom: 4,
+                  }}
+                >
+                  {comment.thread}
+                </Text>
+
+                <Text
+                  style={{
+                    fontSize: 16,
+                    marginBottom: 4,
+                  }}
+                >
+                  {comment.comment}
+                </Text>
+
+                <Text
+                  style={{
+                    color: "gray",
+                    fontSize: 12,
+                  }}
+                >
+                  {comment.date}
+                </Text>
+              </View>
+            ))}
           </ScrollView>
+            </View>
         </View>
       </SafeAreaView>
     </>
