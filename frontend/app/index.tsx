@@ -1,32 +1,52 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, ScrollView, Image } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useLocalSearchParams, router } from "expo-router";
+import { Stack, router } from "expo-router";
+import { Button } from "@react-navigation/elements";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
-export default function ThreadPage() {
-  const { id } = useLocalSearchParams();
+
+export default function Index() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const links = [
+    {
+      title: "Yall gotta see this",
+      description: "Quintuple thumbs down.",
+      url: "https://www.bilibili.tv/en/video/4799492271643648?bstar_from=bstar-web.homepage.recommend.all",
+      image: require("../assets/images/HG2RsZhbIAAbpWj.jpg"),
+    },
+    {
+      title: "Band of Brothers",
+      description: "Don't grab the luger.",
+      url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
+      image: require("../assets/images/images.jpg"),
+    },
+    {
+      title: "The Martian",
+      description: "Matt Damian gets stuck in space. Again.",
+      url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
+      image: require("../assets/images/18007564.jpg"),
+    },
+    {
+      title: "Expo Router Docs",
+      description: "Official documentation for Expo Router navigation.",
+      url: "https://docs.expo.dev/router/introduction/",
+      image: require("../assets/images/icon.png"),
+    },
+  ];
 
   const [fontsLoaded] = useFonts({
-    'RobotoSlab-Regular': require('../../assets/fonts/RobotoSlab-Regular.ttf'),
-    'NotoSans-Regular': require('../../assets/fonts/NotoSans-Regular.ttf')
-  });
+    'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
+    'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
+  })
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
+    if (fontsLoaded) SplashScreen.hideAsync()
   }, [fontsLoaded]);
-
   if (!fontsLoaded) return null;
-
-  const thread = {
-    id: id,
-    title: "Dynamic Thread Page",
-    description: "This thread was loaded dynamically from the browser URL.",
-    image: require('../../assets/images/icon.png'),
-    author: "Admin",
-    date: "May 13, 2026",
-  };
 
   return (
     <>
@@ -39,7 +59,7 @@ export default function ThreadPage() {
                 fontWeight: "bold",
               }}
             >
-              Thread
+              Threads
             </Text>
           ),
         }}
@@ -58,11 +78,33 @@ export default function ThreadPage() {
             zIndex: 1,
           }}
           onPress={() => {
-            router.push('/');
+            console.log("Login pressed");
+            console.log("Username:", username);
+            console.log("Password:", password);
           }}
         >
           <Text style={{ color: "white", fontWeight: "bold" }}>
-            Back
+            Login
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 500,
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            backgroundColor: "#34C759",
+            borderRadius: 8,
+            zIndex: 1,
+          }}
+          onPress={() => {
+            router.push('/auth/signup_page');
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>
+            Signup
           </Text>
         </TouchableOpacity>
 
@@ -73,85 +115,98 @@ export default function ThreadPage() {
             paddingHorizontal: 30,
           }}
         >
+          <TextInput
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 100,
+              paddingVertical: 10,
+              paddingHorizontal: 15,
+            }}
+          />
+
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 300,
+              paddingVertical: 10,
+              paddingHorizontal: 15,
+            }}
+          />
+
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: "bold",
+              marginBottom: 20,
+            }}
+          >
+            Threads
+          </Text>
+
           <ScrollView>
-            <View
-              style={{
-                padding: 20,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 12,
-                backgroundColor: "white",
-              }}
-            >
-              <Image
-                source={thread.image}
-                style={{
-                  width: "100%",
-                  height: 300,
-                  borderRadius: 12,
-                  marginBottom: 20,
-                }}
-                resizeMode="cover"
-              />
-
-              <Text
-                style={{
-                  fontSize: 36,
-                  fontWeight: "bold",
-                  color: "#007AFF",
-                  marginBottom: 10,
-                }}
-              >
-                {thread.title}
-              </Text>
-
-              <Text
-                style={{
-                  color: "gray",
-                  fontSize: 16,
-                  marginBottom: 20,
-                }}
-              >
-                Posted by {thread.author} • {thread.date}
-              </Text>
-
-              <Text
-                style={{
-                  fontSize: 20,
-                  lineHeight: 30,
-                  marginBottom: 30,
-                }}
-              >
-                {thread.description}
-              </Text>
-
-              <View
+            {links.map((link, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => Linking.openURL(link.url)}
                 style={{
                   padding: 15,
-                  backgroundColor: "#f2f2f2",
-                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 8,
+                  marginBottom: 15,
                 }}
               >
+                <View 
+                  style={{ 
+                  flexDirection: "row", 
+                  alignItems: "center" 
+                  }}>
+                  <Image
+                    source={link.image}
+                    style={{ 
+                      width: 100, 
+                      height: 100, 
+                      marginRight: 15,
+                      borderRadius: 8
+                    }}
+                  />
+              <View style={{ 
+                width: 500,
+                height: 50,
+                justifyContent: "center", 
+                }}>
                 <Text
                   style={{
-                    fontSize: 18,
+                    fontSize: 25,
                     fontWeight: "bold",
-                    marginBottom: 10,
+                    color: "#007AFF",
+                    marginBottom: 5,
                   }}
                 >
-                  Thread ID
+                  {link.title}
                 </Text>
 
                 <Text
                   style={{
-                    fontSize: 16,
-                    color: "#007AFF",
+                    color: "gray",
+                    fontSize: 14,
                   }}
                 >
-                  {id}
+                  {link.description}
                 </Text>
               </View>
-            </View>
+              </View>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
       </SafeAreaView>
