@@ -40,21 +40,21 @@ def ping():
 @app.route("/create_user", methods=["POST"])
 def create_user():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data = request.get_json()
 
     name = data.get("name")
     passsword = data.get("password")
 
     if name == None or passsword == None:
-        return jsonify({"error": "misformatted JSON"}), 400
+        return jsonify({"error": "misformatted JSON."}), 400
 
     try:
        user_manager.create_user(name, passsword)
     except UserNameAlreadyExistsError:
-        return jsonify({"error": "User already exists"}), 409
+        return jsonify({"error": "User already exists."}), 409
     except:
-        return jsonify({"error": "Something went wrong"}), 500
+        return jsonify({"error": "Something went wrong."}), 500
     
     session_token = user_manager.login(name, passsword)
     return jsonify({"message": "Success", "session_token": session_token}), 200
@@ -62,22 +62,22 @@ def create_user():
 @app.route("/login", methods=["POST"])
 def login():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data = request.get_json()
 
     name = data.get("name")
     passsword = data.get("password")
 
     if name == None or passsword == None:
-        return jsonify({"error": "misformatted JSON"}), 400
+        return jsonify({"error": "misformatted JSON."}), 400
     
     try:
         session_token = user_manager.login(name, passsword)
     except (UserDoesNotExistError, InvalidUserCredentialsError):
-        return jsonify({"error": "Invalid name or password"}), 401
+        return jsonify({"error": "Invalid name or password."}), 401
     except Exception as e:
         print(e)
-        return jsonify({"error": "Something went wrong"}), 500
+        return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success", "session_token": session_token}), 200
 
@@ -85,12 +85,12 @@ def login():
 @app.route("/logout", methods=["POST"])
 def logout():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data = request.get_json()
     session_token = data.get("session_token")
     
     if session_token == None:
-        return jsonify({"error": "Missing session_token"}), 400
+        return jsonify({"error": "Missing session_token."}), 400
     
     user_manager.logout(session_token)
     return jsonify({"message": "Success"}), 200
@@ -98,34 +98,34 @@ def logout():
 @app.route("/auth", methods=["POST"])
 def auth():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data = request.get_json()
     session_token = data.get("session_token")
     try:
         session_manager.authenticate(session_token)
     except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token"}), 401
+        return jsonify({"error": "Invalid session token."}), 401
     except SessionExpiredError:
-        return jsonify({"error": "Session token expired"}), 401
+        return jsonify({"error": "Session token expired."}), 401
 
     return jsonify({"message": "Success"}), 200
 
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data: dict = request.get_json()
     session_token = data.get("session_token")
 
     if session_token == None:
-        return jsonify({"error": "Missing session token"}), 401
+        return jsonify({"error": "Missing session token."}), 401
         
     try:
         user = session_manager.authenticate(session_token)
     except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token"}), 401
+        return jsonify({"error": "Invalid session token."}), 401
     except SessionExpiredError:
-        return jsonify({"error": "Session token expired"}), 401
+        return jsonify({"error": "Session token expired."}), 401
     
     thread_name = data.get("name")
     thread_description = data.get("description")
@@ -142,24 +142,24 @@ def create_thread():
 @app.route("/post_message", methods=["POST"])
 def post_message():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data: dict = request.get_json()
     session_token = data.get("session_token")
 
     if session_token == None:
-        return jsonify({"error": "Missing session token"}), 401
+        return jsonify({"error": "Missing session token."}), 401
     try:
         user = session_manager.authenticate(session_token)
     except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token"}), 401
+        return jsonify({"error": "Invalid session token."}), 401
     except SessionExpiredError:
-        return jsonify({"error": "Session token expired"}), 401
+        return jsonify({"error": "Session token expired."}), 401
     
     thread_uuid = data.get("thread_uuid")
     message = data.get("message")
 
     if thread_uuid == None:
-        return jsonify({"error": "Missing thread uuid"}), 400
+        return jsonify({"error": "Missing thread uuid."}), 400
 
     print(1, user.uuid, 1)
 
@@ -169,23 +169,23 @@ def post_message():
 @app.route("/get_thread", methods=["GET"])
 def get_thread():
     if not request.is_json:
-        return jsonify({"error": "Missing JSON in request"}), 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     data: dict = request.get_json()
     session_token = data.get("session_token")
 
     if session_token == None:
-        return jsonify({"error": "Missing session token"}), 401
+        return jsonify({"error": "Missing session token."}), 401
     try:
         user = session_manager.authenticate(session_token)
     except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token"}), 401
+        return jsonify({"error": "Invalid session token."}), 401
     except SessionExpiredError:
-        return jsonify({"error": "Session token expired"}), 401
+        return jsonify({"error": "Session token expired."}), 401
     
     thread_uuid = data.get("thread_uuid")
 
     if thread_uuid == None:
-        return jsonify({"error": "Missing thread uuid"}), 400
+        return jsonify({"error": "Missing thread uuid."}), 400
 
     thread = thread_manager.get_thread_from_uuid(thread_uuid)
 

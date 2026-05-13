@@ -110,10 +110,12 @@ export default function SignupPage() {
     return null; // No errors
   }
 
-  // Check if account exists
+  
   const handleSignup = async () => {
     const err = validate();
     if (err) return setError(err);
+
+    setError('');
 
     try {
       const response = await fetch(GLOBAL_URL+'create_user', {
@@ -134,9 +136,6 @@ export default function SignupPage() {
       setLoading(false);
       setError("Cannot connect to server.");
     }
-
-    setError('');
-    setLoading(true);
 
   }
 
