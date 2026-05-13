@@ -99,9 +99,7 @@ export default function Index() {
             borderRadius: 8,
             zIndex: 1,
           }}
-          onPress={() => {
-            router.push('/auth/signup_page');
-          }}
+          onPress={() => { router.push('/auth/signup_page') }}
         >
           <Text style={{ color: "white", fontWeight: "bold" }}>
             Signup

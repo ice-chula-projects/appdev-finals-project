@@ -54,7 +54,7 @@ export const styles = StyleSheet.create({
   },
   error: { 
     color: '#e53e3e', 
-    fontSize: 15, 
+    fontSize: 15,
     margin: 10,
     alignSelf: 'center',
     fontFamily: 'RobotoSlab-Regular' 
@@ -72,7 +72,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    margin: 15,
+    marginBottom: 20,
     alignItems: 'center',
     alignSelf: 'center'
   },
@@ -192,7 +192,7 @@ export default function SignupPage() {
           />
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Text style={styles.error}>{error || ' '}</Text>
 
         <Pressable
           style={[styles.button, loading && styles.buttonDisabled]}

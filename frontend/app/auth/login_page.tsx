@@ -70,12 +70,12 @@ export const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#2f5ae9',
-    margin: 15,
     maxWidth: '50%',
     maxHeight: '20%',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
+    marginBottom: 20,
     alignItems: 'center',
     alignSelf: 'center'
   },
@@ -118,6 +118,9 @@ export default function LoginPage() {
     const err = validate();
     if (err) return setError(err);
 
+    setError('');
+    setLoading(true);
+
     try {
       const response = await fetch(GLOBAL_URL+"login", {
           method: "POST",
@@ -139,8 +142,6 @@ export default function LoginPage() {
       setLoading(false);
       setError("Cannot connect to server.");
     }
-    setError('');
-    setLoading(true);
   }
 
   // Login Page UI
@@ -188,7 +189,7 @@ export default function LoginPage() {
           />
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Text style={styles.error}>{error || ' '}</Text>
 
         <Pressable
           style={[styles.button, loading && styles.buttonDisabled]}
