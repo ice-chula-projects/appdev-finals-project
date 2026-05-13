@@ -58,6 +58,25 @@ class UserManager:
 
         users_collection.insert_one(user.to_database_representation())
         return user.uuid
+    
+    def update_user(self, user_uuid: str, name: str = None, motd: str = None, profile_picture_base64: str = None, password: str = None):
+        user = self.get_user_from_uuid(user_uuid)
+
+        if name != None:
+            if name != user.name and self.users_collection.find_one({"name": name}) != None:
+                raise UserNameAlreadyExistsError
+            user.name = name
+        
+        if motd != None:
+            user.motd = motd
+        
+        if profile_picture_base64 != None:
+            user.profile_picture_base64 = profile_picture_base64
+
+        if password != None:
+            user.password_hash = Security.calculate_password_hash(password, user.password_salt)
+
+        self.users_collection.replace_one({"_id": user_uuid}, user.to_database_representation())
 
     def get_users(self) -> list[User]:
         users: list[User] = []

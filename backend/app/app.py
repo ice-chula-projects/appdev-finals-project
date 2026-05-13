@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Request
 from flask_cors import CORS
 from pymongo import MongoClient
 
@@ -29,6 +29,23 @@ session_manager = SessionManager(settings)
 thread_manager = ThreadManager(db["threads"], settings)
 user_manager = UserManager(db["users"], session_manager, settings)
 
+# validates that the request contains JSON and that it contains a valid session token
+# returns the user if successful
+# otherwise returns the error message and status code
+def authenticate_session_token(request: Request):
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    data: dict = request.get_json()
+    session_token = data.get("session_token")
+    try:
+        user = session_manager.authenticate(session_token)
+    except SessionDoesNotExistError:
+        return None, "Invalid session token.", 401
+    except SessionExpiredError:
+        return None, "Session token expired.", 401
+
+    return user, "Success", 200
+
 @app.route("/")
 def home():
     return jsonify({"message": "Hello World!"}), 200
@@ -41,7 +58,7 @@ def ping():
 def create_user():
     if not request.is_json:
         return jsonify({"error": "Missing JSON in request."}), 400
-    data = request.get_json()
+    data: dict = request.get_json()
 
     name = data.get("name")
     passsword = data.get("password")
@@ -52,18 +69,39 @@ def create_user():
     try:
        user_manager.create_user(name, passsword)
     except UserNameAlreadyExistsError:
-        return jsonify({"error": "User already exists."}), 409
+        return jsonify({"error": "User name has already been taken."}), 409
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
     session_token = user_manager.login(name, passsword)
-    return jsonify({"message": "Success", "session_token": session_token}), 200
+    return jsonify({"message": "Success.", "session_token": session_token}), 200
+
+@app.route("/update_user", methods=["UPDATE"])
+def update_user():
+    user, message, status_code = authenticate_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    data: dict = request.get_json()
+    name = data.get("name", None)
+    motd = data.get("motd", None)
+    profile_picture_base64 = data.get("profile_picture_base64", None)
+    password = data.get("password")
+
+    try:
+        user_manager.update_user(user.uuid, name, motd, profile_picture_base64, password)
+    except UserNameAlreadyExistsError:
+        return jsonify({"error": "User name has already been taken."}), 409
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    return jsonify({"message": "Success."}), 200
 
 @app.route("/login", methods=["POST"])
 def login():
     if not request.is_json:
         return jsonify({"error": "Missing JSON in request."}), 400
-    data = request.get_json()
+    data: dict = request.get_json()
 
     name = data.get("name")
     passsword = data.get("password")
@@ -79,7 +117,7 @@ def login():
         print(e)
         return jsonify({"error": "Something went wrong."}), 500
     
-    return jsonify({"message": "Success", "session_token": session_token}), 200
+    return jsonify({"message": "Success.", "session_token": session_token}), 200
 
 
 @app.route("/logout", methods=["POST"])
@@ -93,40 +131,17 @@ def logout():
         return jsonify({"error": "Missing session_token."}), 400
     
     user_manager.logout(session_token)
-    return jsonify({"message": "Success"}), 200
+    return jsonify({"message": "Success."}), 200
 
-@app.route("/auth", methods=["POST"])
-def auth():
-    if not request.is_json:
-        return jsonify({"error": "Missing JSON in request."}), 400
-    data = request.get_json()
-    session_token = data.get("session_token")
-    try:
-        session_manager.authenticate(session_token)
-    except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token."}), 401
-    except SessionExpiredError:
-        return jsonify({"error": "Session token expired."}), 401
 
-    return jsonify({"message": "Success"}), 200
 
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
-    if not request.is_json:
-        return jsonify({"error": "Missing JSON in request."}), 400
-    data: dict = request.get_json()
-    session_token = data.get("session_token")
-
-    if session_token == None:
-        return jsonify({"error": "Missing session token."}), 401
-        
-    try:
-        user = session_manager.authenticate(session_token)
-    except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token."}), 401
-    except SessionExpiredError:
-        return jsonify({"error": "Session token expired."}), 401
+    user, message, status_code = authenticate_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
     
+    data: dict = request.get_json()
     thread_name = data.get("name")
     thread_description = data.get("description")
 
@@ -137,24 +152,15 @@ def create_thread():
     
     thread_uuid = thread_manager.create_thread(thread_name, thread_description, user)
 
-    return jsonify({"message": "Success", "thread_uuid": thread_uuid}), 200
+    return jsonify({"message": "Success.", "thread_uuid": thread_uuid}), 200
 
 @app.route("/post_message", methods=["POST"])
 def post_message():
-    if not request.is_json:
-        return jsonify({"error": "Missing JSON in request."}), 400
-    data: dict = request.get_json()
-    session_token = data.get("session_token")
-
-    if session_token == None:
-        return jsonify({"error": "Missing session token."}), 401
-    try:
-        user = session_manager.authenticate(session_token)
-    except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token."}), 401
-    except SessionExpiredError:
-        return jsonify({"error": "Session token expired."}), 401
+    user, message, status_code = authenticate_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
     
+    data: dict = request.get_json()
     thread_uuid = data.get("thread_uuid")
     message = data.get("message")
 
@@ -164,24 +170,15 @@ def post_message():
     print(1, user.uuid, 1)
 
     thread_manager.post_message(thread_uuid, user, message)
-    return jsonify({"message": "Success"}), 200
+    return jsonify({"message": "Success."}), 200
 
 @app.route("/get_thread", methods=["GET"])
 def get_thread():
-    if not request.is_json:
-        return jsonify({"error": "Missing JSON in request."}), 400
-    data: dict = request.get_json()
-    session_token = data.get("session_token")
-
-    if session_token == None:
-        return jsonify({"error": "Missing session token."}), 401
-    try:
-        user = session_manager.authenticate(session_token)
-    except SessionDoesNotExistError:
-        return jsonify({"error": "Invalid session token."}), 401
-    except SessionExpiredError:
-        return jsonify({"error": "Session token expired."}), 401
+    user, message, status_code = authenticate_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
     
+    data: dict = request.get_json()
     thread_uuid = data.get("thread_uuid")
 
     if thread_uuid == None:
@@ -189,7 +186,7 @@ def get_thread():
 
     thread = thread_manager.get_thread_from_uuid(thread_uuid)
 
-    return jsonify({"message": "Success", "thread": thread.to_database_representation()}), 200
+    return jsonify({"message": "Success.", "thread": thread.to_database_representation()}), 200
 
 @app.route("/get_users")
 def get_users():
@@ -198,7 +195,7 @@ def get_users():
     for user in user_manager.get_users():
         users.append(user.to_database_representation())
 
-    return jsonify({"message": "Success", "users": users}), 200
+    return jsonify({"message": "Success.", "users": users}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
