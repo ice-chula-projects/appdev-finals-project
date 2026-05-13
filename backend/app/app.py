@@ -1,3 +1,4 @@
+from math import floor
 import os
 from flask import Flask, jsonify, request, Request
 from flask_cors import CORS
@@ -7,7 +8,7 @@ from dataclasses import asdict
 from settings import Settings
 from user import UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
 from session import SessionManager, SessionExpiredError, SessionDoesNotExistError
-from thread import ThreadManager
+from thread import ThreadDoesNotExistError, ThreadManager
 from attachment import InvalidBase64ImageError
 
 app = Flask(__name__)
@@ -31,20 +32,24 @@ session_manager = SessionManager(settings)
 thread_manager = ThreadManager(db["threads"], settings)
 user_manager = UserManager(db["users"], session_manager, settings)
 
-# validates that the request contains JSON and that it contains a valid session token
+# max amount of "items" (threads/messages) in 1 "page"
+items_per_page = 50
+
+# validates that it contains a valid session token
 # returns the user if successful
 # otherwise returns the error message and status code
-def authenticate_body_session_token(request: Request):
-    if not request.is_json:
-        return None, "Missing JSON in request.", 400
-    data: dict = request.get_json()
-    session_token = data.get("session_token")
+def authenticate_header_session_token(request: Request):
+    session_token = request.headers.get("session-token")
+    if session_token == None:
+        return None, "Missing session-token in header.", 401
     try:
         user = session_manager.authenticate(session_token)
     except SessionDoesNotExistError:
         return None, "Invalid session token.", 401
     except SessionExpiredError:
         return None, "Session token expired.", 401
+    except:
+        return None, "Something went wrong.", 500
 
     return user, "Success", 200
 
@@ -90,7 +95,10 @@ def create_user():
 
 @app.route("/update_user", methods=["UPDATE"])
 def update_user():
-    user, message, status_code = authenticate_body_session_token(request)
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+
+    user, message, status_code = authenticate_header_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -127,8 +135,7 @@ def login():
         session_token = user_manager.login(name, passsword)
     except (UserDoesNotExistError, InvalidUserCredentialsError):
         return jsonify({"error": "Invalid name or password."}), 401
-    except Exception as e:
-        print(e)
+    except:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "session_token": session_token}), 200
@@ -149,7 +156,10 @@ def logout():
 
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
-    user, message, status_code = authenticate_body_session_token(request)
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -168,12 +178,17 @@ def create_thread():
         thread_uuid = thread_manager.create_thread(thread_name, thread_description, user, thumbnail_base64=thread_thumbnail_base64, password=thread_password)
     except InvalidBase64ImageError:
         return jsonify({"error": "Provided image is invalid"}), 400
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "thread_uuid": thread_uuid}), 200
 
 @app.route("/post_message", methods=["POST"])
 def post_message():
-    user, message, status_code = authenticate_body_session_token(request)
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
@@ -195,7 +210,50 @@ def get_threads():
 
     dict_display_threads = list(map(asdict, display_threads))
 
-    return jsonify({"message": "Success.", "threads": dict_display_threads}), 200
+    if len(dict_display_threads) == 1:
+        return jsonify({"message": "Success.", "thread": dict_display_threads[0]}), 200
+    else:
+        return jsonify({"message": "Success.", "threads": dict_display_threads}), 200
+
+@app.route("/get_thread_messages", methods=["GET"])
+def get_thread_messages():
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    thread_uuid = request.args.get("uuid")
+    page = request.args.get("page")
+
+    try:    
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)   
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist"}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    # update thread history
+    user_manager.update_thread_history(user.uuid, thread.uuid)
+
+    messages = list(thread.messages.values())
+    messages.sort(key = lambda message: message.creation_date, reverse=True)
+    dict_messages = list(map(asdict, messages))
+
+    #pages system
+    messages_count = len(dict_messages)
+    try:
+        page = int(page)
+    except:
+        page = 1
+    
+    if page < 1: page = 1
+
+    if page * items_per_page > messages_count:
+        page = (messages_count // items_per_page) + 1
+    
+    start_index = (page - 1) * items_per_page
+    end_index = min(page * items_per_page, messages_count) #is exclusive
+    print( start_index, end_index)
+    return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))

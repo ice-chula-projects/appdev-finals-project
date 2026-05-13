@@ -138,6 +138,13 @@ class Thread:
 
             setattr(thread, key, value)
         
+
+        for message_uuid, message_dict in thread.messages.items():
+            message = Message()
+            for key, value in message_dict.items():
+                setattr(message, key, value)
+                
+            thread.messages[message_uuid] = message 
         return thread
 
     def to_database_representation(self) -> dict:

@@ -110,6 +110,21 @@ class UserManager:
         
         return users
     
+    def update_thread_history(self, user_uuid: str, thread_uuid: str):
+        user = self.get_user_from_uuid(user_uuid)
+        thread_history = user.thread_history
+
+        # dont do anything if previous thread is the same as this one
+        if len(thread_history) != 0 and thread_history[-1] == thread_uuid:
+            return
+
+        thread_history.insert(0, thread_uuid)
+        if len(thread_history) > self.settings.max_thread_history_length:
+            thread_history.pop()
+
+        self.users_collection.update_one({"_id": user_uuid}, {"$set": {"thread_history": thread_history}})
+        
+    
     # returns the session token
     def login(self, name: str, password: str) -> str:
         user = self.get_user_from_name(name)
