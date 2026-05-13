@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
-import { randomSubtitles } from '../../assets/misc/randomSubtitles'
+import { randomSubtitles } from '../../components/randomSubtitles'
 
 export const styles = StyleSheet.create({
   container: { 
