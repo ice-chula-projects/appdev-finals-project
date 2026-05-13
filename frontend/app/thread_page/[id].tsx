@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-} from "react-native";
-
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Button } from "@react-navigation/elements";
-import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
 
 export default function Index() {
   const { id } = useLocalSearchParams();
@@ -167,12 +160,20 @@ export default function Index() {
         uuid: "3f55d26e-950d-4f4c-a9f2-b5a26d11f119",
       },
 
-      "4b23ef95-f947-49f9-b1d8-8a70cb0c9120": {
+      "3b23ef95-f947-49f9-b1d8-8a70cb0c9120": {
         attachment: null,
         author_user_uuid: "edba56d7-b61d-4d66-9f0c-0ab0fbe99120",
         creation_date: "Wed, 13 May 2026 13:02:05 GMT",
         last_modified_date: "Wed, 13 May 2026 13:02:05 GMT",
         message: "i should be studying",
+        uuid: "4b23ef95-f947-49f9-b1d8-8a70cb0c9120",
+      },
+      "9d113d6a-f32f-49f9-a9f2-8a40cb0c9120": {
+        attachment: null,
+        author_user_uuid: "edba56d7-b61d-4d66-9f0c-0ab0fbe99120",
+        creation_date: "Wed, 13 May 2026 13:02:09 GMT",
+        last_modified_date: "Wed, 13 May 2026 13:02:09 GMT",
+        message: "Anyway heres the ukranian anthem Shche ne vmerla Ukraina, i slava, i volia! Shche nam, brattia-molodtsi, usmikhnet’sia dolia! Zahynut’ nashi vorohy, yak rosa na sontsi; Zapanujem i my, brattia, u svoïi storontsi! Dusheï v svitli svobodu, i vsem nam, brattia, yednyst’ nashu! Zhyttia nashu i voliu, i svobodu, brattia, pokhaiem! Nashe pravo, nashe slava, nashe velyke derzhavnyctvo! Shche ne vmerla Ukraina, i slava, i volia!",
         uuid: "4b23ef95-f947-49f9-b1d8-8a70cb0c9120",
       },
     },
@@ -299,8 +300,8 @@ export default function Index() {
           </Text>
             <Text
             style={{
-              fontSize: 18,
-              marginBottom: 20,
+              fontSize: 16,
+              marginBottom: 10,
             }}
           >
             {threadData.description}
@@ -332,7 +333,7 @@ export default function Index() {
 
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: 20,
                     }}
                   >
                     {msg.message}
