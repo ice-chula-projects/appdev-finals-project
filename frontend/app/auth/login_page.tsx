@@ -96,10 +96,8 @@ export const styles = StyleSheet.create({
   },
 })
 
-const isEmail = (value: String) => value.includes("@");
-
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState(''); // Username or email for login
+  const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -107,16 +105,15 @@ export default function LoginPage() {
 
   // User account must meet requirements
   const validate = () => {
-    if (identifier.trim().length < 3) return "Please enter a valid username or e-mail address.";
-    if (isEmail(identifier) && !identifier.includes(".")) return "Please enter a valid e-mail address.";
+    if (username.trim().length < 3) return "Please enter a valid username.";
     if (password.length < 6) return "Password must be at least 6 characters long.";
     return null; // No errors
   }
 
   // Dummy accounts for testing before Backend API
   const dummyAccounts = [
-  { username: 'john_doe', email: 'john@example.com', password: 'password123' },
-  { username: 'jane_doe', email: 'jane@example.com', password: 'password456' },
+  { username: 'john_doe', password: 'password123' },
+  { username: 'jane_doe', password: 'password456' },
   ];
 
   // Check if requirements are met
@@ -128,15 +125,13 @@ export default function LoginPage() {
     setLoading(true);
 
     setTimeout(() => {
-      const accountInput = identifier.trim().toLowerCase();
+      const accountInput = username.trim().toLowerCase();
 
-      const account = dummyAccounts.find(acc => (acc.username.toLowerCase() === accountInput) || (acc.email.toLowerCase() === accountInput) );
+      const account = dummyAccounts.find(acc => acc.username.toLowerCase() === accountInput);
 
       // Account does not exist case
       if (!account) {
-        setError(
-          isEmail(identifier) ? "No account found with that e-mail address, try again." : "No account found with that username, try again."
-        )
+        setError("No account found with that username, try again.");
         setLoading(false);
         return
       }
@@ -186,9 +181,9 @@ export default function LoginPage() {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Username or E-mail"
-            value={identifier}
-            onChangeText={(v) => { setIdentifier(v); setError('') }}
+            placeholder="Username"
+            value={username}
+            onChangeText={(v) => { setUsername(v); setError('') }}
           />
           <TextInput
             style={styles.input}

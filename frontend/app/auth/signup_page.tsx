@@ -95,7 +95,6 @@ export const styles = StyleSheet.create({
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -104,7 +103,6 @@ export default function SignupPage() {
   // User account must meet requirements
   const validate = () => {
     if (username.length < 3) return 'Username must be at least 3 characters.';
-    if (!email.includes('@')) return 'Please enter a valid e-mail address.';
     if (password.length < 6) return 'Password must be at least 6 characters.';
     if (password !== confirmPassword) return 'Passwords do not match.';
     return null; // No errors
@@ -162,13 +160,6 @@ export default function SignupPage() {
             placeholder="Username"
             value={username}
             onChangeText={(v) => { setUsername(v); setError('') }}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            value={email}
-            onChangeText={(v) => { setEmail(v); setError('') }}
-            keyboardType="email-address"
           />
           <TextInput
             style={styles.input}
