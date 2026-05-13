@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from pymongo import MongoClient
 
 from settings import Settings
@@ -8,6 +9,7 @@ from session import SessionManager, SessionExpiredError, SessionDoesNotExistErro
 from thread import ThreadManager
 
 app = Flask(__name__)
+CORS(app)
 
 #get environmental variables
 MONGO_URI = os.environ.get("MONGO_URI")
