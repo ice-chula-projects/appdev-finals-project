@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image, Button, Alert } from 'react-native'
 import { Stack, router } from 'expo-router'
+
+const GLOBAL_URL = "http://localhost:5000/"
 
 export const styles = StyleSheet.create({
   container: { 
@@ -109,20 +111,34 @@ export default function SignupPage() {
   }
 
   // Check if account exists
-  const handleSignup = () => {
+  const handleSignup = async () => {
     const err = validate();
     if (err) return setError(err);
+
+    try {
+      const response = await fetch(GLOBAL_URL+'create_user', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "name": username, "password": password }),
+        });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (response.ok) {
+        router.push('/');
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setLoading(false);
+      setError("Cannot connect to server.");
+    }
 
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      router.push('/')
-    }, 1000);
   }
-
-  
 
   // Signup Page UI
   return (

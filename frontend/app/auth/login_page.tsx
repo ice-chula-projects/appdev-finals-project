@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
 import { randomSubtitles } from '../../components/randomSubtitles'
+
+const GLOBAL_URL = "http://localhost:5000/"
 
 export const styles = StyleSheet.create({
   container: { 
@@ -103,6 +105,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [subtitle] = useState(() => randomSubtitles())
 
+
   // User account must meet requirements
   const validate = () => {
     if (username.trim().length < 3) return "Please enter a valid username.";
@@ -110,43 +113,34 @@ export default function LoginPage() {
     return null; // No errors
   }
 
-  // Dummy accounts for testing before Backend API
-  const dummyAccounts = [
-  { username: 'john_doe', password: 'password123' },
-  { username: 'jane_doe', password: 'password456' },
-  ];
-
   // Check if requirements are met
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const err = validate();
     if (err) return setError(err);
 
+    try {
+      const response = await fetch(GLOBAL_URL+"login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "name": username, "password": password }),
+        });
+
+      const data = await response.json();
+      setLoading(false);
+
+      if (response.ok) {
+        const sessionToken = data.session_token;
+        console.log(sessionToken);
+        router.push('/');
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setLoading(false);
+      setError("Cannot connect to server.");
+    }
     setError('');
     setLoading(true);
-
-    setTimeout(() => {
-      const accountInput = username.trim().toLowerCase();
-
-      const account = dummyAccounts.find(acc => acc.username.toLowerCase() === accountInput);
-
-      // Account does not exist case
-      if (!account) {
-        setError("No account found with that username, try again.");
-        setLoading(false);
-        return
-      }
-
-      // Incorrect password case
-      if (account.password !== password) {
-        setError("Incorrect password, try again.");
-        setLoading(false);
-        return
-      }
-
-      // Successful login
-      setLoading(false);
-      router.push('/')
-    }, 1000);
   }
 
   // Login Page UI
