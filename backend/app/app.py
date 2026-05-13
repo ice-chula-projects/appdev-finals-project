@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from pymongo import MongoClient
 
 from settings import Settings
@@ -8,6 +9,7 @@ from session import SessionManager, SessionExpiredError, SessionDoesNotExistErro
 from thread import ThreadManager
 
 app = Flask(__name__)
+CORS(app)
 
 #get environmental variables
 MONGO_URI = os.environ.get("MONGO_URI")
@@ -54,7 +56,8 @@ def create_user():
     except:
         return jsonify({"error": "Something went wrong"}), 500
     
-    return jsonify({"message": "Success"}), 200
+    session_token = user_manager.login(name, passsword)
+    return jsonify({"message": "Success", "session_token": session_token}), 200
 
 @app.route("/login", methods=["POST"])
 def login():
