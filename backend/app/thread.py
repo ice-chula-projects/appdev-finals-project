@@ -23,7 +23,7 @@ class ThreadManager:
 
         return Thread.from_database_representation(thread)
 
-    def get_display_threads(self, query_str:str = None) -> list[DisplayThread]:
+    def search_threads(self, query_str:str = None) -> list[Thread]:
         if query_str != None:
             filter = {
                 "$or":[
@@ -34,24 +34,7 @@ class ThreadManager:
         else:
             filter = None
 
-        displayThreads = []
-        for thread in self.threads_collection.find(filter):
-            thread: Thread = Thread.from_database_representation(thread)
-
-            displayThread = DisplayThread(
-                uuid = thread.uuid,
-                name = thread.name,
-                description = thread.description,
-                thumbnail_base64 = thread.thumbnail_base64,
-                author_user_uuid = thread.author_user_uuid,
-                creation_date = thread.creation_date,
-                last_modified_date = thread.last_modified_date,
-                last_message_date = thread.last_message_date,
-                private = thread.private
-            )
-            displayThreads.append(displayThread)
-        
-        return displayThreads
+        return [Thread.from_database_representation(thread) for thread in self.threads_collection.find(filter)]
 
     def create_thread(self, name: str, description: str, author: User, thumbnail_base64: str = None, password: str = None):
         threads_collection = self.threads_collection
@@ -196,6 +179,19 @@ class Thread:
     
     def authenticate(self, password: str) -> bool:
         return Security.compare_hash(password, self.password_salt, self.password_hash)
+    
+    def to_display_thread(self) -> DisplayThread:
+        return DisplayThread(
+                uuid = self.uuid,
+                name = self.name,
+                description = self.description,
+                thumbnail_base64 = self.thumbnail_base64,
+                author_user_uuid = self.author_user_uuid,
+                creation_date = self.creation_date,
+                last_modified_date = self.last_modified_date,
+                last_message_date = self.last_message_date,
+                private = self.private
+            )
 
 class ThreadDoesNotExistError(Exception):
     pass

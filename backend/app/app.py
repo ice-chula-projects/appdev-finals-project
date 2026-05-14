@@ -215,8 +215,8 @@ def post_message():
     thread_manager.post_message(thread_uuid, user, message)
     return jsonify({"message": "Success."}), 200
 
-@app.route("/get_threads", methods=["GET"])
-def get_threads():
+@app.route("/search_threads", methods=["GET"])
+def search_threads():
     search_str = request.args.get("search")
     page = request.args.get("page")
 
@@ -225,17 +225,31 @@ def get_threads():
     except:
         page = 1
 
-    display_threads = thread_manager.get_display_threads(search_str)
-    display_threads.sort(key=lambda thread: thread.creation_date, reverse=True)
-    dict_display_threads = list(map(asdict, display_threads))
-
-    threads_count = len(dict_display_threads)
+    threads = thread_manager.search_threads(search_str)
     
-    if threads_count == 1:
-        return jsonify({"message": "Success.", "thread": dict_display_threads[0]}), 200
-    else:
-        start_index, end_index = calculate_indexes_from_page(page, threads_count)  
-        return jsonify({"message": "Success.", "threads": dict_display_threads[start_index:end_index], "total_threads": threads_count, "page": page}), 200
+    threads.sort(key=lambda thread: thread.creation_date, reverse=True)
+    display_threads = list(map(lambda thread: asdict(thread.to_display_thread()), threads))
+
+    threads_count = len(display_threads)
+    
+    start_index, end_index = calculate_indexes_from_page(page, threads_count)  
+    return jsonify({"message": "Success.", "threads": display_threads[start_index:end_index], "total_threads": threads_count, "page": page}), 200
+
+@app.route("/get_thread", methods=["GET"])
+def get_thread():
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    try:    
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)   
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist"}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    return jsonify({"message": "Success.", "thread": asdict(thread.to_display_thread())}), 200
 
 @app.route("/get_thread_messages", methods=["GET"])
 def get_thread_messages():
@@ -245,6 +259,9 @@ def get_thread_messages():
     
     thread_uuid = request.args.get("uuid")
     page = request.args.get("page")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
 
     try:
         page = int(page)
