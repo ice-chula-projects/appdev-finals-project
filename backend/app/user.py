@@ -34,7 +34,9 @@ class UserManager:
     
     def get_user_profile(self, uuid: str) -> PublicUser:
         user = self.get_user_from_uuid(uuid)
-
+        
+        if user.profile_picture_base64 == None:
+                user.profile_picture_base64 = self.settings.default_profile_picture
         return user.to_public_user()
 
     # meant for use when client needs names and pfps to display in messages
