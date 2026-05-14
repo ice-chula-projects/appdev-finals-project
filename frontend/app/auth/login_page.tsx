@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomSubtitles } from '../../components/randomSubtitles'
 
 const GLOBAL_URL = "http://localhost:5000/"
@@ -133,8 +134,11 @@ export default function LoginPage() {
 
       if (response.ok) {
         const sessionToken = data.session_token;
-        console.log(sessionToken);
-        router.push('/');
+        console.log("Token received:", sessionToken);
+        await AsyncStorage.setItem("session_token", sessionToken);
+        const savedToken = await AsyncStorage.getItem("session_token");
+        console.log("Token saved:", savedToken)
+        router.replace('/');
       } else {
         setError(data.error);
       }
