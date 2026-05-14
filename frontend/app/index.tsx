@@ -3,6 +3,7 @@ import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } f
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Button } from "@react-navigation/elements";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
@@ -11,38 +12,182 @@ export default function Index() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  const [threads, setThreads] = useState<any[]>([]);
+
+  const [showCreateThread, setShowCreateThread] =
+    useState(false);
+
+  const [threadTitle, setThreadTitle] = useState("");
+  const [threadDescription, setThreadDescription] =
+    useState("");
+
+  const [creatingThread, setCreatingThread] =
+    useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+
   const links = [
     {
-      title: "Yall gotta see this",
+      uuid: "preset-1",
+      name: "Yall gotta see this",
       description: "Quintuple thumbs down.",
       url: "https://www.bilibili.tv/en/video/4799492271643648?bstar_from=bstar-web.homepage.recommend.all",
       image: require("../assets/images/HG2RsZhbIAAbpWj.jpg"),
     },
     {
-      title: "Band of Brothers",
+      uuid: "preset-2",
+      name: "Band of Brothers",
       description: "Don't grab the luger.",
       url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
       image: require("../assets/images/images.jpg"),
     },
     {
-      title: "The Martian",
+      uuid: "preset-3",
+      name: "The Martian",
       description: "Matt Damian gets stuck in space. Again.",
       url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
       image: require("../assets/images/18007564.jpg"),
     },
     {
-      title: "Expo Router Docs",
+      uuid: "preset-4",
+      name: "Expo Router Docs",
       description: "Official documentation for Expo Router navigation.",
       url: "https://docs.expo.dev/router/introduction/",
       image: require("../assets/images/icon.png"),
     },
     {
-      title: "Test Threads",
+      uuid: "preset-5",
+      name: "Test Threads",
       description: "Testing if i can link threads.",
       url: "http://localhost:8081/thread_page/abb5916a-031b-41fd-bba6-8e8c706bca45",
       image: require("../assets/images/message_logo.png"),
     },
   ];
+
+  const searchThreads = async (query: string) => {
+    try {
+      setSearching(true);
+
+      const filteredPresets = links.filter(
+        (thread) =>
+          thread.name
+            .toLowerCase()
+            .includes(query.toLowerCase()) ||
+          thread.description
+            .toLowerCase()
+            .includes(query.toLowerCase())
+      );
+
+      const response = await fetch(
+        `http://localhost:5000/search_threads?search=${encodeURIComponent(query)}&page=1`
+      );
+
+      const data = await response.json();
+
+      console.log("SEARCH THREADS:", data);
+
+      if (response.ok) {
+        const formattedThreads = data.threads.map(
+          (thread: any) => ({
+            uuid: thread.uuid,
+            name: thread.name || thread.title,
+            description: thread.description,
+            url: `http://localhost:8081/thread_page/${thread.uuid}`,
+            image: require("../assets/images/message_logo.png"),
+          })
+        );
+
+        setThreads([
+          ...filteredPresets,
+          ...formattedThreads,
+        ]);
+      } else {
+        console.log(data.error);
+
+        setThreads(filteredPresets);
+      }
+    } catch (err) {
+      console.log(err);
+
+      const filteredPresets = links.filter(
+        (thread) =>
+          thread.name
+            .toLowerCase()
+            .includes(query.toLowerCase()) ||
+          thread.description
+            .toLowerCase()
+            .includes(query.toLowerCase())
+      );
+
+      setThreads(filteredPresets);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      searchThreads(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+  const createThread = async () => {
+    if (!threadTitle.trim()) return;
+
+    try {
+      setCreatingThread(true);
+
+      const sessionToken =
+        await AsyncStorage.getItem("session_token");
+
+      const response = await fetch(
+        "http://localhost:5000/create_thread",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "session-token": sessionToken || "",
+          },
+          body: JSON.stringify({
+            name: threadTitle,
+            description: threadDescription,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("CREATE THREAD:", data);
+
+      if (response.ok) {
+        const createdThread = {
+          uuid: data.thread_uuid,
+          name: threadTitle,
+          description: threadDescription,
+          url: `http://localhost:8081/thread_page/${data.thread_uuid}`,
+          image: require("../assets/images/message_logo.png"),
+        };
+
+        setThreads((prev) => [
+          createdThread,
+          ...prev,
+        ]);
+
+        setThreadTitle("");
+        setThreadDescription("");
+        setShowCreateThread(false);
+      } else {
+        console.log(data.error);
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setCreatingThread(false);
+    }
+  };
 
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
@@ -81,21 +226,144 @@ export default function Index() {
           }}
         >
           
-          <Text
+          <View
             style={{
-              fontSize: 24,
-              fontWeight: "bold",
+              flexDirection: "row",
+              alignItems: "center",
               marginBottom: 20,
             }}
           >
-            Threads
-          </Text>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                marginRight: 15,
+              }}
+            >
+              Threads
+            </Text>
+
+            <TextInput
+              placeholder="Search threads..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+                fontSize: 16,
+              }}
+            />
+          </View>
+
+          <View
+            style={{
+              marginBottom: 20,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() =>
+                setShowCreateThread(
+                  !showCreateThread
+                )
+              }
+              style={{
+                backgroundColor: "#007AFF",
+                paddingVertical: 10,
+                paddingHorizontal: 15,
+                borderRadius: 10,
+                marginBottom: 10,
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                {showCreateThread
+                  ? "Close Thread Creator"
+                  : "Create Thread"}
+              </Text>
+            </TouchableOpacity>
+
+            {showCreateThread && (
+              <View
+                style={{
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 10,
+                }}
+              >
+                <TextInput
+                  placeholder="Thread title..."
+                  value={threadTitle}
+                  onChangeText={setThreadTitle}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 10,
+                    marginBottom: 10,
+                    fontSize: 16,
+                  }}
+                />
+
+                <TextInput
+                  placeholder="Thread description..."
+                  value={threadDescription}
+                  onChangeText={
+                    setThreadDescription
+                  }
+                  multiline
+                  style={{
+                    height: 80,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 10,
+                    textAlignVertical: "top",
+                    marginBottom: 10,
+                    fontSize: 14,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={createThread}
+                  disabled={creatingThread}
+                  style={{
+                    backgroundColor: "#34C759",
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {creatingThread
+                      ? "Creating..."
+                      : "Create Thread"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
 
           <ScrollView>
-            {links.map((link, index) => (
+            {threads.map((thread) => (
               <TouchableOpacity
-                key={index}
-                onPress={() => Linking.openURL(link.url)}
+                key={thread.uuid}
+                onPress={() => Linking.openURL(thread.url)}
                 style={{
                   padding: 15,
                   borderWidth: 1,
@@ -110,7 +378,7 @@ export default function Index() {
                   alignItems: "center" 
                   }}>
                   <Image
-                    source={link.image}
+                    source={thread.image}
                     style={{ 
                       width: 100, 
                       height: 100, 
@@ -119,8 +387,7 @@ export default function Index() {
                     }}
                   />
               <View style={{ 
-                width: 500,
-                height: 50,
+                flex: 1,
                 justifyContent: "center", 
                 }}>
                 <Text
@@ -131,7 +398,7 @@ export default function Index() {
                     marginBottom: 5,
                   }}
                 >
-                  {link.title}
+                  {thread.name}
                 </Text>
 
                 <Text
@@ -140,7 +407,7 @@ export default function Index() {
                     fontSize: 14,
                   }}
                 >
-                  {link.description}
+                  {thread.description}
                 </Text>
               </View>
               </View>
