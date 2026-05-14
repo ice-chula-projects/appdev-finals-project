@@ -75,7 +75,7 @@ def home():
 def ping():
     return jsonify({"message": "pong"}), 200
 
-@app.route("/get_user_profile", method=["GET"])
+@app.route("/get_user_profile", methods=["GET"])
 def get_user_profile():
     user_uuid = request.args.get('uuid')
     if user_uuid == None:
