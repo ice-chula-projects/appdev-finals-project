@@ -1,15 +1,33 @@
 import { useState, useEffect } from "react";
 import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Button } from "@react-navigation/elements";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
+const GLOBAL_URL = "http://localhost:5000/"
 
-export default function Index() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+
+export default function ProfilePage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [profileDescription, setProfileDescription] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [postHistory, setPostHistory] = useState<any[]>([]);
+  const [commentHistory, setCommentHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+            const sessionToken = await AsyncStorage.getItem("session_token");
+            const username = await AsyncStorage.getItem("username");
+            if (username) { setProfileName(username) };
+    }
+    loadProfile();
+  }, []);
+
 
   const links = [
     {
@@ -81,48 +99,6 @@ export default function Index() {
       />
 
       <SafeAreaView style={{ flex: 1 }}>
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 20,
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            backgroundColor: "#007AFF",
-            borderRadius: 8,
-            zIndex: 1,
-          }}
-          onPress={() => {
-            console.log("Login pressed");
-            console.log("Username:", username);
-            console.log("Password:", password);
-          }}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>
-            Login
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 500,
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            backgroundColor: "#34C759",
-            borderRadius: 8,
-            zIndex: 1,
-          }}
-          onPress={() => {
-            router.push('/auth/signup_page');
-          }}
-        >
-          <Text style={{ color: "white", fontWeight: "bold" }}>
-            Signup
-          </Text>
-        </TouchableOpacity>
-
         <View
           style={{
             flex: 1,
@@ -130,32 +106,6 @@ export default function Index() {
             paddingHorizontal: 30,
           }}
         >
-          <TextInput
-            placeholder="Username"
-            value={username}
-            onChangeText={setUsername}
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 100,
-              paddingVertical: 10,
-              paddingHorizontal: 15,
-            }}
-          />
-
-          <TextInput
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={true}
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 300,
-              paddingVertical: 10,
-              paddingHorizontal: 15,
-            }}
-          />
 
           <View
             style={{
@@ -184,7 +134,7 @@ export default function Index() {
                 fontFamily: "RobotoSlab-Regular",
               }}
             >
-              Porrapat
+              {profileName || "Unknown User"}
             </Text>
 
             <Text
@@ -203,7 +153,7 @@ export default function Index() {
                 fontFamily: "NotoSans-Regular",
               }}
             >
-              Why are you here.
+              {profileDescription || "No description yet."}
             </Text>
             </View>
 
@@ -214,7 +164,7 @@ export default function Index() {
               marginBottom: 5,
             }}
           >
-            Post  History
+            Thread History
           </Text>
             <View
             style={{
@@ -291,7 +241,7 @@ export default function Index() {
               marginBottom: 5,
             }}
           >
-            Comment History
+            Text History
           </Text>
             <View
             style={{

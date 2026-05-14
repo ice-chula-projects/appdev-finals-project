@@ -8,8 +8,8 @@ import { useFonts } from 'expo-font';
 
 
 export default function Index() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   const links = [
     {
@@ -64,9 +64,10 @@ export default function Index() {
                 fontSize: 35,
                 fontWeight: "bold",
                 marginLeft: 10,
+                fontFamily: "NotoSans-Regular"
               }}
             >
-              Messaging Board
+              Board of Mess
             </Text>
           ),
         }}

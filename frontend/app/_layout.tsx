@@ -89,6 +89,7 @@ export default function RootLayout() {
   // Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("session_token");
+    await AsyncStorage.removeItem("username");
     setLoggedIn(false);
     router.replace('/');
   }

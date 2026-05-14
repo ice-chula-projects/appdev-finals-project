@@ -137,7 +137,10 @@ export default function LoginPage() {
         console.log("Token received:", sessionToken);
         await AsyncStorage.setItem("session_token", sessionToken);
         const savedToken = await AsyncStorage.getItem("session_token");
-        console.log("Token saved:", savedToken)
+        console.log("Token saved:", savedToken) // Check if session token is matched
+
+        await AsyncStorage.setItem("username", username);
+
         router.replace('/');
       } else {
         setError(data.error);

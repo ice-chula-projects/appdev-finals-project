@@ -114,7 +114,6 @@ export default function SignupPage() {
   const handleSignup = async () => {
     const err = validate();
     if (err) return setError(err);
-
     setError('');
 
     try {
@@ -136,7 +135,6 @@ export default function SignupPage() {
       setLoading(false);
       setError("Cannot connect to server.");
     }
-
   }
 
   // Signup Page UI
