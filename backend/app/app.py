@@ -65,7 +65,7 @@ def calculate_indexes_from_page(page: int, item_count:int):
     start_index = (page - 1) * items_per_page
     end_index = min(page * items_per_page, item_count) #is exclusive
 
-    return (start_index, end_index)
+    return (start_index, end_index, page)
 
 @app.route("/")
 def home():
@@ -251,8 +251,8 @@ def search_threads():
 
     threads_count = len(display_threads)
     
-    start_index, end_index = calculate_indexes_from_page(page, threads_count)  
-    return jsonify({"message": "Success.", "threads": display_threads[start_index:end_index], "total_threads": threads_count, "page": page}), 200
+    start_index, end_index, clamped_page = calculate_indexes_from_page(page, threads_count)  
+    return jsonify({"message": "Success.", "threads": display_threads[start_index:end_index], "total_threads": threads_count, "page": clamped_page}), 200
 
 @app.route("/get_thread", methods=["GET"])
 def get_thread():
@@ -314,8 +314,8 @@ def get_thread_messages():
     #pages system
     messages_count = len(dict_messages)
     
-    start_index, end_index = calculate_indexes_from_page(page, messages_count) 
-    return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count, "page": page}), 200
+    start_index, end_index ,clamped_page= calculate_indexes_from_page(page, messages_count) 
+    return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count, "page": clamped_page}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
