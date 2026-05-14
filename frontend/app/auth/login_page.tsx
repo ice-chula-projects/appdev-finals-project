@@ -102,6 +102,7 @@ export const styles = StyleSheet.create({
 export default function LoginPage() {
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
+  const [userUUID, setUserUUID] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [subtitle] = useState(() => randomSubtitles())
@@ -110,7 +111,7 @@ export default function LoginPage() {
   // User account must meet requirements
   const validate = () => {
     if (username.trim().length < 3) return "Please enter a valid username.";
-    if (password.length < 6) return "Password must be at least 6 characters long.";
+    if (password.length < 8) return "Password must be at least 8 characters long.";
     return null; // No errors
   }
 
@@ -134,12 +135,14 @@ export default function LoginPage() {
 
       if (response.ok) {
         const sessionToken = data.session_token;
+        const userUUID = data.user_uuid;
         console.log("Token received:", sessionToken);
         await AsyncStorage.setItem("session_token", sessionToken);
         const savedToken = await AsyncStorage.getItem("session_token");
         console.log("Token saved:", savedToken) // Check if session token is matched
-
         await AsyncStorage.setItem("username", username);
+        console.log(data);
+        await AsyncStorage.setItem("user_uuid", userUUID);
 
         router.replace('/');
       } else {
