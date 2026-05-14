@@ -32,6 +32,13 @@ class UserManager:
         
         return User.from_database_representation(user)
     
+    def get_user_profile(self, uuid: str) -> PublicUser:
+        user = self.get_user_from_uuid(uuid)
+
+        if user.profile_picture_base64 == None:
+                user.profile_picture_base64 = self.settings.default_profile_picture
+        return user.to_public_user()
+
     # meant for use when client needs names and pfps to display in messages
     def get_display_users(self, uuids: list[str]) -> list[DisplayUser]:
         users = self.users_collection.find({"_id":{"$in": uuids}})
@@ -40,17 +47,10 @@ class UserManager:
         for user in users:
             user: User = User.from_database_representation(user)
 
-            print(user.profile_picture_base64)
             if user.profile_picture_base64 == None:
                 user.profile_picture_base64 = self.settings.default_profile_picture
-            print(self.settings.default_profile_picture)
 
-            display_user = DisplayUser(
-                uuid = user.uuid,
-                name = user.name,
-                profile_picture_base64 = user.profile_picture_base64 
-            )
-            display_users.append(display_user)
+            display_users.append(user.to_display_user())
         
         return display_users
     
@@ -177,22 +177,39 @@ class User:
         # mongodb excepts the id to be named _id
         database_representation["_id"] = database_representation.pop("uuid")
         return database_representation
+    
+    def to_display_user(self) -> DisplayUser:
+        return DisplayUser(
+            uuid = self.uuid,
+            name = self.name,
+            profile_picture_base64 = self.profile_picture_base64
+        )
+    
+    def to_public_user(self) -> PublicUser:
+        return PublicUser(
+            uuid = self.uuid,
+            name = self.name,
+            motd = self.motd,
+            profile_picture_base64 = self.profile_picture_base64,
+            saved_threads=self.saved_threads,
+            thread_history=self.thread_history
+        )
 
 # user information that gets sent to the client when someone visits a specific profile
 @dataclass
 class PublicUser:
-    uuid: str
-    name: str
-    motd: str
-    profile_picture_base64:str
+    uuid: str = None
+    name: str = None
+    motd: str = None
+    profile_picture_base64:str = None
 
     #list of uuids
-    saved_threads: list[str]
-    thread_history: list[str]
+    saved_threads: list[str] = None
+    thread_history: list[str] = None
 
 # user information that gets sent to the client for use when viewing a message from them
 @dataclass
 class DisplayUser:
-    uuid: str
-    name: str
-    profile_picture_base64:str
+    uuid: str = None
+    name: str = None
+    profile_picture_base64:str = None
