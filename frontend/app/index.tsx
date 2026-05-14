@@ -36,6 +36,12 @@ export default function Index() {
       url: "https://docs.expo.dev/router/introduction/",
       image: require("../assets/images/icon.png"),
     },
+    {
+      title: "Test Threads",
+      description: "Testing if i can link threads.",
+      url: "http://localhost:8081/thread_page/19732",
+      image: require("../assets/images/message_logo.png"),
+    },
   ];
 
   const [fontsLoaded] = useFonts({
