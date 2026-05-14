@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
@@ -12,7 +11,7 @@ const GLOBAL_URL = "http://localhost:5000/"
 
 export default function ProfilePage() {
   const [profileName, setProfileName] = useState('');
-  const [userUUID, setUserUUID ] = useState('');
+  const [userUUID, setUserUUID] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
@@ -32,16 +31,17 @@ export default function ProfilePage() {
     const loadProfile = async () => {
         try {
             const username = await AsyncStorage.getItem("username");
-            const userUUID = await AsyncStorage.getItem("user.uuid");
+            const userUUID = await AsyncStorage.getItem("user_uuid");
             const savedPicture = await AsyncStorage.getItem("profile_picture_base64");
             const savedDescription = await AsyncStorage.getItem("motd");
 
             console.log("Loaded username:", username);
+            console.log("Loaded UUID:", userUUID);
 
             if (username) setProfileName(username);
             if (userUUID) setUserUUID(userUUID);
             if (savedPicture) setProfilePicture(savedPicture);
-            if (savedDescription) setProfilePicture(savedDescription);
+            if (savedDescription) setProfileDescription(savedDescription);
             } catch (err) {
                 console.log("Failed to load profile:", err);
             }
@@ -114,36 +114,41 @@ export default function ProfilePage() {
   }
 
   const fetchUserProfile = async () => {
-    try {
-        const token = await AsyncStorage.getItem("session_token");
-        const uuid = await AsyncStorage.getItem("user.uuid");
+  try {
+    const uuid = await AsyncStorage.getItem("user_uuid");
+    if (!uuid) {
+      console.log("No UUID found.");
+      return;
+    }
+    const response = await fetch(GLOBAL_URL+`get_users?uuid=${uuid}`, { method: "GET" });
+    const data = await response.json();
 
-        if (!uuid) {
-            console.log("No UUID found.");
-            return;
+    if (response.ok) {
+      const user = data.users?.[uuid];
+
+      if (!user) {
+        console.log("User not found.");
+        return;
+      }
+
+      console.log("Fetched user:", user);
+
+      setProfileName(user.name ?? "");
+      setUserUUID(user.user_uuid ?? uuid);
+      setProfileDescription(user.motd ?? "");
+
+        if (user.profile_picture) {
+            setProfilePicture(user.profile_picture);
         }
-        const response = await fetch( GLOBAL_URL+`get_users?uuid=${uuid}`, {method: "GET"} )
-        const data = await response.json();
-        if (response.ok) {
-            const user = data.users[uuid];
-            if (!user) {
-                console.log("User not found.");
-                return;
-            }
-
-            setProfileName(data.name ?? "");
-            setUserUUID(user.uuid ?? "");
-            setProfileDescription(data.motd ?? "")
-            if (data.profile_picture) {
-                setProfilePicture(data.profile_picture); 
-            } else {
-                console.log(data.error);
-            }
+        await AsyncStorage.setItem("username", user.name ?? "");
+        await AsyncStorage.setItem("motd", user.motd ?? "");
+        } else {
+        console.log(data.error);
         }
     } catch (err) {
-        console.log("Failed to fetch user:",err);
+        console.log("Failed to fetch user:", err);
+      }
     }
-  }
 
   useEffect(() => { fetchUserProfile() }, []);
 
@@ -151,7 +156,7 @@ export default function ProfilePage() {
     try {
         const token = await AsyncStorage.getItem("session_token");
         const response = await fetch(GLOBAL_URL+"update_user", {
-            method: "UPDATE",
+            method: "PATCH",
             headers: {"Content-Type": "application/json", "session-token": token ?? ""},
             body: JSON.stringify({motd: tempDescription})
         })
@@ -352,7 +357,7 @@ export default function ProfilePage() {
                 fontFamily: "RobotoSlab-Regular",
               }}
             >
-              {userUUID || "UUID not found"}
+              UUID: {userUUID || "Unknown"}
             </Text>
 
             {editDescription ? (
