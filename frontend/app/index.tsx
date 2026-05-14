@@ -1,25 +1,61 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
-import { Button } from "@react-navigation/elements";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
 
 
 export default function Index() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [createVisible, setCreateVisible] = useState(false);
+  const [threadTitle, setThreadTitle] = useState("");
+  const [threadDescription, setThreadDescription] = useState("");
+  const [threadImage, setThreadImage] = useState<string | null>(null);
+
+  const pickThreadImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission required.", "Image gallery permission is required.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1,1],
+      quality: 0.7,
+      base64: true,
+    })
+    if (!result.canceled) setThreadImage(result.assets[0].uri);
+  }
+
+  const handleCreateThread = () => {
+    if (!threadTitle.trim()) {
+      Alert.alert("Error!", "Please enter a thread title.");
+      return;
+    }
+    if (!threadDescription.trim()) {
+    Alert.alert("Error!", "Please enter a thread description.");
+    return;
+    }
+    if (!threadImage) {
+    Alert.alert("Error","Please select a thread image.");
+    return;
+    }
+    console.log("Creating thread...");
+    console.log({threadTitle, threadDescription, threadImage});
+    setCreateVisible(false);
+    setThreadTitle("");
+    setThreadDescription("");
+    setThreadImage(null);
+  }
 
   const [threads, setThreads] = useState<any[]>([]);
 
   const [showCreateThread, setShowCreateThread] =
     useState(false);
-
-  const [threadTitle, setThreadTitle] = useState("");
-  const [threadDescription, setThreadDescription] =
-    useState("");
 
   const [creatingThread, setCreatingThread] =
     useState(false);
