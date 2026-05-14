@@ -106,7 +106,7 @@ def create_user():
     session_token = user_manager.login(name, passsword)
     return jsonify({"message": "Success.", "session_token": session_token}), 200
 
-@app.route("/update_user", methods=["UPDATE"])
+@app.route("/update_user", methods=["PATCH"])
 def update_user():
     if not request.is_json:
         return None, "Missing JSON in request.", 400
