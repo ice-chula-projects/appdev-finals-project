@@ -97,14 +97,15 @@ def create_user():
         return jsonify({"error": "misformatted JSON."}), 400
 
     try:
-       user_manager.create_user(name, passsword)
+       uuid = user_manager.create_user(name, passsword)
+       
     except UserNameAlreadyExistsError:
         return jsonify({"error": "User name has already been taken."}), 409
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
     session_token = user_manager.login(name, passsword)
-    return jsonify({"message": "Success.", "session_token": session_token}), 200
+    return jsonify({"message": "Success.", "session_token": session_token, "user_uuid": uuid}), 200
 
 @app.route("/update_user", methods=["PATCH"])
 def update_user():
@@ -146,12 +147,13 @@ def login():
     
     try:
         session_token = user_manager.login(name, passsword)
+        user = session_manager.authenticate(session_token)
     except (UserDoesNotExistError, InvalidUserCredentialsError):
         return jsonify({"error": "Invalid name or password."}), 401
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
-    return jsonify({"message": "Success.", "session_token": session_token}), 200
+    return jsonify({"message": "Success.", "session_token": session_token, "user_uuid": user.uuid}), 200
 
 
 @app.route("/logout", methods=["POST"])
