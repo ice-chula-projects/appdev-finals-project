@@ -14,9 +14,15 @@ export default function Index() {
 
   const [threadData, setThreadData] = useState<any>(null);
   const [threadMessageData, setThreadMessageData] = useState<any>(null);
+
+  const [newPost, setNewPost] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const [showPostBox, setShowPostBox] = useState(false);
+
   const [loading, setLoading] = useState(true);  
 
-  const SESSION_TOKEN ="TchBnBhs0fVdJoNnR2db3jkqdlrlQE-y4B0Qz6IWm1k"; // Replace with actual session token management
+  const SESSION_TOKEN ="reAekohKWiDt7ksNL9zpiZv3iYVMcDiWI_CG6aKpzVE"; // Replace with actual session token management
 
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
@@ -32,7 +38,7 @@ export default function Index() {
 useEffect(() => {
   const fetchThread = async () => {
     try {
-      const res = await fetch(
+      const bes = await fetch(
         `http://localhost:5000/get_thread?uuid=${id}`,
         {
           method: "GET",
@@ -43,7 +49,7 @@ useEffect(() => {
         }
       );
 
-      const ress = await fetch(
+      const cess = await fetch(
         `http://localhost:5000/get_thread_messages?uuid=${id}`,
         {
           method: "GET",
@@ -54,10 +60,10 @@ useEffect(() => {
         }
       );
 
-      const data = await res.json();
-      const dbtb = await ress.json();
+      const data = await bes.json();
+      const dbtb = await cess.json();
 
-      if (res.ok && ress.ok) {
+      if (bes.ok && cess.ok) {
         setThreadData(data);
         setThreadMessageData(dbtb);
       } else {
@@ -72,6 +78,56 @@ useEffect(() => {
 
     if (id) fetchThread();
   }, [id]);
+
+  const submitPost = async () => {
+    if (!newPost.trim()) return;
+
+    try {
+      setPosting(true);
+
+      const res = await fetch(
+        "http://localhost:5000/post_message",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "session-token": SESSION_TOKEN,
+          },
+          body: JSON.stringify({
+            thread_uuid: id,
+            message: newPost,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const createdMessage = {
+          author_user_uuid: "You", // Replace with actual user identifier if available
+          message: newPost,
+          creation_date: new Date().toLocaleString(),
+        };
+
+        setThreadMessageData((prev: any) => ({
+          ...prev,
+          messages: [
+            createdMessage,
+            ...prev.messages,
+          ],
+        }));
+
+        setNewPost("");
+        setShowPostBox(false);
+      } else {
+        console.log("Post error:", data.error);
+      }
+    } catch (err) {
+      console.log("Network error:", err);
+    } finally {
+      setPosting(false);
+    }
+  };
 
   if (!fontsLoaded) return null;
 
@@ -191,14 +247,101 @@ useEffect(() => {
           </Text>
             <Text
             style={{
+              fontSize: 12,
+              marginBottom: 10,
+            }}
+          >
+            {threadData.thread.creation_date}
+            {`\n`}
+          </Text>
+
+          <Text
+            style={{
               fontSize: 16,
               marginBottom: 10,
             }}
           >
             {threadData.thread.description}
-            {`\n`}
-            {threadData.thread.creation_date}
           </Text>
+
+          <View
+            style={{
+              marginBottom: 20,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setShowPostBox(!showPostBox)}
+              style={{
+                backgroundColor: "#007AFF",
+                paddingVertical: 10,
+                paddingHorizontal: 15,
+                borderRadius: 10,
+                marginBottom: 10,
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                {showPostBox
+                  ? "Close Post Box"
+                  : "Create Post"}
+              </Text>
+            </TouchableOpacity>
+
+            {showPostBox && (
+              <View
+                style={{
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 10,
+                }}
+              >
+                <TextInput
+                  placeholder="Write a message..."
+                  value={newPost}
+                  onChangeText={setNewPost}
+                  multiline
+                  style={{
+                    height: 80,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 10,
+                    textAlignVertical: "top",
+                    marginBottom: 10,
+                    fontSize: 14,
+                  }}
+                />
+
+                <TouchableOpacity
+                  onPress={submitPost}
+                  disabled={posting}
+                  style={{
+                    backgroundColor: "#34C759",
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {posting
+                      ? "Posting..."
+                      : "Post Message"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
 
           <ScrollView>
             {Object.values(threadMessageData.messages).map(
