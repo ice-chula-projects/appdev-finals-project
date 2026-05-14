@@ -115,7 +115,7 @@ export default function RootLayout() {
               >
                 <Image
                   source={require("../assets/images/default_profile.png")}
-                  {/* source={ profilePicture ? {uri: profilePicture} : require("../assets/images/default_profile.png") } */}
+                  
                   style={styles.profileIcon}
                 />
               </TouchableOpacity>

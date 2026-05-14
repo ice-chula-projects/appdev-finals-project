@@ -224,8 +224,10 @@ export default function ProfilePage() {
           headerTitle: () => (
             <Text
               style={{
-                fontSize: 40,
-                fontWeight: "bold",
+                fontSize: 35,
+                fontWeight: "600",
+                fontFamily: "NotoSans-Regular",
+                marginLeft: 10
               }}
             >
               Profile Page
@@ -303,7 +305,7 @@ export default function ProfilePage() {
         <View
           style={{
             flex: 1,
-            paddingTop: 100,
+            paddingTop: 50,
             paddingHorizontal: 30,
           }}
         >
@@ -324,6 +326,7 @@ export default function ProfilePage() {
               style={{
                 width: 100,
                 height: 100,
+                marginTop: 15,
                 borderRadius: 15,
                 borderWidth: 3,
                 marginBottom: 5,
@@ -346,9 +349,10 @@ export default function ProfilePage() {
                 color: "gray",
                 marginTop: 5,
                 marginBottom: 10,
+                fontFamily: "RobotoSlab-Regular",
               }}
             >
-              {userUUID}
+              {userUUID || "UUID not found"}
             </Text>
 
             {editDescription ? (
@@ -356,29 +360,31 @@ export default function ProfilePage() {
                     <TextInput
                     value={tempDescription}
                     onChangeText={setTempDescription}
+                    placeholder="Enter description here (max. 50 characters)"
+                    maxLength={50}
                     style={{
                         borderWidth: 1,
                         borderColor: "#ccc",
-                        padding: 8,
+                        padding: 10,
                         borderRadius: 6,
                         width: "100%",
+                        color: "#757575"
                     }}
-                    multiline
                     />
 
                     <View style={{ flexDirection: "row", marginTop: 10 }}>
                         <TouchableOpacity onPress={updateDescription}>
-                            <Text style={{ color: "green", marginRight: 15 }}>Save</Text>
+                            <Text style={{ color: "green", marginRight: 15, fontFamily: "RobotoSlab-Regular" }}>Save</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setEditDescription(false)}>
-                            <Text style={{ color: "red" }}>Cancel</Text>
+                            <Text style={{ color: "red", fontFamily: "RobotoSlab-Regular" }}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </>
             ) : (
                 <>
-                    <Text style={{ textAlign: "center" }}>
+                    <Text style={{ textAlign: "center", fontFamily: "RobotoSlab-Regular" }}>
                         {profileDescription || "No description yet."}
                     </Text>
 
@@ -386,7 +392,11 @@ export default function ProfilePage() {
                         setTempDescription(profileDescription);
                         setEditDescription(true);
                     }}>
-                        <Text style={{ color: "#007AFF", marginTop: 8 }}>Edit Description</Text>
+                        <Text style={{ 
+                            color: "#007AFF", 
+                            marginTop: 8, 
+                            fontFamily: "RobotoSlab-Regular" 
+                        }}>Edit Description</Text>
                     </TouchableOpacity>
                 </>
             )}
