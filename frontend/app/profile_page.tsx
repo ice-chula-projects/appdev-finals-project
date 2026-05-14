@@ -1,32 +1,167 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
-import { Button } from "@react-navigation/elements";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
 const GLOBAL_URL = "http://localhost:5000/"
 
-
 export default function ProfilePage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [profileName, setProfileName] = useState('');
+  const [userUUID, setUserUUID ] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+
+  const [pendingPicture, setPendingPicture] = useState<string | null>(null);
+  const [pendingBase64, setPendingBase64] = useState<string | null>(null);
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
   const [postHistory, setPostHistory] = useState<any[]>([]);
   const [commentHistory, setCommentHistory] = useState<any[]>([]);
+  
+  const [editDescription, setEditDescription] = useState(false);
+  const [tempDescription, setTempDescription] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
-            const sessionToken = await AsyncStorage.getItem("session_token");
+        try {
             const username = await AsyncStorage.getItem("username");
-            if (username) { setProfileName(username) };
+            const userUUID = await AsyncStorage.getItem("user.uuid");
+            const savedPicture = await AsyncStorage.getItem("profile_picture_base64");
+            const savedDescription = await AsyncStorage.getItem("motd");
+
+            console.log("Loaded username:", username);
+
+            if (username) setProfileName(username);
+            if (userUUID) setUserUUID(userUUID);
+            if (savedPicture) setProfilePicture(savedPicture);
+            if (savedDescription) setProfilePicture(savedDescription);
+            } catch (err) {
+                console.log("Failed to load profile:", err);
+            }
+        }   
+        loadProfile();
+    }, [])
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+        alert("Permission to access image gallery is required.");
+        return;
     }
-    loadProfile();
-  }, []);
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+    })
+
+    if (!result.canceled) {
+        setProfilePicture(result.assets[0].uri);
+        setPendingBase64(result.assets[0].base64 ?? null);
+        setConfirmVisible(true);
+    }
+  }
+
+  const uploadProfilePicture = async (base64: String, uri: string) => {
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+    const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+
+    const response = await fetch(GLOBAL_URL+"update_user", {
+        method: "UPDATE",
+        headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ''},
+        body: JSON.stringify({profile_picture_base64: `data:${mimeType};base64,${base64}`})
+    })
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error ?? 'Upload failed.');
+    }
+    return response.json();
+  }
+
+  const handleConfirm = async () => {
+    if (!pendingPicture || !pendingBase64) return;
+    setUploading(true);
+    try {
+      await uploadProfilePicture(pendingBase64, pendingPicture);
+      setProfilePicture(pendingPicture);
+      await AsyncStorage.setItem("profile_picture_uri", pendingPicture);
+      setConfirmVisible(false);
+      setPendingPicture(null);
+      setPendingBase64(null);
+    } catch (err: any) {
+      Alert.alert('Upload failed', err.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const handleCancel = () => {
+    setPendingPicture(null);
+    setPendingBase64(null);
+    setProfilePicture(null);
+    setConfirmVisible(false);
+  }
+
+  const fetchUserProfile = async () => {
+    try {
+        const token = await AsyncStorage.getItem("session_token");
+        const uuid = await AsyncStorage.getItem("user.uuid");
+
+        if (!uuid) {
+            console.log("No UUID found.");
+            return;
+        }
+        const response = await fetch( GLOBAL_URL+`get_users?uuid=${uuid}`, {method: "GET"} )
+        const data = await response.json();
+        if (response.ok) {
+            const user = data.users[uuid];
+            if (!user) {
+                console.log("User not found.");
+                return;
+            }
+
+            setProfileName(data.name ?? "");
+            setUserUUID(user.uuid ?? "");
+            setProfileDescription(data.motd ?? "")
+            if (data.profile_picture) {
+                setProfilePicture(data.profile_picture); 
+            } else {
+                console.log(data.error);
+            }
+        }
+    } catch (err) {
+        console.log("Failed to fetch user:",err);
+    }
+  }
+
+  useEffect(() => { fetchUserProfile() }, []);
+
+  const updateDescription = async () => {
+    try {
+        const token = await AsyncStorage.getItem("session_token");
+        const response = await fetch(GLOBAL_URL+"update_user", {
+            method: "UPDATE",
+            headers: {"Content-Type": "application/json", "session-token": token ?? ""},
+            body: JSON.stringify({motd: tempDescription})
+        })
+        if (!response.ok) throw new Error("Failed to update the description.");
+        await AsyncStorage.setItem("motd",tempDescription);
+        setEditDescription(false);
+    } catch (err) {
+        Alert.alert("Error","Cannot update the description.")
+    }
+  }
 
 
   const links = [
@@ -81,6 +216,7 @@ export default function ProfilePage() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
 
+
   return (
     <>
       <Stack.Screen
@@ -92,11 +228,76 @@ export default function ProfilePage() {
                 fontWeight: "bold",
               }}
             >
-              Threads
+              Profile Page
             </Text>
           ),
         }}
       />
+
+      <Modal
+    visible={confirmVisible}
+    transparent
+    animationType="slide"
+    onRequestClose={handleCancel}
+    >
+        <View style={{ flex: 1, justifyContent: 'flex-end'}}>
+            <View style={{
+                backgroundColor: '#fff',
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                padding: 24,
+                alignItems: 'center',
+                paddingBottom: 40,
+            }}>
+                <Text style={{ fontSize: 17, fontWeight: '600', marginBottom: 14 }}>Use this photo?</Text>
+
+            {pendingPicture && (
+                <Image
+                    source={{ uri: pendingPicture }}
+                    style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 14,
+                    marginBottom: 20,
+                }}
+                />
+            )}
+
+            {uploading ? (
+                <ActivityIndicator size="large" color="#007AFF" />
+            ) : (
+                <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                <TouchableOpacity
+                    onPress={handleCancel}
+                    style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    alignItems: 'center',
+                    }}
+                >
+                    <Text style={{ color: '#333', fontWeight: '500' }}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleConfirm}
+                    style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 8,
+                    backgroundColor: '#007AFF',
+                    alignItems: 'center',
+                    }}
+                >
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Confirm</Text>
+                </TouchableOpacity>
+                </View>
+            )}
+            </View>
+        </View>
+    </Modal>
 
       <SafeAreaView style={{ flex: 1 }}>
         <View
@@ -110,22 +311,25 @@ export default function ProfilePage() {
           <View
             style={{
               alignItems: "center",
-              marginBottom: 5,
+              marginBottom: 10,
               borderWidth: 1,
               borderColor: "#ccc",
               borderRadius: 8,
               padding: 5,
             }}
           >
+            <TouchableOpacity onPress={pickImage}>
             <Image
-              source={require("../assets/images/HG2RsZhbIAAbpWj.jpg")}
+              source={profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png")}
               style={{
                 width: 100,
                 height: 100,
-                borderRadius: 30,
+                borderRadius: 15,
+                borderWidth: 3,
                 marginBottom: 5,
               }}
             />
+            </TouchableOpacity>
 
             <Text
               style={{
@@ -144,18 +348,49 @@ export default function ProfilePage() {
                 marginBottom: 10,
               }}
             >
-              e89883ed-f8b1-482f-a024-fd28beb286c6
+              {userUUID}
             </Text>
 
-            <Text
-              style={{
-                textAlign: "center",
-                fontFamily: "NotoSans-Regular",
-              }}
-            >
-              {profileDescription || "No description yet."}
-            </Text>
-            </View>
+            {editDescription ? (
+                <>
+                    <TextInput
+                    value={tempDescription}
+                    onChangeText={setTempDescription}
+                    style={{
+                        borderWidth: 1,
+                        borderColor: "#ccc",
+                        padding: 8,
+                        borderRadius: 6,
+                        width: "100%",
+                    }}
+                    multiline
+                    />
+
+                    <View style={{ flexDirection: "row", marginTop: 10 }}>
+                        <TouchableOpacity onPress={updateDescription}>
+                            <Text style={{ color: "green", marginRight: 15 }}>Save</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => setEditDescription(false)}>
+                            <Text style={{ color: "red" }}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            ) : (
+                <>
+                    <Text style={{ textAlign: "center" }}>
+                        {profileDescription || "No description yet."}
+                    </Text>
+
+                    <TouchableOpacity onPress={() => {
+                        setTempDescription(profileDescription);
+                        setEditDescription(true);
+                    }}>
+                        <Text style={{ color: "#007AFF", marginTop: 8 }}>Edit Description</Text>
+                    </TouchableOpacity>
+                </>
+            )}
+        </View>
 
         <Text
             style={{
