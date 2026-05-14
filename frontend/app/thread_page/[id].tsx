@@ -10,94 +10,8 @@ import { useFonts } from 'expo-font';
 export default function Index() {
   const { id } = useLocalSearchParams();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const[threadData1, setThreadData1] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-
-  // Fetch thread info
-  useEffect(() => {
-  const fetchThread = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/get_thread?uuid=${id}`);
-      const data = await response.json();
-      if (response.ok) {
-        setThreadData1(data.thread);
-      } else {
-        console.log(data.error);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  if (id) {
-    fetchThread();
-  }
-}, [id]);
-
-  // Fetch messages
-  useEffect(() => {
-    const fetchMessages = async () => {
-    try {
-      const sessionToken = await AsyncStorage.getItem("session_token");
-      const response = await fetch(`http://localhost:5000/get_thread_messages?uuid=${id}&page=1`, {
-          method: "GET",
-          headers: {"session-token": sessionToken || ""},
-        }
-      );
-
-      const data = await response.json();
-      if (response.ok) {
-        setMessages(data.messages);
-      } else {
-        console.log(data.error);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  if (id) {
-    fetchMessages();
-  }
-  }, [id]);
-
-  const handleSendMessage = async () => {
-  if (!newMessage.trim()) return;
-
-  try {
-    const sessionToken = await AsyncStorage.getItem("session_token");
-    const response = await fetch("http://localhost:5000/post_message", {
-        method: "POST",
-        headers: {"Content-Type": "application/json", "session-token": sessionToken || ""},
-        body: JSON.stringify({ thread_uuid: id, message: newMessage,}),
-      }
-    );
-
-    const data = await response.json();
-    if (response.ok) {
-      setNewMessage("");
-
-      // Refresh messages
-      const refreshResponse = await fetch(
-        `http://localhost:5000/get_thread_messages?uuid=${id}&page=1`,
-        { headers: {"session-token": sessionToken || ""} }
-      );
-
-      const refreshData = await refreshResponse.json();
-      if (refreshResponse.ok) {
-        setMessages(refreshData.messages);
-      }
-    } else {
-      console.log(data.error);
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const [threadData, setThreadData] = useState<any>(null);
   const [threadMessageData, setThreadMessageData] = useState<any>(null);
@@ -109,7 +23,6 @@ export default function Index() {
 
   const [loading, setLoading] = useState(true);  
 
-  const SESSION_TOKEN ="reAekohKWiDt7ksNL9zpiZv3iYVMcDiWI_CG6aKpzVE"; // Replace with actual session token management
 
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
@@ -124,6 +37,7 @@ export default function Index() {
 
 useEffect(() => {
   const fetchThread = async () => {
+    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
     try {
       const bes = await fetch(
         `http://localhost:5000/get_thread?uuid=${id}`,
@@ -167,6 +81,7 @@ useEffect(() => {
   }, [id]);
 
   const submitPost = async () => {
+    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
     if (!newPost.trim()) return;
 
     try {

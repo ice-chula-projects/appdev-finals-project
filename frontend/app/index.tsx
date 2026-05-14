@@ -39,7 +39,7 @@ export default function Index() {
     {
       title: "Test Threads",
       description: "Testing if i can link threads.",
-      url: "http://localhost:8081/thread_page/19732",
+      url: "http://localhost:8081/thread_page/abb5916a-031b-41fd-bba6-8e8c706bca45",
       image: require("../assets/images/message_logo.png"),
     },
   ];
