@@ -1,7 +1,5 @@
-import json
-from math import floor
+import math
 import os
-from urllib import response
 from flask import Flask, jsonify, request, Request
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -11,7 +9,7 @@ from settings import Settings
 from user import User, UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
 from session import SessionManager, SessionExpiredError, SessionDoesNotExistError
 from thread import ThreadDoesNotExistError, ThreadManager
-from attachment import Attachement, AttachmentMediaTypes, InvalidBase64ImageError, validate_base64_string
+from attachment import Attachment, AttachmentMediaTypes, InvalidBase64ImageError, validate_base64_string
 
 app = Flask(__name__)
 CORS(app)
@@ -50,7 +48,7 @@ def authenticate_header_session_token(request: Request) -> tuple[User | None, st
         return None, "Invalid session token.", 401
     except SessionExpiredError:
         return None, "Session token expired.", 401
-    except:
+    except Exception:
         return None, "Something went wrong.", 500
 
     return user, "Success", 200
@@ -60,7 +58,7 @@ def calculate_indexes_from_page(page: int, item_count:int):
     if page < 1: page = 1
 
     if page * items_per_page > item_count:
-        page = (item_count // items_per_page) + 1
+        page = max(1, math.ceil(item_count / items_per_page))
     
     start_index = (page - 1) * items_per_page
     end_index = min(page * items_per_page, item_count) #is exclusive
@@ -70,7 +68,7 @@ def calculate_indexes_from_page(page: int, item_count:int):
 # validates that the attachment contains the required fields and turns it into an attachment
 # returns the attachment if successful
 # otherwise returns the error message and status code
-def validate_attachment(attachment) -> tuple[Attachement | None, str, int]:
+def validate_attachment(attachment) -> tuple[Attachment | None, str, int]:
     if not isinstance(attachment, dict):
         return None, "Attachment must be a json object.", 400
     
@@ -98,11 +96,11 @@ def validate_attachment(attachment) -> tuple[Attachement | None, str, int]:
         case _:
             return None, "Attachment media type is invalid.", 400
     
-    return Attachement(data_base64 = data_base64,extension_type = extension_type, media_type = media_type), "Success.", 200
+    return Attachment(data_base64 = data_base64,extension_type = extension_type, media_type = media_type), "Success.", 200
 
 @app.route("/")
 def home():
-    return jsonify({"message": "Hello World!"}), 200
+    return jsonify({"message": "Hello World!", "is_appdev_finals_message_board": True}), 200
 
 @app.route("/ping")
 def ping():
@@ -118,7 +116,7 @@ def get_user_profile():
         user = user_manager.get_user_profile(user_uuid)
     except UserDoesNotExistError:
         return jsonify({"error": "User does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "user": asdict(user)}), 200
@@ -140,26 +138,26 @@ def create_user():
     data: dict = request.get_json()
 
     name = data.get("name")
-    passsword = data.get("password")
+    password = data.get("password")
 
-    if name == None or passsword == None:
+    if name == None or password == None:
         return jsonify({"error": "misformatted JSON."}), 400
 
     try:
-       uuid = user_manager.create_user(name, passsword)
+       uuid = user_manager.create_user(name, password)
        
     except UserNameAlreadyExistsError:
         return jsonify({"error": "User name has already been taken."}), 409
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
-    session_token = user_manager.login(name, passsword)
+    session_token = user_manager.login(name, password)
     return jsonify({"message": "Success.", "session_token": session_token, "user_uuid": uuid}), 200
 
 @app.route("/update_user", methods=["PATCH"])
 def update_user():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
 
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -177,23 +175,20 @@ def update_user():
         return jsonify({"error": "User name has already been taken."}), 409
     except InvalidBase64ImageError:
         return jsonify({"error": "Provided image is invalid"}), 400
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success."}), 200
 
 @app.route("/delete_user", methods=["DELETE"])
 def delete_user():
-    if not request.is_json:
-        return None, "Missing JSON in request.", 400
-
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
 
     try:
         user_manager.delete_user(user.uuid)
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success."}), 200
@@ -205,30 +200,27 @@ def login():
     data: dict = request.get_json()
 
     name = data.get("name")
-    passsword = data.get("password")
+    password = data.get("password")
 
-    if name == None or passsword == None:
+    if name == None or password == None:
         return jsonify({"error": "misformatted JSON."}), 400
     
     try:
-        session_token = user_manager.login(name, passsword)
+        session_token = user_manager.login(name, password)
         user = session_manager.authenticate(session_token)
     except (UserDoesNotExistError, InvalidUserCredentialsError):
         return jsonify({"error": "Invalid name or password."}), 401
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "session_token": session_token, "user_uuid": user.uuid}), 200
 
 @app.route("/logout", methods=["POST"])
 def logout():
-    if not request.is_json:
-        return jsonify({"error": "Missing JSON in request."}), 400
-    data: dict = request.get_json()
-    session_token = data.get("session_token")
-    
+    session_token = request.headers.get("session-token")
+
     if session_token == None:
-        return jsonify({"error": "Missing session_token."}), 400
+        return jsonify({"error": "Missing session-token in header."}), 401
     
     user_manager.logout(session_token)
     return jsonify({"message": "Success."}), 200
@@ -236,7 +228,7 @@ def logout():
 @app.route("/create_thread", methods=["POST"])
 def create_thread():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -257,7 +249,7 @@ def create_thread():
         thread_uuid = thread_manager.create_thread(thread_name, thread_description, user, thumbnail_base64=thread_thumbnail_base64, password=thread_password)
     except InvalidBase64ImageError:
         return jsonify({"error": "Provided image is invalid"}), 400
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "thread_uuid": thread_uuid}), 200
@@ -265,7 +257,7 @@ def create_thread():
 @app.route("/update_thread", methods=["PATCH"])
 def update_thread():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -287,7 +279,7 @@ def update_thread():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     if thread.author_user_uuid != user.uuid:
@@ -297,7 +289,7 @@ def update_thread():
         thread_manager.update_thread(thread_uuid, name= thread_name, description=thread_description, thumbnail_base64=thread_thumbnail_base64, password=thread_password, remove_thumbnail=remove_thumbnail)
     except InvalidBase64ImageError:
         return jsonify({"error": "Provided image is invalid"}), 400
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success."}), 200
@@ -317,7 +309,7 @@ def delete_thread():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     if thread.author_user_uuid != user.uuid:
@@ -325,7 +317,7 @@ def delete_thread():
 
     try:
         thread_manager.delete_thread(thread_uuid)
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success."}), 200
@@ -333,7 +325,7 @@ def delete_thread():
 @app.route("/create_message", methods=["POST"])
 def create_message():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -360,7 +352,7 @@ def create_message():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     if thread.private:
@@ -372,14 +364,14 @@ def create_message():
         if not thread.authenticate(password):
             return jsonify({"error": "Invalid Password"}), 403
         
-    message_uuid = thread_manager.create_message(thread_uuid, user, message, attachment)
+    message_uuid = thread_manager.create_message(thread_uuid, user, message_body, attachment)
 
     return jsonify({"message": "Success.", "message_uuid": message_uuid}), 200
 
 @app.route("/update_message", methods=["PATCH"])
 def update_message():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -410,7 +402,7 @@ def update_message():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     message = thread.messages.get(message_uuid, None)
@@ -429,7 +421,7 @@ def update_message():
 @app.route("/delete_message", methods=["DELETE"])
 def delete_message():
     if not request.is_json:
-        return None, "Missing JSON in request.", 400
+        return jsonify({"error": "Missing JSON in request."}), 400
     
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
@@ -450,7 +442,7 @@ def delete_message():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     message = thread.messages.get(message_uuid, None)
@@ -469,7 +461,7 @@ def search_threads():
 
     try:
         page = int(page)
-    except:
+    except Exception:
         page = 1
 
     threads = thread_manager.search_threads(search_str)
@@ -493,7 +485,7 @@ def get_thread():
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     return jsonify({"message": "Success.", "thread": asdict(thread.to_display_thread())}), 200
@@ -512,14 +504,14 @@ def get_thread_messages():
 
     try:
         page = int(page)
-    except:
+    except Exception:
         page = 1
     
     try:    
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
         return jsonify({"error": "Thread does not exist."}), 404
-    except:
+    except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
     if thread.private:
@@ -579,4 +571,4 @@ def unsave_thread():
     return jsonify({"message": "Success."}), 200
     
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=int(PORT))
+    app.run(host="0.0.0.0", debug=False, port=int(PORT))

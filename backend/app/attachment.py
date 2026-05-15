@@ -33,7 +33,7 @@ class AttachmentMediaTypes(Enum):
     APPLICATION = "application"
 
 @dataclass
-class Attachement:
+class Attachment:
     data_base64: str = ""
     # png/jpg etc
     extension_type: str = ""
