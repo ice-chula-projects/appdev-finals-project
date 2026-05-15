@@ -6,6 +6,9 @@ import { Button } from "@react-navigation/elements";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import Slider from "@react-native-community/slider";
+import { Audio, ResizeMode, Video } from "expo-av";
+import { useRef } from "react";
 
 export default function Index() {
   const { id } = useLocalSearchParams();
@@ -26,6 +29,8 @@ export default function Index() {
   const [showPostBox, setShowPostBox] = useState(false);
 
   const [loading, setLoading] = useState(true);  
+  const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
+  const [volume, setVolume] = useState(0.5);
 
 
   const [fontsLoaded] = useFonts({
@@ -213,6 +218,262 @@ const deleteThread = async () => {
   }
 };
 
+function AudioPlayer() {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(1);
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const changeVolume = async (value: number) => {
+  setVolume(value);
+
+  if (sound) {
+    await sound.setVolumeAsync(value);
+  }
+  };
+
+  const loadAudio = async () => {
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      require("../../assets/audios/[Armroed Core] Sirius Executives.mp3"),
+      {
+        shouldPlay: false,
+        volume: volume,
+      }
+    );
+
+    newSound.setOnPlaybackStatusUpdate((status: any) => {
+      if (!status.isLoaded) return;
+
+      setPosition(status.positionMillis);
+      setDuration(status.durationMillis || 1);
+      setIsPlaying(status.isPlaying);
+
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+      }
+    });
+
+    setSound(newSound);
+
+    return newSound;
+  };
+
+  const togglePlayback = async () => {
+    let activeSound = sound;
+
+    if (!activeSound) {
+      activeSound = await loadAudio();
+    }
+
+    const status = await activeSound.getStatusAsync();
+
+    if (!status.isLoaded) return;
+
+    if (status.isPlaying) {
+      await activeSound.pauseAsync();
+    } else {
+      await activeSound.playAsync();
+    }
+  };
+
+  const stopAudio = async () => {
+    if (!sound) return;
+
+    await sound.stopAsync();
+    await sound.setPositionAsync(0);
+
+    setPosition(0);
+    setIsPlaying(false);
+  };
+
+  const seekAudio = async (value: number) => {
+    if (!sound) return;
+
+    await sound.setPositionAsync(value);
+    setPosition(value);
+  };
+
+  const formatTime = (millis: number) => {
+    const totalSeconds = Math.floor(millis / 1000);
+
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+          return (
+          <View>
+            <Slider
+              minimumValue={0}
+              maximumValue={duration}
+              value={position}
+              onSlidingComplete={seekAudio}
+            />
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 5,
+              }}
+            >
+              <Text>{formatTime(position)}</Text>
+
+              <Text>{formatTime(duration)}</Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <TouchableOpacity
+                onPress={togglePlayback}
+                style={{
+                  backgroundColor: "#007AFF",
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {isPlaying ? "Pause" : "Play"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={stopAudio}
+                style={{
+                  backgroundColor: "#FF3B30",
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Stop
+                </Text>
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={async () => {
+                    let newVolume = Math.max(
+                      0,
+                      volume - 0.05
+                    );
+
+                    newVolume = Number(
+                      newVolume.toFixed(2)
+                    );
+
+                    setVolume(newVolume);
+
+                    if (sound) {
+                      await sound.setVolumeAsync(
+                        newVolume
+                      );
+                    }
+                  }}
+                  style={{
+                    backgroundColor: "#666",
+                    paddingVertical: 6,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    -
+                  </Text>
+                </TouchableOpacity>
+
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    minWidth: 70,
+                    textAlign: "center",
+                  }}
+                >
+                  Vol {volume.toFixed(2)}
+                </Text>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    let newVolume = Math.min(
+                      1,
+                      volume + 0.05
+                    );
+
+                    newVolume = Number(
+                      newVolume.toFixed(2)
+                    );
+
+                    setVolume(newVolume);
+
+                    if (sound) {
+                      await sound.setVolumeAsync(
+                        newVolume
+                      );
+                    }
+                  }}
+                  style={{
+                    backgroundColor: "#666",
+                    paddingVertical: 6,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    +
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        );
+}
   if (!fontsLoaded) return null;
 
   if (!threadMessageData || !threadData) {
@@ -526,6 +787,47 @@ const deleteThread = async () => {
                   </Text>
 
                   {/* add media player here. audio player + image viewer + video downloader w/ viewable thumbnail  */}
+                                                <View
+                                                  style={{
+                                                    marginTop: 10,
+                                                    gap: 5,
+                                                  }}
+                                                >
+
+                                                  {/* IMAGE VIEWER */}
+                                                  <Image
+                                                    source={require("../../assets/images/18007564.jpg")}
+                                                    style={{
+                                                      width: 150,
+                                                      height: 150,
+                                                      borderRadius: 10,
+                                                      resizeMode: "cover",
+                                                    }}
+                                                  />
+
+                                                  {/* AUDIO PLAYER */}
+                                                  <View
+                                                    style={{
+                                                      borderWidth: 1,
+                                                      borderColor: "#ccc",
+                                                      borderRadius: 10,
+                                                      padding: 8,
+                                                    }}
+                                                  >
+                                                    <Text
+                                                      style={{
+                                                        fontWeight: "bold",
+                                                        marginBottom: 8,
+                                                      }}
+                                                    >
+                                                      [Armored Core] Sirius Executives.mp3
+                                                    </Text>
+
+                                                    <AudioPlayer />
+                                                  </View>
+                                                </View>
+
+
 
                   <Text
                     style={{
@@ -541,12 +843,6 @@ const deleteThread = async () => {
             )}
 
             
-          </ScrollView>
-
-          <ScrollView>
-            <Text>
-              {/* {JSON.stringify(threadMessageData)} */}
-            </Text>
           </ScrollView>
         </View>
       </SafeAreaView>
