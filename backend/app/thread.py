@@ -75,7 +75,7 @@ class ThreadManager:
         threads_collection.insert_one(thread.to_database_representation())
         return thread.uuid
     
-    def update_thread(self, thread_uuid: str, name: str = None, description: str = None, thumbnail_base64: str = None, password:str = None): 
+    def update_thread(self, thread_uuid: str, name: str = None, description: str = None, thumbnail_base64: str = None, password:str = None, remove_thumbnail: bool = False): 
         thread = self.get_thread_from_uuid(thread_uuid)
         update_map = {}
 
@@ -89,7 +89,10 @@ class ThreadManager:
             if not validate_base64_image(thumbnail_base64):
                 raise InvalidBase64ImageError
             update_map["thumbnail_base64"] = thumbnail_base64
-            
+        
+        if remove_thumbnail:
+            update_map["thumbnail_base64"] = None
+
         if password != None:
             private = password == ""
             update_map["private"] = private
@@ -111,10 +114,10 @@ class ThreadManager:
         message = thread.post_message(author, message_body, attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message), "last_message_date": datetime.now()}})
 
-    def update_message(self, thread_uuid: str, message_uuid: str,  message_body: str, attachment: Attachement = None):
+    def update_message(self, thread_uuid: str, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachement = None, remove_attachment: bool = False):
         thread = self.get_thread_from_uuid(thread_uuid)
 
-        message = thread.update_message(message_uuid, message_body, attachment)
+        message = thread.update_message(message_uuid, message_body=message_body, remove_message_body=remove_message_body, attachment=attachment, remove_attachment=remove_attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
 
     def delete_message(self, thread_uuid: str, message_uuid: str):
@@ -200,13 +203,23 @@ class Thread:
 
         return message
     
-    def update_message(self, message_uuid: str, message_body: str, attachment: Attachement = None) -> Message:
+    def update_message(self, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachement = None, remove_attachment: bool = False) -> Message:
         message = self.messages.get(message_uuid, None)
         if message == None:
             raise MessageDoesNotExistError
+
+        if message_body != None:
+            message.message = message_body
         
-        message.message = message_body
-        message.attachment = attachment
+        if remove_message_body:
+            message.message = None
+
+        if attachment != None:
+            message.attachment = attachment
+        
+        if remove_attachment:
+            message.attachment = None
+
         message.last_modified_date = datetime.now()
 
         return message
