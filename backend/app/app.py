@@ -280,6 +280,7 @@ def update_thread():
     thread_name = data.get("name", None)
     thread_description = data.get("description", None)
     thread_thumbnail_base64 = data.get("thumbnail_base64", None)
+    remove_thumbnail = data.get("remove_thumbnail", False)
     thread_password = data.get("password", None)
     
     try:
@@ -293,7 +294,7 @@ def update_thread():
         return jsonify({"error": "Cannot update threads from a different user."}), 403
 
     try:
-        thread_manager.update_thread(thread_uuid, thread_name, thread_description, thread_thumbnail_base64, thread_password)
+        thread_manager.update_thread(thread_uuid, name= thread_name, description=thread_description, thumbnail_base64=thread_thumbnail_base64, password=thread_password, remove_thumbnail=remove_thumbnail)
     except InvalidBase64ImageError:
         return jsonify({"error": "Provided image is invalid"}), 400
     except:
