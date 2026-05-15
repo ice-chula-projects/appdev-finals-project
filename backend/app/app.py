@@ -150,6 +150,22 @@ def update_user():
     
     return jsonify({"message": "Success."}), 200
 
+@app.route("/delete_user", methods=["DELETE"])
+def delete_user():
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+
+    try:
+        user_manager.delete_user(user.uuid)
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    return jsonify({"message": "Success."}), 200
+
 @app.route("/login", methods=["POST"])
 def login():
     if not request.is_json:
@@ -215,6 +231,76 @@ def create_thread():
     
     return jsonify({"message": "Success.", "thread_uuid": thread_uuid}), 200
 
+@app.route("/update_thread", methods=["PATCH"])
+def update_thread():
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    data: dict = request.get_json()
+    thread_uuid = data.get("thread_uuid")
+    thread_name = data.get("name", None)
+    thread_description = data.get("description", None)
+    thread_thumbnail_base64 = data.get("thumbnail_base64", None)
+    thread_password = data.get("password", None)
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    try:
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist"}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    if thread.author_user_uuid != user.uuid:
+        return jsonify({"error": "Cannot update threads from a different user."}), 403
+
+    try:
+        thread_manager.update_thread(thread_uuid, thread_name, thread_description, thread_thumbnail_base64, thread_password)
+    except InvalidBase64ImageError:
+        return jsonify({"error": "Provided image is invalid"}), 400
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    return jsonify({"message": "Success."}), 200
+
+@app.route("/delete_thread", methods=["DELETE"])
+def delete_thread():
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    data: dict = request.get_json()
+    thread_uuid = data.get("thread_uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    try:
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist"}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    if thread.author_user_uuid != user.uuid:
+        return jsonify({"error": "Cannot delete a thread from a different user."}), 403
+
+    try:
+        thread_manager.delete_thread(thread_uuid)
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    return jsonify({"message": "Success."}), 200
+
 @app.route("/post_message", methods=["POST"])
 def post_message():
     if not request.is_json:
@@ -230,6 +316,8 @@ def post_message():
 
     if thread_uuid == None:
         return jsonify({"error": "Missing thread uuid."}), 400
+
+    
 
     thread_manager.post_message(thread_uuid, user, message)
     return jsonify({"message": "Success."}), 200
