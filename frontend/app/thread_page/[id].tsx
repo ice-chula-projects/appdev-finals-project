@@ -13,6 +13,10 @@ export default function Index() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const [currentUserUUID, setCurrentUserUUID] = useState("");
+  const [deletingThread, setDeletingThread] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const [threadData, setThreadData] = useState<any>(null);
   const [threadMessageData, setThreadMessageData] = useState<any>(null);
 
@@ -37,6 +41,13 @@ export default function Index() {
 useEffect(() => {
   const fetchThread = async () => {
     const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+
+    const STORED_USER_UUID = await AsyncStorage.getItem("user_uuid");
+
+    if (STORED_USER_UUID) {
+      setCurrentUserUUID(STORED_USER_UUID);
+    }
+
     try {
       const bes = await fetch(
         `http://localhost:5000/get_thread?uuid=${id}`,
@@ -170,6 +181,38 @@ dbtb.messages = updatedMessages;
     }
   };
 
+const deleteThread = async () => {
+  const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+
+  try {
+    setDeletingThread(true);
+
+    const res = await fetch(
+      `http://localhost:5000/delete_thread?uuid=${encodeURIComponent(id.toString())}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "session-token": SESSION_TOKEN,
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      router.replace("/");
+    } else {
+      console.log("Delete error:", data.error);
+    }
+  } catch (err) {
+    console.log("Network error:", err);
+  } finally {
+    setDeletingThread(false);
+    setConfirmDelete(false);
+  }
+};
+
   if (!fontsLoaded) return null;
 
   if (!threadMessageData || !threadData) {
@@ -247,6 +290,78 @@ dbtb.messages = updatedMessages;
           >
             {threadData.thread.description}
           </Text>
+
+          {currentUserUUID ===
+            threadData.thread.author_user_uuid && (
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 10,
+                marginBottom: 15,
+              }}
+            >
+              {!confirmDelete  ? (
+                <TouchableOpacity
+                  onPress={() => setConfirmDelete(true)}
+                  style={{
+                    backgroundColor: "#FF3B30",
+                    paddingVertical: 10,
+                    paddingHorizontal: 15,
+                    borderRadius: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Delete Thread
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    onPress={deleteThread}
+                    style={{
+                      backgroundColor: "#FF3B30",
+                      paddingVertical: 10,
+                      paddingHorizontal: 15,
+                      borderRadius: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Confirm Delete
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setConfirmDelete(false)}
+                    style={{
+                      backgroundColor: "#888",
+                      paddingVertical: 10,
+                      paddingHorizontal: 15,
+                      borderRadius: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
 
           <View
             style={{
