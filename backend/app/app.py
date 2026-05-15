@@ -90,7 +90,6 @@ def get_user_profile():
     
     return jsonify({"message": "Success.", "user": asdict(user)}), 200
 
-
 @app.route("/get_users", methods=["GET"])
 def get_users():
     user_uuids = request.args.getlist('uuid')
@@ -188,7 +187,6 @@ def login():
     
     return jsonify({"message": "Success.", "session_token": session_token, "user_uuid": user.uuid}), 200
 
-
 @app.route("/logout", methods=["POST"])
 def logout():
     if not request.is_json:
@@ -240,15 +238,16 @@ def update_thread():
     if user == None:
         return jsonify({"error": message}), status_code
     
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+
     data: dict = request.get_json()
-    thread_uuid = data.get("thread_uuid")
     thread_name = data.get("name", None)
     thread_description = data.get("description", None)
     thread_thumbnail_base64 = data.get("thumbnail_base64", None)
     thread_password = data.get("password", None)
-
-    if thread_uuid == None:
-        return jsonify({"error": "Missing thread uuid."}), 400
     
     try:
         thread = thread_manager.get_thread_from_uuid(thread_uuid)
@@ -271,15 +270,11 @@ def update_thread():
 
 @app.route("/delete_thread", methods=["DELETE"])
 def delete_thread():
-    if not request.is_json:
-        return None, "Missing JSON in request.", 400
-    
     user, message, status_code = authenticate_header_session_token(request)
     if user == None:
         return jsonify({"error": message}), status_code
     
-    data: dict = request.get_json()
-    thread_uuid = data.get("thread_uuid")
+    thread_uuid = request.args.get("uuid")
 
     if thread_uuid == None:
         return jsonify({"error": "Missing thread uuid."}), 400
@@ -404,6 +399,6 @@ def get_thread_messages():
     
     start_index, end_index ,clamped_page= calculate_indexes_from_page(page, messages_count) 
     return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count, "page": clamped_page}), 200
-
+ 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
