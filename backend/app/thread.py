@@ -6,7 +6,7 @@ from pymongo.collection import Collection
 from settings import Settings
 from user import User
 from dataclasses import dataclass, asdict
-from attachment import Attachement, validate_base64_image, InvalidBase64ImageError
+from attachment import Attachment, validate_base64_image, InvalidBase64ImageError
 
 class ThreadManager:
     threads_collection: Collection
@@ -108,7 +108,7 @@ class ThreadManager:
     def delete_thread(self, thread_uuid: str):
         self.threads_collection.delete_one({"_id": thread_uuid})
     
-    def create_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
+    def create_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachment = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
         message = thread.create_message(author, message_body, attachment)
@@ -116,7 +116,7 @@ class ThreadManager:
 
         return message.uuid
 
-    def update_message(self, thread_uuid: str, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachement = None, remove_attachment: bool = False):
+    def update_message(self, thread_uuid: str, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachment = None, remove_attachment: bool = False):
         thread = self.get_thread_from_uuid(thread_uuid)
 
         message = thread.update_message(message_uuid, message_body=message_body, remove_message_body=remove_message_body, attachment=attachment, remove_attachment=remove_attachment)
@@ -165,7 +165,7 @@ class Thread:
                 setattr(message, key, value)
             
             if message.attachment != None:
-                message.attachment = Attachement(
+                message.attachment = Attachment(
                     data_base64=message.attachment["data_base64"],
                     extension_type=message.attachment["extension_type"],
                     media_type=message.attachment["media_type"]
@@ -180,7 +180,7 @@ class Thread:
         database_representation["_id"] = database_representation.pop("uuid")
         return database_representation
     
-    def create_message(self, author: User, message_body: str, attachment: Attachement = None) -> Message:
+    def create_message(self, author: User, message_body: str, attachment: Attachment = None) -> Message:
         messages = self.messages
         
         while True:
@@ -205,7 +205,7 @@ class Thread:
 
         return message
     
-    def update_message(self, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachement = None, remove_attachment: bool = False) -> Message:
+    def update_message(self, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachment = None, remove_attachment: bool = False) -> Message:
         message = self.messages.get(message_uuid, None)
         if message == None:
             raise MessageDoesNotExistError
@@ -264,7 +264,7 @@ class Message:
     uuid: str = ""
     author_user_uuid: str = ""
     message: str = ""
-    attachment: Attachement = None
+    attachment: Attachment = None
 
     creation_date: datetime = None
     last_modified_date: datetime = None
