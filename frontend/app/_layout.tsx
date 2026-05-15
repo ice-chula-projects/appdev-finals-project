@@ -1,5 +1,5 @@
 import { Stack, router, usePathname } from "expo-router";
-import { Text, View, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 
@@ -70,10 +70,62 @@ const styles = StyleSheet.create({
     borderColor: "#a7a7a7",
     boxShadow: "0px 0px 6px rgba(0, 0, 0, 0.5)",
   },
+  popupOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  popupContainer: {
+    width: "90%",
+    maxWidth: 350,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  popupText: {
+    fontSize: 23,
+    color: "#1f1f1f",
+    marginBottom: 15,
+    textAlign: "center",
+    lineHeight: 22,
+    fontWeight: "600",
+    fontFamily: "RobotoSlab-Regular",
+  },
+  popupButtons: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    gap: 15,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "#8b8b8b",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: "#940404",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  popupButtonText: {
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 16,
+    fontFamily: "RobotoSlab-Regular",
+  }
 })
 
 export default function RootLayout() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
+
   const pathname = usePathname();
 
   // Check session token
@@ -87,46 +139,37 @@ export default function RootLayout() {
   }, [pathname]);
 
   // Logout
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     await AsyncStorage.removeItem("session_token");
     await AsyncStorage.removeItem("username");
     setLoggedIn(false);
-    router.replace('/');
+    setLogoutPopupVisible(false);
+    router.replace("/");
   }
 
   return (
+    <>
     <Stack
       screenOptions={{
         headerLeft: () => (
           <TouchableOpacity onPress={() => router.push("/")} style={{ marginLeft: 15 }}>
-            <Image 
-              source={require("../assets/images/message_logo.png")}
-              style={styles.homeIcon}
-            />
+            <Image source={require("../assets/images/message_logo.png")} style={styles.homeIcon} />
           </TouchableOpacity>
         ),
 
         headerRight: () => (
           loggedIn ? (
             <View style={styles.userSection}>
-
-              <TouchableOpacity
-                onPress={() => router.push("/profile_page")}
-              >
+              <TouchableOpacity onPress={() => router.push("/profile_page")}>
                 <Image
                   source={require("../assets/images/default_profile.png")}
                   style={styles.profileIcon}
                 />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={handleLogout}
-              >
-                <Text style={styles.logoutButton}>
-                  LOGOUT
-                </Text>
+              <TouchableOpacity onPress={() => setLogoutPopupVisible(true)}>
+                <Text style={styles.logoutButton}>LOGOUT</Text>
               </TouchableOpacity>
-
             </View>
           ) : (
             <View style={styles.notLoggedInButtons}>
@@ -142,5 +185,29 @@ export default function RootLayout() {
         ),
       }}
     />
-  );
+    
+    <Modal
+      transparent
+      animationType="fade"
+      visible={logoutPopupVisible}
+      onRequestClose={() => setLogoutPopupVisible(false)}
+    >
+      <View style={styles.popupOverlay}>
+        <View style={styles.popupContainer}>
+          <Text style={styles.popupText}>Are you sure?</Text>
+          <View style={styles.popupButtons}>
+            <TouchableOpacity style={styles.confirmButton} onPress={confirmLogout}>
+              <Text style={styles.popupButtonText}>Confirm</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setLogoutPopupVisible(false)}>
+              <Text style={styles.popupButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+
+    </>
+  )
 }
