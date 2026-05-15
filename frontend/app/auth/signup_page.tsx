@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image, Button, Alert } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image, ScrollView, useWindowDimensions } from 'react-native'
 import { Stack, router } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const GLOBAL_URL = "http://localhost:5000/"
 
@@ -102,6 +103,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const { width } = useWindowDimensions();
+
   // User account must meet requirements
   const validate = () => {
     if (username.length < 3) return 'Username must be at least 3 characters.';
@@ -110,27 +113,41 @@ export default function SignupPage() {
     return null; // No errors
   }
 
-  
   const handleSignup = async () => {
     const err = validate();
     if (err) return setError(err);
     setError('');
+    setLoading(true);
 
     try {
-      const response = await fetch(GLOBAL_URL+'create_user', {
+      const signupResponse = await fetch(GLOBAL_URL+'create_user', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ "name": username, "password": password }),
         });
 
-      const data = await response.json();
-      setLoading(false);
+      const signupData = await signupResponse.json();
 
-      if (response.ok) {
-        router.push('/');
-      } else {
-        setError(data.error);
+      if (!signupResponse.ok) {
+        setError(signupData.error);
+        setLoading(false);
+        return;
       }
+
+      const loginResponse = await fetch(GLOBAL_URL+'login', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "name": username, "password": password }),
+      })
+
+      const loginData = await loginResponse.json();
+      if (loginResponse.ok) {
+        await AsyncStorage.setItem("session_token", loginData.session_token);
+        router.replace("/");
+      } else {
+        router.replace("/auth/login_page");
+      }
+
     } catch (error) {
       setLoading(false);
       setError("Cannot connect to server.");

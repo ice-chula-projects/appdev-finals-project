@@ -213,11 +213,6 @@ export default function Index() {
     'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
   })
 
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync()
-  }, [fontsLoaded]);
-  if (!fontsLoaded) return null;
-
   const { width, height } = useWindowDimensions();
   const styles = StyleSheet.create({
     pageName: {
@@ -355,6 +350,11 @@ export default function Index() {
       fontFamily: "RobotoSlab-Regular"
     }
   })
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded]);
+  if (!fontsLoaded) return null;
 
   return (
     <>
