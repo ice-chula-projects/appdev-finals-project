@@ -22,6 +22,9 @@ class ThreadManager:
             raise ThreadDoesNotExistError()
 
         return Thread.from_database_representation(thread)
+    
+    def thread_exists(self, uuid: str) -> bool:
+        return self.threads_collection.find_one({"_id": uuid}) != None
 
     def search_threads(self, query_str:str = None) -> list[Thread]:
         if query_str != None:

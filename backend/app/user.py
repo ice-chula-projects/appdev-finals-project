@@ -130,7 +130,19 @@ class UserManager:
             thread_history.pop()
 
         self.users_collection.update_one({"_id": user_uuid}, {"$set": {"thread_history": thread_history}})
-        
+    
+    def update_saved_thread(self, user_uuid: str, thread_uuid: str, saved_status: bool):
+        user = self.get_user_from_uuid(user_uuid)
+        saved_threads = user.saved_threads
+
+        if saved_status:
+            if thread_uuid not in saved_threads:
+                saved_threads.append(thread_uuid)
+        else:
+            if thread_uuid in saved_threads:
+                saved_threads.remove(thread_uuid)
+
+        self.users_collection.update_one({"_id": user_uuid}, {"$set": {"saved_threads": saved_threads}})
     
     # returns the session token
     def login(self, name: str, password: str) -> str:

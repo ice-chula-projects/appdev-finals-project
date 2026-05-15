@@ -252,7 +252,7 @@ def update_thread():
     try:
         thread = thread_manager.get_thread_from_uuid(thread_uuid)
     except ThreadDoesNotExistError:
-        return jsonify({"error": "Thread does not exist"}), 404
+        return jsonify({"error": "Thread does not exist."}), 404
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
@@ -282,7 +282,7 @@ def delete_thread():
     try:
         thread = thread_manager.get_thread_from_uuid(thread_uuid)
     except ThreadDoesNotExistError:
-        return jsonify({"error": "Thread does not exist"}), 404
+        return jsonify({"error": "Thread does not exist."}), 404
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
@@ -347,7 +347,7 @@ def get_thread():
     try:    
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
-        return jsonify({"error": "Thread does not exist"}), 404
+        return jsonify({"error": "Thread does not exist."}), 404
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
@@ -373,7 +373,7 @@ def get_thread_messages():
     try:    
         thread = thread_manager.get_thread_from_uuid(thread_uuid)   
     except ThreadDoesNotExistError:
-        return jsonify({"error": "Thread does not exist"}), 404
+        return jsonify({"error": "Thread does not exist."}), 404
     except:
         return jsonify({"error": "Something went wrong."}), 500
     
@@ -399,6 +399,39 @@ def get_thread_messages():
     
     start_index, end_index ,clamped_page= calculate_indexes_from_page(page, messages_count) 
     return jsonify({"message": "Success.", "messages": dict_messages[start_index:end_index], "total_messages": messages_count, "page": clamped_page}), 200
- 
+
+@app.route("/save_thread", methods=["POST"])
+def save_thread():
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    if not thread_manager.thread_exists(thread_uuid):
+        return jsonify({"error": "Thread does not exist."}), 404
+    
+    user_manager.update_saved_thread(user.uuid, thread_uuid, True)
+
+    return jsonify({"message": "Success."}), 200
+
+@app.route("/unsave_thread", methods=["POST"])
+def unsave_thread():
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    user_manager.update_saved_thread(user.uuid, thread_uuid, False)
+
+    return jsonify({"message": "Success."}), 200
+    
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=int(PORT))
