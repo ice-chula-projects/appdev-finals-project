@@ -97,15 +97,29 @@ export const styles = StyleSheet.create({
     color: '#666',
     fontFamily: 'RobotoSlab-Regular'
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff"
+  }
 })
 
 export default function LoginPage() {
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
-  const [userUUID, setUserUUID] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
   const [subtitle] = useState(() => randomLoginSubtitles());
+
+  // Initial loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
 
   // User account must meet requirements
@@ -159,9 +173,20 @@ export default function LoginPage() {
     }
   }
 
+  // Initial loading screen
+  if (pageLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#2f5ae9"
+        />
+      </View>
+    )
+  }
+
   // Login Page UI
   return (
-
   <>
     <Stack.Screen
       options={{
@@ -170,9 +195,10 @@ export default function LoginPage() {
             style={{
               fontSize: 40,
               fontWeight: "bold",
+              fontFamily: "RobotoSlab-Regular"
             }}
           >
-            Threads
+            Login
           </Text>
         ),
       }}

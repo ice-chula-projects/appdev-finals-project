@@ -166,6 +166,7 @@ export default function SignupPage() {
       }
 
     } catch (error) {
+      console.log("Error:", err);
       setError("Cannot connect to server.");
     } finally {
       setLoading(false);
@@ -195,9 +196,10 @@ export default function SignupPage() {
             style={{
               fontSize: 40,
               fontWeight: "bold",
+              fontFamily: "RobotoSlab-Regular"
             }}
           >
-            Threads
+            Signup
           </Text>
         ),
       }}
