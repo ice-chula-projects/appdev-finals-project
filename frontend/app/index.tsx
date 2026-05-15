@@ -253,7 +253,7 @@ export default function Index() {
     createThreadMargins: {
       flexDirection: "row",
       margin: 10,
-      marginBottom: 20,
+      marginBottom: 10,
       flex: 1,
     },
     threadImagePicker: {
@@ -296,30 +296,25 @@ export default function Index() {
     alignButtons: {
       flexDirection: "row",
       justifyContent: "space-between",
-      gap: 10,
+      gap: 15,
       marginLeft: 10,
       marginRight: 10,
     },
     cancelThreadButton: {
       flex: 1,
-      backgroundColor: "#afafaf",
+      backgroundColor: "#8b8b8b",
       paddingVertical: 14,
       borderRadius: 8,
       alignItems: "center",
-      marginRight: 10,
-    },
-    cancelThreadText: {
-      fontWeight: "bold",
-      fontFamily: "NotoSans-Regular"
     },
     confirmThreadButton: {
       flex: 1,
-      backgroundColor: "#007AFF",
+      backgroundColor: "#004c9e",
       paddingVertical: 14,
       borderRadius: 8,
       alignItems: "center",
     },
-    confirmThreadText: {
+    threadButtonText: {
       fontWeight: "bold",
       color: "#ffffff",
       fontFamily: "NotoSans-Regular"
@@ -327,6 +322,7 @@ export default function Index() {
     threadErrorText: {
       color: "#ff0000",
       textAlign: "center",
+      marginBottom: 15,
       fontFamily: "NotoSans-Regular",
     },
     addThreadButton: {
@@ -406,26 +402,20 @@ export default function Index() {
                 </View>
               </View>
 
-              <View>
                 {createThreadError ? (
                   <Text style={styles.threadErrorText}>{createThreadError}</Text>
                 ) : null }
-              </View>
 
               <View style={styles.alignButtons}>
-                <TouchableOpacity
-                onPress={() => setCreateVisible(false)}
-                style={styles.cancelThreadButton}
-                >
-                  <Text style={styles.cancelThreadText}>Cancel</Text>
+
+                <TouchableOpacity onPress={handleCreateThread} style={styles.confirmThreadButton}>
+                  <Text style={styles.threadButtonText}>Confirm</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={handleCreateThread}
-                  style={styles.confirmThreadButton}
-                >
-                  <Text style={styles.confirmThreadText}>Confirm</Text>
+                <TouchableOpacity onPress={() => setCreateVisible(false)} style={styles.cancelThreadButton}>
+                  <Text style={styles.threadButtonText}>Cancel</Text>
                 </TouchableOpacity>
+
               </View>
             </View>
           </View>

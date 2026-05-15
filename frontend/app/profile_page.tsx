@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, ActivityIndicator } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, ActivityIndicator, StyleSheet } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
@@ -94,8 +94,11 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       await uploadProfilePicture(pendingBase64, pendingPicture);
+
       setProfilePicture(pendingPicture);
-      await AsyncStorage.setItem("profile_picture_uri", pendingPicture);
+
+      await AsyncStorage.setItem("profile_picture_base64", pendingBase64);
+
       setConfirmVisible(false);
       setPendingPicture(null);
       setPendingBase64(null);
@@ -154,17 +157,18 @@ export default function ProfilePage() {
 
   const updateDescription = async () => {
     try {
-        const token = await AsyncStorage.getItem("session_token");
+        const sessionToken = await AsyncStorage.getItem("session_token");
         const response = await fetch(GLOBAL_URL+"update_user", {
             method: "PATCH",
-            headers: {"Content-Type": "application/json", "session-token": token ?? ""},
+            headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ""},
             body: JSON.stringify({motd: tempDescription})
         })
         if (!response.ok) throw new Error("Failed to update the description.");
-        await AsyncStorage.setItem("motd",tempDescription);
+        setProfileDescription(tempDescription);
+        await AsyncStorage.setItem("motd", tempDescription);
         setEditDescription(false);
     } catch (err) {
-        Alert.alert("Error","Cannot update the description.")
+        Alert.alert("Error","Cannot update the description.");
     }
   }
 
@@ -221,84 +225,166 @@ export default function ProfilePage() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
 
+  const styles = StyleSheet.create({
+    headerTitle: {
+      fontSize: 35,
+      fontWeight: "600",
+      fontFamily: "NotoSans-Regular",
+      marginLeft: 10
+    },
+    container: {
+      flex: 1,
+      paddingTop: 50,
+      paddingHorizontal: 30,
+    },
+    safeView: {
+      flex: 1
+    },
+    yourProfile: {
+      fontSize: 50,
+      fontWeight: "bold",
+      color: "#2b2b2b",
+      fontFamily: "RobotoSlab-Regular",
+    },
+    pickImagePopup: {
+      backgroundColor: '#c7c7c7',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      alignItems: 'center',
+      paddingBottom: 20,
+    },
+    pickImageText: {
+      fontSize: 20, 
+      fontWeight: '600', 
+      marginBottom: 14,
+      fontFamily: "NotoSans-Regular"
+    },
+    pendingPic: {
+      width: 120,
+      height: 120,
+      borderRadius: 14,
+      marginBottom: 20,
+    },
+    alignPopupButtons: { 
+      flexDirection: 'row', 
+      gap: 12, 
+      width: '100%' 
+    },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      backgroundColor: "#8f8f8f",
+      borderColor: '#ccc',
+      alignItems: 'center',
+    },
+    confirmButton: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      backgroundColor: '#007AFF',
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#ffffff', 
+      fontWeight: '600',
+      fontFamily: "NotoSans-Regular"
+    },
+    userProfileBox: {
+      alignItems: "center",
+      marginBottom: 10,
+      borderWidth: 2,
+      borderColor: "#ccc",
+      borderRadius: 8,
+      padding: 15,
+    },
+    profilePictureIcon: {
+      width: 100,
+      height: 100,
+      marginTop: 15,
+      marginBottom: 5,
+      borderRadius: 15,
+      borderWidth: 2,
+      borderColor: "#c2c2c2",
+    },
+    profileUsername: {
+      fontSize: 30,
+      fontWeight: "bold",
+      fontFamily: "RobotoSlab-Regular",
+    },
+    profileUUID: {
+      color: "gray",
+      marginTop: 5,
+      marginBottom: 10,
+      fontFamily: "RobotoSlab-Regular",
+    },
+    editDescBox: {
+      width: "50%",
+      borderWidth: 1,
+      borderColor: "#ccc",
+      padding: 10,
+      borderRadius: 5,
+      fontFamily: "RobotoSlab-Regular"
+    },
+    descButtons: { 
+      flexDirection: "row", 
+      marginTop: 10 ,
+    },
+    descSave: {
+      color: "#00b652", 
+      marginRight: 15, 
+      fontFamily: "RobotoSlab-Regular",
+    },
+    descCancel: {
+      color: "red", 
+      fontFamily: "RobotoSlab-Regular",
+    },
+    profileDesc: { 
+      textAlign: "center", 
+      fontFamily: "RobotoSlab-Regular" 
+    },
+    editDesc: { 
+      color: "#007AFF", 
+      marginTop: 8, 
+      fontFamily: "RobotoSlab-Regular" 
+    },
+
+  })
 
   return (
     <>
       <Stack.Screen
         options={{
           headerTitle: () => (
-            <Text
-              style={{
-                fontSize: 35,
-                fontWeight: "600",
-                fontFamily: "NotoSans-Regular",
-                marginLeft: 10
-              }}
-            >
-              Profile Page
-            </Text>
+            <Text style={styles.headerTitle}>Profile Page</Text>
           ),
         }}
       />
 
       <Modal
-    visible={confirmVisible}
-    transparent
-    animationType="slide"
-    onRequestClose={handleCancelPFP}
-    >
+        visible={confirmVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCancelPFP}
+      >
         <View style={{ flex: 1, justifyContent: 'flex-end'}}>
-            <View style={{
-                backgroundColor: '#fff',
-                borderTopLeftRadius: 20,
-                borderTopRightRadius: 20,
-                padding: 24,
-                alignItems: 'center',
-                paddingBottom: 40,
-            }}>
-                <Text style={{ fontSize: 17, fontWeight: '600', marginBottom: 14 }}>Use this photo?</Text>
+            <View style={styles.pickImagePopup}>
+                <Text style={styles.pickImageText}>Use this photo?</Text>
 
-            {pendingPicture && (
-                <Image
-                    source={{ uri: pendingPicture }}
-                    style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: 14,
-                    marginBottom: 20,
-                }}
-                />
-            )}
+            { pendingPicture && ( <Image source={{ uri: pendingPicture }} style={styles.pendingPic}/> ) }
 
             {uploading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : (
-                <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-                <TouchableOpacity
-                    onPress={handleCancelPFP}
-                    style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: '#ccc',
-                    alignItems: 'center',
-                    }}
-                >
-                    <Text style={{ color: '#333', fontWeight: '500' }}>Cancel</Text>
+                <View style={styles.alignPopupButtons}>
+                <TouchableOpacity onPress={handleCancelPFP} style={styles.cancelButton}>
+                    <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    onPress={handleConfirmPFP}
-                    style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                    backgroundColor: '#007AFF',
-                    alignItems: 'center',
-                    }}
-                >
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>Confirm</Text>
+                <TouchableOpacity onPress={handleConfirmPFP} style={styles.confirmButton}>
+                    <Text style={styles.buttonText}>Confirm</Text>
                 </TouchableOpacity>
                 </View>
             )}
@@ -306,60 +392,20 @@ export default function ProfilePage() {
         </View>
     </Modal>
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View
-          style={{
-            flex: 1,
-            paddingTop: 50,
-            paddingHorizontal: 30,
-          }}
-        >
-
-          <View
-            style={{
-              alignItems: "center",
-              marginBottom: 10,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 8,
-              padding: 5,
-            }}
-          >
+      <SafeAreaView style={styles.safeView}>
+        <View style={styles.container}>
+          <View style={styles.userProfileBox}>
+            <Text style={styles.yourProfile}>Your Profile</Text>
             <TouchableOpacity onPress={pickImage}>
-            <Image
-              source={profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png")}
-              style={{
-                width: 100,
-                height: 100,
-                marginTop: 15,
-                marginBottom: 5,
-                borderRadius: 15,
-                borderWidth: 2,
-                borderColor: "#c2c2c2",
-              }}
-            />
+              <Image
+                source={profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png")}
+                style={styles.profilePictureIcon}
+              />
             </TouchableOpacity>
 
-            <Text
-              style={{
-                fontSize: 30,
-                fontWeight: "bold",
-                fontFamily: "RobotoSlab-Regular",
-              }}
-            >
-              {profileName || "Unknown User"}
-            </Text>
+            <Text style={styles.profileUsername}>{profileName || "Unknown User"}</Text>
 
-            <Text
-              style={{
-                color: "gray",
-                marginTop: 5,
-                marginBottom: 10,
-                fontFamily: "RobotoSlab-Regular",
-              }}
-            >
-              UUID: {userUUID || "Unknown"}
-            </Text>
+            <Text style={styles.profileUUID}>UUID: {userUUID || "Unknown"}</Text>
 
             {editDescription ? (
                 <>
@@ -368,29 +414,22 @@ export default function ProfilePage() {
                     onChangeText={setTempDescription}
                     placeholder="Enter description here (max. 50 characters)"
                     maxLength={50}
-                    style={{
-                        borderWidth: 1,
-                        borderColor: "#ccc",
-                        padding: 10,
-                        borderRadius: 6,
-                        width: "100%",
-                        color: "#757575"
-                    }}
+                    style={styles.editDescBox}
                     />
 
-                    <View style={{ flexDirection: "row", marginTop: 10 }}>
+                    <View style={styles.descButtons}>
                         <TouchableOpacity onPress={updateDescription}>
-                            <Text style={{ color: "green", marginRight: 15, fontFamily: "RobotoSlab-Regular" }}>Save</Text>
+                            <Text style={styles.descSave}>Save</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setEditDescription(false)}>
-                            <Text style={{ color: "red", fontFamily: "RobotoSlab-Regular" }}>Cancel</Text>
+                            <Text style={styles.descCancel}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </>
             ) : (
                 <>
-                    <Text style={{ textAlign: "center", fontFamily: "RobotoSlab-Regular" }}>
+                    <Text style={styles.profileDesc}>
                         {profileDescription || "No description yet."}
                     </Text>
 
@@ -398,11 +437,7 @@ export default function ProfilePage() {
                         setTempDescription(profileDescription);
                         setEditDescription(true);
                     }}>
-                        <Text style={{ 
-                            color: "#007AFF", 
-                            marginTop: 8, 
-                            fontFamily: "RobotoSlab-Regular" 
-                        }}>Edit Description</Text>
+                        <Text style={styles.editDesc}>Edit Description</Text>
                     </TouchableOpacity>
                 </>
             )}
