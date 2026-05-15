@@ -111,8 +111,10 @@ class ThreadManager:
     def create_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
-        message = thread.post_message(author, message_body, attachment)
+        message = thread.create_message(author, message_body, attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message), "last_message_date": datetime.now()}})
+
+        return message.uuid
 
     def update_message(self, thread_uuid: str, message_uuid: str, message_body: str = None, remove_message_body: bool = False, attachment: Attachement = None, remove_attachment: bool = False):
         thread = self.get_thread_from_uuid(thread_uuid)
@@ -178,7 +180,7 @@ class Thread:
         database_representation["_id"] = database_representation.pop("uuid")
         return database_representation
     
-    def post_message(self, author: User, message_body: str, attachment: Attachement = None) -> Message:
+    def create_message(self, author: User, message_body: str, attachment: Attachement = None) -> Message:
         messages = self.messages
         
         while True:

@@ -371,8 +371,94 @@ def create_message():
         if not thread.authenticate(password):
             return jsonify({"error": "Invalid Password"}), 403
         
-    thread_manager.create_message(thread_uuid, user, message, attachment)
+    message_uuid = thread_manager.create_message(thread_uuid, user, message, attachment)
 
+    return jsonify({"message": "Success.", "message_uuid": message_uuid}), 200
+
+@app.route("/update_message", methods=["PATCH"])
+def update_message():
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    data: dict = request.get_json()
+    message_uuid = data.get("message_uuid", None)
+
+    message_body = data.get("message", None)
+    remove_message_body = data.get("remove_message", False)
+    attachment = data.get("attachment", None)
+    remove_attachment = data.get("remove_attachment", False)
+    
+    if message_uuid == None:
+        return jsonify({"error": "Missing message uuid."}), 400
+
+    if attachment != None:
+        attachment, message, status_code = validate_attachment(attachment)
+        if attachment == None:
+            return jsonify({"error": message}), status_code
+
+    try:    
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)   
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist."}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    message = thread.messages.get(message_uuid, None)
+    if message == None:
+        return jsonify({"error": "Message does not exist."}), 404
+    if message.author_user_uuid != user.uuid:
+        return jsonify({"error": "Cannot update a message from a different user."}), 403
+    
+    if (remove_message_body or (message_body != None and message_body.strip() == "")) and message.attachment == None or remove_attachment and message.message == None:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    thread_manager.update_message(thread_uuid, message_uuid, message_body=message_body, remove_message_body=remove_message_body, attachment=attachment, remove_attachment=remove_attachment)
+
+    return jsonify({"message": "Success."}), 200
+
+@app.route("/delete_message", methods=["DELETE"])
+def delete_message():
+    if not request.is_json:
+        return None, "Missing JSON in request.", 400
+    
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    thread_uuid = request.args.get("uuid")
+
+    if thread_uuid == None:
+        return jsonify({"error": "Missing thread uuid."}), 400
+    
+    data: dict = request.get_json()
+    message_uuid = data.get("message_uuid", None)
+
+    if message_uuid == None:
+        return jsonify({"error": "Missing message uuid."}), 400
+
+    try:    
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)   
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist."}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    message = thread.messages.get(message_uuid, None)
+    if message == None:
+        return jsonify({"error": "Message does not exist."}), 404
+    if message.author_user_uuid != user.uuid:
+        return jsonify({"error": "Cannot delete a message from a different user."}), 403
+    
+    thread_manager.delete_message(thread_uuid, message_uuid)
     return jsonify({"message": "Success."}), 200
 
 @app.route("/search_threads", methods=["GET"])
