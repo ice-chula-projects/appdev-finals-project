@@ -95,6 +95,8 @@ class ThreadManager:
             else:
                 update_map["password_hash"] = None
         
+        update_map["last_modified_date"] = datetime.now()
+        
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set": update_map})
 
     def delete_thread(self, thread_uuid: str):
@@ -104,12 +106,12 @@ class ThreadManager:
         thread = self.get_thread_from_uuid(thread_uuid)
 
         message = thread.post_message(author, message_body, attachment)
-        self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
+        self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message), "last_message_date": datetime.now()}})
 
-    def update_message(self, thread_uuid: str, message_uuid: str, actor: User,  message_body: str, attachment: Attachement = None):
+    def update_message(self, thread_uuid: str, message_uuid: str,  message_body: str, attachment: Attachement = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
-        message = thread.update_message(actor, message_uuid, message_body, attachment)
+        message = thread.update_message(message_uuid, message_body, attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
 
     def delete_message(self, thread_uuid: str, message_uuid: str):
