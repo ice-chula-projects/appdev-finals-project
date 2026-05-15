@@ -33,7 +33,6 @@ export default function Index() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
 
 useEffect(() => {
   const fetchThread = async () => {
@@ -63,7 +62,48 @@ useEffect(() => {
 
       const data = await bes.json();
       const dbtb = await cess.json();
+      try {
+  const creatorRes = await fetch(
+    `http://localhost:5000/get_user_profile?uuid=${data.thread.author_user_uuid}`
+  );
 
+  const creatorData = await creatorRes.json();
+
+  if (creatorRes.ok) {
+    data.thread.author_username = creatorData.user.name;
+  } else {
+    data.thread.author_username = "Unknown User";
+  }
+} catch {
+  data.thread.author_username = "Unknown User";
+}
+
+// get usernames for messages
+const updatedMessages = await Promise.all(
+  Object.values(dbtb.messages).map(async (msg: any) => {
+    try {
+      const userRes = await fetch(
+        `http://localhost:5000/get_user_profile?uuid=${msg.author_user_uuid}`
+      );
+
+      const userData = await userRes.json();
+
+      return {
+        ...msg,
+        author_username: userRes.ok
+          ? userData.user.name
+          : "Unknown User",
+      };
+    } catch {
+      return {
+        ...msg,
+        author_username: "Unknown User",
+      };
+    }
+  })
+);
+
+dbtb.messages = updatedMessages;
       if (bes.ok && cess.ok) {
         setThreadData(data);
         setThreadMessageData(dbtb);
@@ -88,7 +128,7 @@ useEffect(() => {
       setPosting(true);
 
       const res = await fetch(
-        "http://localhost:5000/post_message",
+        `http://localhost:5000/create_message?uuid=${encodeURIComponent(id.toString())}`,
         {
           method: "POST",
           headers: {
@@ -96,7 +136,6 @@ useEffect(() => {
             "session-token": SESSION_TOKEN,
           },
           body: JSON.stringify({
-            thread_uuid: id,
             message: newPost,
           }),
         }
@@ -174,9 +213,21 @@ useEffect(() => {
               marginBottom: 5,
             }}
           >
-            {id}
-            {"  -  "}
+            {/* {id}
+            {"  -  "} */}
             {threadData.thread.name}
+            {"  by  "}
+            {threadData.thread.author_username}
+          </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              marginBottom: 5,
+            }}
+          >
+            
+            {"author id:  "}
+            {threadData.thread.author_user_uuid}
           </Text>
             <Text
             style={{
@@ -291,10 +342,21 @@ useEffect(() => {
                 >
                   <Text
                     style={{
+                      fontSize: 15,
                       fontWeight: "bold",
                       marginBottom: 5,
                     }}
                   >
+                    {msg.author_username}
+                  </Text>
+
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      marginBottom: 5,
+                    }}
+                  >
+                    {"user id:  "}
                     {msg.author_user_uuid}
                   </Text>
 
