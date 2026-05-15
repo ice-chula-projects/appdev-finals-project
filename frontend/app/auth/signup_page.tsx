@@ -94,6 +94,12 @@ export const styles = StyleSheet.create({
     color: '#666',
     fontFamily: 'RobotoSlab-Regular'
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff"
+  }
 })
 
 export default function SignupPage() {
@@ -101,9 +107,18 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
 
   const { width } = useWindowDimensions();
+
+  // Initial loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // User account must meet requirements
   const validate = () => {
@@ -143,15 +158,30 @@ export default function SignupPage() {
       const loginData = await loginResponse.json();
       if (loginResponse.ok) {
         await AsyncStorage.setItem("session_token", loginData.session_token);
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Brief loading time
         router.replace("/");
       } else {
+        await new Promise(resolve => setTimeout(resolve, 1500));
         router.replace("/auth/login_page");
       }
 
     } catch (error) {
-      setLoading(false);
       setError("Cannot connect to server.");
+    } finally {
+      setLoading(false);
     }
+  }
+
+  // Initial loading screen
+  if (pageLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#2f5ae9"
+        />
+      </View>
+    )
   }
 
   // Signup Page UI

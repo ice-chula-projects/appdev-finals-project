@@ -137,20 +137,27 @@ export default function LoginPage() {
         const sessionToken = data.session_token;
         const userUUID = data.user_uuid;
         console.log("Token received:", sessionToken);
+
         await AsyncStorage.setItem("session_token", sessionToken);
         const savedToken = await AsyncStorage.getItem("session_token");
-        console.log("Token saved:", savedToken) // Check if session token is matched
+        console.log("Token saved:", savedToken); // Check if session token is matched
+
         await AsyncStorage.setItem("username", username);
-        console.log(data);
+
         await AsyncStorage.setItem("user_uuid", userUUID);
 
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         router.replace('/');
+
       } else {
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setError(data.error);
       }
     } catch (error) {
-      setLoading(false);
       setError("Cannot connect to server.");
+    } finally {
+      setLoading(false);
     }
   }
 
