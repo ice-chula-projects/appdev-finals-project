@@ -8,10 +8,10 @@ from pymongo import MongoClient
 from dataclasses import asdict
 
 from settings import Settings
-from user import UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
+from user import User, UserManager, UserNameAlreadyExistsError, UserDoesNotExistError, InvalidUserCredentialsError
 from session import SessionManager, SessionExpiredError, SessionDoesNotExistError
 from thread import ThreadDoesNotExistError, ThreadManager
-from attachment import InvalidBase64ImageError
+from attachment import Attachement, AttachmentMediaTypes, InvalidBase64ImageError, validate_base64_string
 
 app = Flask(__name__)
 CORS(app)
@@ -40,7 +40,7 @@ items_per_page = 50
 # validates that it contains a valid session token
 # returns the user if successful
 # otherwise returns the error message and status code
-def authenticate_header_session_token(request: Request):
+def authenticate_header_session_token(request: Request) -> tuple[User | None, str, int]:
     session_token = request.headers.get("session-token")
     if session_token == None:
         return None, "Missing session-token in header.", 401
@@ -66,6 +66,39 @@ def calculate_indexes_from_page(page: int, item_count:int):
     end_index = min(page * items_per_page, item_count) #is exclusive
 
     return (start_index, end_index, page)
+
+# validates that the attachment contains the required fields and turns it into an attachment
+# returns the attachment if successful
+# otherwise returns the error message and status code
+def validate_attachment(attachment) -> tuple[Attachement | None, str, int]:
+    if not isinstance(attachment, dict):
+        return None, "Attachment must be a json object.", 400
+    
+    data_base64 = attachment.get("data_base64")
+    extension_type = attachment.get("extension_type")
+    media_type = attachment.get("media_type")
+
+    if data_base64 == None or extension_type == None or media_type == None:
+        return None, "Attachment missing required fields.", 400
+    
+    if not validate_base64_string(data_base64):
+        return None, "Attachment data is not valid base64.", 400
+
+    match media_type:
+        case "image":
+            media_type = AttachmentMediaTypes.IMAGE
+        case "audio":
+            media_type = AttachmentMediaTypes.AUDIO
+        case "video":
+            media_type = AttachmentMediaTypes.VIDEO
+        case "text":
+            media_type = AttachmentMediaTypes.TEXT
+        case "application" | "file":
+            media_type = AttachmentMediaTypes.APPLICATION
+        case _:
+            return None, "Attachment media type is invalid.", 400
+    
+    return Attachement(data_base64 = data_base64,extension_type = extension_type, media_type = media_type), "Success.", 200
 
 @app.route("/")
 def home():
@@ -296,8 +329,8 @@ def delete_thread():
     
     return jsonify({"message": "Success."}), 200
 
-@app.route("/post_message", methods=["POST"])
-def post_message():
+@app.route("/create_message", methods=["POST"])
+def create_message():
     if not request.is_json:
         return None, "Missing JSON in request.", 400
     
@@ -305,16 +338,41 @@ def post_message():
     if user == None:
         return jsonify({"error": message}), status_code
     
-    data: dict = request.get_json()
-    thread_uuid = data.get("thread_uuid")
-    message = data.get("message")
+    thread_uuid = request.args.get("uuid")
 
     if thread_uuid == None:
         return jsonify({"error": "Missing thread uuid."}), 400
-
     
+    data: dict = request.get_json()
+    message_body= data.get("message")
+    attachment = data.get("attachment")
 
-    thread_manager.post_message(thread_uuid, user, message)
+    if attachment != None:
+        attachment, message, status_code = validate_attachment(attachment)
+        if attachment == None:
+            return jsonify({"error": message}), status_code
+
+    if (message_body == None or message_body.strip() == "") and attachment == None:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    try:    
+        thread = thread_manager.get_thread_from_uuid(thread_uuid)   
+    except ThreadDoesNotExistError:
+        return jsonify({"error": "Thread does not exist."}), 404
+    except:
+        return jsonify({"error": "Something went wrong."}), 500
+    
+    if thread.private:
+        password = request.headers.get("thread-password")
+
+        if password == None:
+            return jsonify({"error": "Missing thread-password in header"}), 401
+        
+        if not thread.authenticate(password):
+            return jsonify({"error": "Invalid Password"}), 403
+        
+    thread_manager.create_message(thread_uuid, user, message, attachment)
+
     return jsonify({"message": "Success."}), 200
 
 @app.route("/search_threads", methods=["GET"])

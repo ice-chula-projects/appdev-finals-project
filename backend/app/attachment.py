@@ -15,14 +15,22 @@ def validate_base64_image(image_base64:str):
     except:
         return False
 
+def validate_base64_string(base64_str:str):
+    try:
+        base64.b64decode(base64_str, validate=True)
+        return True
+    except:
+        return False
+
 class InvalidBase64ImageError(Exception):
     pass
 
 class AttachmentMediaTypes(Enum):
-    FILE = "file"
+    TEXT = "text"
     IMAGE = "image"
     AUDIO = "audio"
     VIDEO = "video"
+    APPLICATION = "application"
 
 @dataclass
 class Attachement:

@@ -105,7 +105,7 @@ class ThreadManager:
     def delete_thread(self, thread_uuid: str):
         self.threads_collection.delete_one({"_id": thread_uuid})
     
-    def post_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
+    def create_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
         message = thread.post_message(author, message_body, attachment)
@@ -158,7 +158,14 @@ class Thread:
             message = Message()
             for key, value in message_dict.items():
                 setattr(message, key, value)
-                
+            
+            if message.attachment != None:
+                message.attachment = Attachement(
+                    data_base64=message.attachment["data_base64"],
+                    extension_type=message.attachment["extension_type"],
+                    media_type=message.attachment["media_type"]
+                )
+
             thread.messages[message_uuid] = message 
         return thread
 
