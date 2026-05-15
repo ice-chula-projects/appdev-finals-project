@@ -485,6 +485,69 @@ export default class BackEnd {
         return response;
     }
 
+    static async getThreads(threadUuids: string[]): Promise<GetThreadsResponse> {
+    if (this.#apiUrl == null) {
+        const response = new GetThreadsResponse();
+
+        response.success = false;
+        response.message = "Invalid Api Url";
+        return response;
+    }
+
+    const response = new GetThreadsResponse();
+    const params = new URLSearchParams();
+
+    for (const threadUuid of threadUuids) {
+        params.append("uuid", threadUuid);
+    }
+
+    try {
+        const apiResponse = await fetch(
+            this.#apiUrl + "get_threads?" + params.toString(),
+            {
+                method: "GET"
+            }
+        );
+
+        const body = await apiResponse.json();
+
+        if (apiResponse.ok) {
+            response.success = true;
+            response.message = body.message;
+
+            const threads: Record<string, DisplayThread> = {};
+
+            for (const uuid of Object.keys(body.threads)) {
+                const thread = body.threads[uuid];
+
+                threads[uuid] = {
+                    uuid: thread.uuid,
+                    name: thread.name,
+                    description: thread.description,
+                    thumbnailUri: "data:image/png;base64," + thread.thumbnail_base64,
+                    authorUserUuid: thread.author_user_uuid,
+
+                    creationDate: new Date(thread.creation_date),
+                    lastModifiedDate: new Date(thread.last_modified_date),
+                    lastMessageDate: new Date(thread.last_message_date),
+
+                    private: thread.private === true
+                };
+            }
+
+            response.threads = threads;
+        } else {
+            response.success = false;
+            response.message = body.error;
+        }
+    } catch (error) {
+        response.success = false;
+        response.message = String(error);
+    }
+
+    return response;
+}
+
     static async updateThread(sessionToken: string, threadUuid: string, threadUpdateParameters: ThreadUpdateParameters): Promise<ApiReponse> {
         if (this.#apiUrl == null) {
             const response = new ApiReponse();
@@ -1101,4 +1164,11 @@ export class GetThreadMessagesResponse implements BaseApiResponse {
     messages: Message[];
     totalMessages: number;
     page: number;
+}
+
+export class GetThreadsResponse implements BaseApiResponse {
+    success: boolean;
+    message: string;
+
+    threads: Record<string, DisplayThread>;
 }

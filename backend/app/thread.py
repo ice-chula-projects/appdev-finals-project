@@ -23,6 +23,17 @@ class ThreadManager:
 
         return Thread.from_database_representation(thread)
     
+    def get_theads(self, uuids: list[str]) -> list[Thread]:
+        database_threads = self.threads_collection.find({"_id":{"$in": uuids}})
+
+        threads = []
+        for thread in database_threads:
+            thread: Thread = Thread.from_database_representation(threads)
+
+            threads.append(thread)
+        
+        return threads
+
     def thread_exists(self, uuid: str) -> bool:
         return self.threads_collection.find_one({"_id": uuid}) != None
 

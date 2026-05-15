@@ -490,6 +490,19 @@ def get_thread():
     
     return jsonify({"message": "Success.", "thread": asdict(thread.to_display_thread())}), 200
 
+@app.route("/get_threads", methods=["GET"])
+def get_threads():
+    thread_uuids = request.args.getlist("uuid")
+
+    threads = thread_manager.get_theads(thread_uuids)
+    
+    dict_display_threads = {}
+
+    for thread in threads:
+        dict_display_threads[thread.uuid] = asdict(thread.to_display_thread())
+
+    return jsonify({"message": "Success.", "threads": dict_display_threads}), 200
+
 @app.route("/get_thread_messages", methods=["GET"])
 def get_thread_messages():
     user, message, status_code = authenticate_header_session_token(request)
