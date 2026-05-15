@@ -72,6 +72,34 @@ class ThreadManager:
         threads_collection.insert_one(thread.to_database_representation())
         return thread.uuid
     
+    def update_thread(self, thread_uuid: str, name: str = None, description: str = None, thumbnail_base64: str = None, password:str = None): 
+        thread = self.get_thread_from_uuid(thread_uuid)
+        update_map = {}
+
+        if name != None:
+            update_map["name"] = name
+            
+        if description != None:
+            update_map["description"] = description
+            
+        if thumbnail_base64 != None:
+            if not validate_base64_image(thumbnail_base64):
+                raise InvalidBase64ImageError
+            update_map["thumbnail_base64"] = thumbnail_base64
+            
+        if password != None:
+            private = password == ""
+            update_map["private"] = private
+            if private:
+                update_map["password_hash"] = Security.calculate_password_hash(password, thread.password_salt)
+            else:
+                update_map["password_hash"] = None
+        
+        self.threads_collection.update_one({"_id": thread_uuid}, {"$set": update_map})
+
+    def delete_thread(self, thread_uuid: str):
+        self.threads_collection.delete_one({"_id": thread_uuid})
+    
     def post_message(self, thread_uuid: str, author: User, message_body: str, attachment: Attachement = None):
         thread = self.get_thread_from_uuid(thread_uuid)
 
@@ -84,14 +112,11 @@ class ThreadManager:
         message = thread.update_message(actor, message_uuid, message_body, attachment)
         self.threads_collection.update_one({"_id": thread_uuid}, {"$set":{f"messages.{message.uuid}": asdict(message)}})
 
-    def delete_message(self, thread_uuid: str, message_uuid: str, actor: User):
+    def delete_message(self, thread_uuid: str, message_uuid: str):
         thread = self.get_thread_from_uuid(thread_uuid)
         message = thread.messages.get(message_uuid, None)
         if message == None:
             raise MessageDoesNotExistError
-        
-        if message.author_user_uuid != actor.uuid:
-            raise MessageAuthenticationError
         
         self.threads_collection.update_one({"_id": thread_uuid}, {"$unset":{f"messages.{message_uuid}": ""}})
         
@@ -163,13 +188,10 @@ class Thread:
 
         return message
     
-    def update_message(self, author: User, message_uuid: str, message_body: str, attachment: Attachement = None) -> Message:
+    def update_message(self, message_uuid: str, message_body: str, attachment: Attachement = None) -> Message:
         message = self.messages.get(message_uuid, None)
         if message == None:
             raise MessageDoesNotExistError
-        
-        if message.author_user_uuid != author.uuid:
-            raise MessageAuthenticationError
         
         message.message = message_body
         message.attachment = attachment
@@ -221,7 +243,4 @@ class Message:
     last_modified_date: datetime = None
 
 class MessageDoesNotExistError(Exception):
-    pass
-
-class MessageAuthenticationError(Exception):
     pass

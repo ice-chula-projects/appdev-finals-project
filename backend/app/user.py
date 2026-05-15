@@ -85,23 +85,29 @@ class UserManager:
     def update_user(self, user_uuid: str, name: str = None, motd: str = None, profile_picture_base64: str = None, password: str = None):
         user = self.get_user_from_uuid(user_uuid)
 
+        update_map = {}
+
         if name != None:
             if name != user.name and self.users_collection.find_one({"name": name}) != None:
                 raise UserNameAlreadyExistsError
-            user.name = name
+            update_map["name"] = name
         
         if motd != None:
             user.motd = motd
+            update_map["motd"] = motd
         
         if profile_picture_base64 != None:
             if not validate_base64_image(profile_picture_base64):
                 raise InvalidBase64ImageError
-            user.profile_picture_base64 = profile_picture_base64
+            update_map["profile_picture_base64"] = profile_picture_base64
 
         if password != None:
-            user.password_hash = Security.calculate_password_hash(password, user.password_salt)
+            update_map["password_hash"] = Security.calculate_password_hash(password, user.password_salt)
 
-        self.users_collection.replace_one({"_id": user_uuid}, user.to_database_representation())
+        self.users_collection.update_one({"_id": user_uuid}, {"$set": update_map})
+
+    def delete_user(self, user_uuid: str):
+        self.users_collection.delete_one({"_id": user_uuid})
 
     def get_users(self) -> list[User]:
         users: list[User] = []

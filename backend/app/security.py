@@ -23,3 +23,6 @@ class Security:
 
 class InvalidPasswordError(Exception):
     pass
+
+class AuthenticationError(Exception):
+    pass
