@@ -16,7 +16,7 @@ export default function Index() {
   const [threadTitle, setThreadTitle] = useState("");
   const [threadDescription, setThreadDescription] = useState("");
   const [threadImage, setThreadImage] = useState<string | null>(null);
-  const [createThreadError, setCreateThreadError] = useState(""),
+  const [createThreadError, setCreateThreadError] = useState("");
   const [loginPopupVisible, setLoginPopupVisible] = useState(false);
   const [threads, setThreads] = useState<any[]>([]);
   const [showCreateThread, setShowCreateThread] = useState(false);
@@ -430,106 +430,6 @@ export default function Index() {
               }}
             />
           </View>
-
-          <View
-            style={{
-              marginBottom: 20,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() =>
-                setShowCreateThread(
-                  !showCreateThread
-                )
-              }
-              style={{
-                backgroundColor: "#007AFF",
-                paddingVertical: 10,
-                paddingHorizontal: 15,
-                borderRadius: 10,
-                marginBottom: 10,
-                alignSelf: "flex-start",
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              >
-                {showCreateThread
-                  ? "Close Thread Creator"
-                  : "Create Thread"}
-              </Text>
-            </TouchableOpacity>
-
-            {showCreateThread && (
-              <View
-                style={{
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 10,
-                }}
-              >
-                <TextInput
-                  placeholder="Thread title..."
-                  value={threadTitle}
-                  onChangeText={setThreadTitle}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 8,
-                    padding: 10,
-                    marginBottom: 10,
-                    fontSize: 16,
-                  }}
-                />
-
-                <TextInput
-                  placeholder="Thread description..."
-                  value={threadDescription}
-                  onChangeText={
-                    setThreadDescription
-                  }
-                  multiline
-                  style={{
-                    height: 80,
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 8,
-                    padding: 10,
-                    textAlignVertical: "top",
-                    marginBottom: 10,
-                    fontSize: 14,
-                  }}
-                />
-
-                <TouchableOpacity
-                  onPress={createThread}
-                  disabled={creatingThread}
-                  style={{
-                    backgroundColor: "#34C759",
-                    paddingVertical: 10,
-                    borderRadius: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {creatingThread
-                      ? "Creating..."
-                      : "Create Thread"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
 
           <ScrollView>
             {threads.map((thread) => (
