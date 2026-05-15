@@ -127,6 +127,7 @@ export default function RootLayout() {
   const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
 
   const pathname = usePathname();
+  const hideHeader = pathname.startsWith("/auth/login_page") || pathname.startsWith("/auth/signup_page")
 
   // Check session token
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function RootLayout() {
     <>
     <Stack
       screenOptions={{
+        headerShown: !hideHeader,
         headerLeft: () => (
           <TouchableOpacity onPress={() => router.push("/")} style={{ marginLeft: 15 }}>
             <Image source={require("../assets/images/message_logo.png")} style={styles.homeIcon} />
