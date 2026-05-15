@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { randomSubtitles } from '../../components/randomSubtitles'
+import { randomLoginSubtitles } from '../../components/randomSubtitles'
 
 const GLOBAL_URL = "http://localhost:5000/"
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
   const [userUUID, setUserUUID] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [subtitle] = useState(() => randomSubtitles())
+  const [subtitle] = useState(() => randomLoginSubtitles());
 
 
   // User account must meet requirements

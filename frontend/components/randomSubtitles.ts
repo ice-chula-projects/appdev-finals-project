@@ -1,4 +1,4 @@
-export const SUBTITLES = [
+export const LOGIN_SUBTITLES = [
     "We missed you.",
     "Welcome back!",
     "Good to see you again.",
@@ -105,6 +105,26 @@ export const SUBTITLES = [
     "Everyday is a good day."
 ]
 
-export const randomSubtitles = (subtitles: string[] = SUBTITLES) => {
+export const CREATE_THREAD_SUBTITLES = [
+  "Make it creative.",
+  "Connect together.",
+  "Make it unique.",
+  "Create meaningful connections.",
+  "Start a new conversation.",
+  "What's on your mind?",
+  "Make it catchy. Make it yours.",
+  "Be controversial, feel free.",
+  "Every great thread starts somewhere.",
+  "Got something worth talking about?",
+  "Share something with the community.",
+  "Anything worth sharing, today?",
+  "Anything worth talking about?",
+]
+
+export const randomLoginSubtitles = (subtitles: string[] = LOGIN_SUBTITLES) => {
+  return subtitles[Math.floor(Math.random() * subtitles.length)]
+}
+
+export const randomCreateThreadSubtitles = (subtitles: string[] = CREATE_THREAD_SUBTITLES) => {
   return subtitles[Math.floor(Math.random() * subtitles.length)]
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from "expo-file-system";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
+import { randomCreateThreadSubtitles } from '../components/randomSubtitles';
 
 const GLOBAL_URL = "http://localhost:5000/"
 
@@ -23,6 +24,7 @@ export default function Index() {
   const [creatingThread, setCreatingThread] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
 
   const pickThreadImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -86,16 +88,14 @@ export default function Index() {
         image: {uri: threadImage}
       }
 
-      setThreads((prev) => [
-        createdThread,
-        ...prev
-      ])
+      setThreads((prev) => [createdThread, ...prev])
 
       setThreadTitle("");
       setThreadDescription("");
       setThreadImage(null);
       setCreateVisible(false);
       setCreateThreadError("");
+      router.push(`/thread_page/${data.thread_uuid}`);
     } catch (err) {
       console.log("Error:",err);
       setCreateThreadError("Could not connect to backend.");
@@ -218,6 +218,7 @@ export default function Index() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
 
+  const { width, height } = useWindowDimensions();
   const styles = StyleSheet.create({
     pageName: {
       fontSize: 35,
@@ -232,8 +233,8 @@ export default function Index() {
         alignItems: "center",
     },
     createThreadPopup: {
-      width: "45%",
-      height: "45%",
+      width: Math.min(width * 0.85, 550), // 85% on mobile devices, max 550 on web
+      maxHeight: height*0.75,
       backgroundColor: "white",
       borderRadius: 15,
       padding: 25,
@@ -245,14 +246,23 @@ export default function Index() {
       marginBottom: 20,
       textAlign: "center",
     },
+    createThreadSubtitle: {
+      textAlign: "center",
+      fontFamily: "RobotoSlab-Regular",
+      fontSize: 15,
+      color: "#505050",
+      marginTop: -20,
+      marginBottom: 5,
+    },
     createThreadMargins: {
       flexDirection: "row",
       margin: 10,
       marginBottom: 20,
+      flex: 1,
     },
     threadImagePicker: {
-      width: 200,
-      height: 200,
+      width: Math.min(width * 0.25, 160),
+      aspectRatio: 1,
       borderWidth: 1,
       borderColor: "#ccc",
       borderRadius: 8,
@@ -277,6 +287,7 @@ export default function Index() {
       fontFamily: "NotoSans-Regular"
     },
     threadDescInput: {
+      flex: 1,
       borderWidth: 1,
       borderColor: "#ccc",
       borderRadius: 10,
@@ -289,12 +300,15 @@ export default function Index() {
     alignButtons: {
       flexDirection: "row",
       justifyContent: "space-between",
+      gap: 10,
+      marginLeft: 10,
+      marginRight: 10,
     },
     cancelThreadButton: {
       flex: 1,
       backgroundColor: "#afafaf",
       paddingVertical: 14,
-      borderRadius: 10,
+      borderRadius: 8,
       alignItems: "center",
       marginRight: 10,
     },
@@ -306,7 +320,7 @@ export default function Index() {
       flex: 1,
       backgroundColor: "#007AFF",
       paddingVertical: 14,
-      borderRadius: 10,
+      borderRadius: 8,
       alignItems: "center",
     },
     confirmThreadText: {
@@ -315,7 +329,30 @@ export default function Index() {
       fontFamily: "NotoSans-Regular"
     },
     threadErrorText: {
-
+      color: "#ff0000",
+      textAlign: "center",
+      fontFamily: "NotoSans-Regular",
+    },
+    addThreadButton: {
+      flex: 1,
+      position: "absolute",
+      bottom: 30,
+      right: 25,
+      backgroundColor: "#003b7a",
+      width: 150,
+      height: 50, 
+      borderRadius: 15,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      elevation: 5,
+    },
+    addThreadButtonText: {
+      color: "white", 
+      fontSize: 15, 
+      fontWeight: "bold", 
+      marginRight: 5,
+      fontFamily: "RobotoSlab-Regular"
     }
   })
 
@@ -338,6 +375,7 @@ export default function Index() {
           <View style={styles.createThreadBackground}>
             <View style={styles.createThreadPopup}>
               <Text style={styles.createThreadText}>Create Thread</Text>
+              <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
               <View style={styles.createThreadMargins}>
                 <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
                   {threadImage ? (
@@ -367,12 +405,13 @@ export default function Index() {
                 </View>
               </View>
 
-              <View style={styles.alignButtons}>
-
+              <View>
                 {createThreadError ? (
                   <Text style={styles.threadErrorText}>{createThreadError}</Text>
                 ) : null }
+              </View>
 
+              <View style={styles.alignButtons}>
                 <TouchableOpacity
                 onPress={() => setCreateVisible(false)}
                 style={styles.cancelThreadButton}
@@ -486,23 +525,8 @@ export default function Index() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-              <TouchableOpacity
-                onPress={() => setCreateVisible(true)}
-                style={{
-                position: "absolute",
-                bottom: 30,
-                right: 25,
-                backgroundColor: "#007AFF",
-                width: 150,
-                height: 50, 
-                borderRadius: 20,
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                elevation: 5,
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 15, fontWeight: "bold", marginRight: 8}}>Add Thread</Text>
+              <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
+              <Text style={styles.addThreadButtonText}>Add Thread</Text>
               <Ionicons name="add-circle" size={40} color="white" />
             </TouchableOpacity>
         </View>
