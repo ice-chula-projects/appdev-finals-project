@@ -69,7 +69,7 @@ export default function Index() {
 
       const response = await fetch(GLOBAL_URL+"create_thread", {
         method: "POST",
-        headers: {"Content_Type": "application/json", "session-token": sessionToken},
+        headers: {"Content-Type": "application/json", "session-token": sessionToken},
         body: JSON.stringify({name: threadTitle, description: threadDescription, thumbnail_base64: `data:image/jpeg;base64,${imageBase64}`})
       })
 
@@ -96,6 +96,7 @@ export default function Index() {
       setCreateVisible(false);
       setCreateThreadError("");
       router.push(`/thread_page/${data.thread_uuid}`);
+      
     } catch (err) {
       console.log("Error:",err);
       setCreateThreadError("Could not connect to backend.");

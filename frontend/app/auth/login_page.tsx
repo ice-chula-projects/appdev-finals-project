@@ -131,7 +131,7 @@ export default function LoginPage() {
         });
 
       const data = await response.json();
-      setLoading(false);
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       if (response.ok) {
         const sessionToken = data.session_token;
@@ -146,15 +146,13 @@ export default function LoginPage() {
 
         await AsyncStorage.setItem("user_uuid", userUUID);
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
         router.replace('/');
 
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setError(data.error);
+        setError(data.error || "Login failed, try again.");
       }
     } catch (error) {
+      console.log("Error:", err);
       setError("Cannot connect to server.");
     } finally {
       setLoading(false);
