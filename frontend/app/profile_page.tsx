@@ -89,7 +89,7 @@ export default function ProfilePage() {
     return response.json();
   }
 
-  const handleConfirm = async () => {
+  const handleConfirmPFP = async () => {
     if (!pendingPicture || !pendingBase64) return;
     setUploading(true);
     try {
@@ -106,7 +106,7 @@ export default function ProfilePage() {
     }
   }
 
-  const handleCancel = () => {
+  const handleCancelPFP = () => {
     setPendingPicture(null);
     setPendingBase64(null);
     setProfilePicture(null);
@@ -245,7 +245,7 @@ export default function ProfilePage() {
     visible={confirmVisible}
     transparent
     animationType="slide"
-    onRequestClose={handleCancel}
+    onRequestClose={handleCancelPFP}
     >
         <View style={{ flex: 1, justifyContent: 'flex-end'}}>
             <View style={{
@@ -275,7 +275,7 @@ export default function ProfilePage() {
             ) : (
                 <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
                 <TouchableOpacity
-                    onPress={handleCancel}
+                    onPress={handleCancelPFP}
                     style={{
                     flex: 1,
                     paddingVertical: 10,
@@ -289,7 +289,7 @@ export default function ProfilePage() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={handleConfirm}
+                    onPress={handleConfirmPFP}
                     style={{
                     flex: 1,
                     paddingVertical: 10,
@@ -332,9 +332,10 @@ export default function ProfilePage() {
                 width: 100,
                 height: 100,
                 marginTop: 15,
-                borderRadius: 15,
-                borderWidth: 3,
                 marginBottom: 5,
+                borderRadius: 15,
+                borderWidth: 2,
+                borderColor: "#c2c2c2",
               }}
             />
             </TouchableOpacity>

@@ -1,19 +1,28 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { File, Paths } from "expo-file-system";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
 
+const GLOBAL_URL = "http://localhost:5000/"
 
 export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
   const [threadTitle, setThreadTitle] = useState("");
   const [threadDescription, setThreadDescription] = useState("");
   const [threadImage, setThreadImage] = useState<string | null>(null);
+  const [createThreadError, setCreateThreadError] = useState(""),
+  const [loginPopupVisible, setLoginPopupVisible] = useState(false);
+  const [threads, setThreads] = useState<any[]>([]);
+  const [showCreateThread, setShowCreateThread] = useState(false);
+  const [creatingThread, setCreatingThread] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
 
   const pickThreadImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -31,37 +40,67 @@ export default function Index() {
     if (!result.canceled) setThreadImage(result.assets[0].uri);
   }
 
-  const handleCreateThread = () => {
+  const handleCreateThread = async () => {
+    setCreateThreadError("");
+
     if (!threadTitle.trim()) {
-      Alert.alert("Error!", "Please enter a thread title.");
+      setCreateThreadError("Please enter a thread title.");
       return;
     }
     if (!threadDescription.trim()) {
-    Alert.alert("Error!", "Please enter a thread description.");
-    return;
+      setCreateThreadError("Please enter a thread description.");
+      return;
     }
     if (!threadImage) {
-    Alert.alert("Error","Please select a thread image.");
-    return;
+      setCreateThreadError("Please select a thread image.");
+      return;
     }
-    console.log("Creating thread...");
-    console.log({threadTitle, threadDescription, threadImage});
-    setCreateVisible(false);
-    setThreadTitle("");
-    setThreadDescription("");
-    setThreadImage(null);
+
+    try {
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      if (!sessionToken) {
+        setCreateThreadError("Only registered users can create threads.");
+        return;
+      }
+      const file = new File(threadImage);
+      const imageBase64 = await file.base64();
+
+      const response = await fetch(GLOBAL_URL+"create_thread", {
+        method: "POST",
+        headers: {"Content_Type": "application/json", "session-token": sessionToken},
+        body: JSON.stringify({name: threadTitle, description: threadDescription, thumbnail_base64: `data:image/jpeg;base64,${imageBase64}`})
+      })
+
+      const data = await response.json();
+      console.log("CREATE THREAD:", data);
+
+      if (!response.ok) {
+        setCreateThreadError(data.error || "Failed to create thread.");
+        return;
+      }
+      const createdThread = {
+        uuid: data.thread_uuid,
+        name: threadTitle,
+        description: threadDescription,
+        url: `http://localhost:8081/thread_page/${data.thread_uuid}`,
+        image: {uri: threadImage}
+      }
+
+      setThreads((prev) => [
+        createdThread,
+        ...prev
+      ])
+
+      setThreadTitle("");
+      setThreadDescription("");
+      setThreadImage(null);
+      setCreateVisible(false);
+      setCreateThreadError("");
+    } catch (err) {
+      console.log("Error:",err);
+      setCreateThreadError("Could not connect to backend.");
+    }
   }
-
-  const [threads, setThreads] = useState<any[]>([]);
-
-  const [showCreateThread, setShowCreateThread] =
-    useState(false);
-
-  const [creatingThread, setCreatingThread] =
-    useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searching, setSearching] = useState(false);
 
   const links = [
     {
@@ -120,7 +159,6 @@ export default function Index() {
       );
 
       const data = await response.json();
-
       console.log("SEARCH THREADS:", data);
 
       if (response.ok) {
@@ -170,61 +208,6 @@ export default function Index() {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  const createThread = async () => {
-    if (!threadTitle.trim()) return;
-
-    try {
-      setCreatingThread(true);
-
-      const sessionToken =
-        await AsyncStorage.getItem("session_token");
-
-      const response = await fetch(
-        "http://localhost:5000/create_thread",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "session-token": sessionToken || "",
-          },
-          body: JSON.stringify({
-            name: threadTitle,
-            description: threadDescription,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      console.log("CREATE THREAD:", data);
-
-      if (response.ok) {
-        const createdThread = {
-          uuid: data.thread_uuid,
-          name: threadTitle,
-          description: threadDescription,
-          url: `http://localhost:8081/thread_page/${data.thread_uuid}`,
-          image: require("../assets/images/message_logo.png"),
-        };
-
-        setThreads((prev) => [
-          createdThread,
-          ...prev,
-        ]);
-
-        setThreadTitle("");
-        setThreadDescription("");
-        setShowCreateThread(false);
-      } else {
-        console.log(data.error);
-      }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setCreatingThread(false);
-    }
-  };
-
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
     'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
@@ -235,26 +218,179 @@ export default function Index() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
 
+  const styles = StyleSheet.create({
+    pageName: {
+      fontSize: 35,
+      fontWeight: "bold",
+      marginLeft: 10,
+      fontFamily: "NotoSans-Regular",
+    },
+    createThreadBackground: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    createThreadPopup: {
+      width: "45%",
+      height: "45%",
+      backgroundColor: "white",
+      borderRadius: 15,
+      padding: 25,
+    },
+    createThreadText: {
+      fontSize: 30,
+      fontWeight: "bold",
+      fontFamily: "RobotoSlab-Regular",
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    createThreadMargins: {
+      flexDirection: "row",
+      margin: 10,
+      marginBottom: 20,
+    },
+    threadImagePicker: {
+      width: 200,
+      height: 200,
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 8,
+      justifyContent: "center",
+      alignItems: "center",
+      overflow: "hidden",
+      marginRight: 15,
+    },
+    imagePickerText: {
+      color: "gray",
+      fontSize: 12,
+      marginTop: 3,
+      textAlign: "center",
+      fontFamily: "NotoSans-Regular"
+    },
+    threadNameInput: {
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 10,
+      fontFamily: "NotoSans-Regular"
+    },
+    threadDescInput: {
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      padding: 10,
+      height: 65,
+      textAlignVertical: "top",
+      fontFamily: "NotoSans-Regular",
+    },
+
+    alignButtons: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    cancelThreadButton: {
+      flex: 1,
+      backgroundColor: "#afafaf",
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: "center",
+      marginRight: 10,
+    },
+    cancelThreadText: {
+      fontWeight: "bold",
+      fontFamily: "NotoSans-Regular"
+    },
+    confirmThreadButton: {
+      flex: 1,
+      backgroundColor: "#007AFF",
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    confirmThreadText: {
+      fontWeight: "bold",
+      color: "#ffffff",
+      fontFamily: "NotoSans-Regular"
+    },
+    threadErrorText: {
+
+    }
+  })
+
   return (
     <>
       <Stack.Screen
         options={{
-          headerTitle: () => (
-            <Text
-              style={{
-                fontSize: 35,
-                fontWeight: "bold",
-                marginLeft: 10,
-                fontFamily: "NotoSans-Regular"
-              }}
-            >
-              Board of Mess
-            </Text>
-          ),
+          headerTitle: () => ( <Text style={styles.pageName}>Board of Mess</Text> ),
         }}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
+
+        <Modal
+          visible={createVisible}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setCreateVisible(false)}
+        >
+          <View style={styles.createThreadBackground}>
+            <View style={styles.createThreadPopup}>
+              <Text style={styles.createThreadText}>Create Thread</Text>
+              <View style={styles.createThreadMargins}>
+                <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
+                  {threadImage ? (
+                    <Image source={{ uri: threadImage }} style={{ width: "100%", height: "100%"}}/>
+                  ) : (
+                    <>
+                      <Ionicons name="image-outline" size={36} color="#8f8f8f" />
+                      <Text style={styles.imagePickerText}>Select Image</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <View style={{ flex: 1 }}>
+                  <TextInput
+                    placeholder="Thread Title"
+                    value={threadTitle}
+                    onChangeText={setThreadTitle}
+                    style={styles.threadNameInput}
+                  />
+                  <TextInput
+                    placeholder="Description"
+                    value={threadDescription}
+                    onChangeText={setThreadDescription}
+                    style={styles.threadDescInput}
+                    multiline
+                  />
+                </View>
+              </View>
+
+              <View style={styles.alignButtons}>
+
+                {createThreadError ? (
+                  <Text style={styles.threadErrorText}>{createThreadError}</Text>
+                ) : null }
+
+                <TouchableOpacity
+                onPress={() => setCreateVisible(false)}
+                style={styles.cancelThreadButton}
+                >
+                  <Text style={styles.cancelThreadText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleCreateThread}
+                  style={styles.confirmThreadButton}
+                >
+                  <Text style={styles.confirmThreadText}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <View style={{
             flex: 1,
             paddingTop: 30,
@@ -450,6 +586,25 @@ export default function Index() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+              <TouchableOpacity
+                onPress={() => setCreateVisible(true)}
+                style={{
+                position: "absolute",
+                bottom: 30,
+                right: 25,
+                backgroundColor: "#007AFF",
+                width: 150,
+                height: 50, 
+                borderRadius: 20,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                elevation: 5,
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 15, fontWeight: "bold", marginRight: 8}}>Add Thread</Text>
+              <Ionicons name="add-circle" size={40} color="white" />
+            </TouchableOpacity>
         </View>
       </SafeAreaView>
     </>
