@@ -249,6 +249,26 @@ const deleteThread = async () => {
             paddingHorizontal: 30,
           }}
         >
+
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
+          <Image
+            source={require("../../assets/images/default_profile.png")}
+            style={{
+              width: 35,
+              height: 35,
+              borderRadius: 20,
+              marginRight: 10,
+            }}
+          />
+
           <Text
             style={{
               fontSize: 24,
@@ -262,6 +282,8 @@ const deleteThread = async () => {
             {"  by  "}
             {threadData.thread.author_username}
           </Text>
+          </View>
+
           <Text
             style={{
               fontSize: 12,
@@ -455,6 +477,24 @@ const deleteThread = async () => {
                     marginBottom: 15,
                   }}
                 >
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 8,
+                  }}
+                  >
+
+                  <Image
+                    source={require("../../assets/images/default_profile.png")}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 20,
+                    }}
+                  />
                   <Text
                     style={{
                       fontSize: 15,
@@ -475,6 +515,8 @@ const deleteThread = async () => {
                     {msg.author_user_uuid}
                   </Text>
 
+                </View>
+
                   <Text
                     style={{
                       fontSize: 20,
@@ -482,6 +524,8 @@ const deleteThread = async () => {
                   >
                     {msg.message}
                   </Text>
+
+                  {/* add media player here. audio player + image viewer + video downloader w/ viewable thumbnail  */}
 
                   <Text
                     style={{
