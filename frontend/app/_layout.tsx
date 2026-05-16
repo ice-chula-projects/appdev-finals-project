@@ -1,5 +1,5 @@
 import { Stack, router, usePathname } from "expo-router";
-import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput } from "react-native";
+import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 import BackEnd from "../components/backend";
@@ -174,8 +174,9 @@ export default function RootLayout() {
 
       const response = await BackEnd.setApiUrl(savedUrl);
 
-      if (!response.success || !BackEnd.isApiAvailable()) {
+      if (!response.success) {
         setShowApiPopup(true);
+        Alert.alert(response.message);
       } else {
         setShowApiPopup(false);
         const sessionToken = await AsyncStorage.getItem("session_token");
@@ -199,16 +200,19 @@ export default function RootLayout() {
         return;
       }
 
-      await BackEnd.setApiUrl(cleanedUrl);
-      await AsyncStorage.setItem("api_url", cleanedUrl);
+      const response = await BackEnd.setApiUrl(cleanedUrl);
+      if(response.success){
+        await AsyncStorage.setItem("api_url", cleanedUrl);
+        setShowApiPopup(false);
+        Alert.alert("Success", "Backend connected!");
 
-      setShowApiPopup(false);
-
-      Alert.alert("Success", "Backend connected!");
-      console.log("Backend URL set:", cleanedUrl);
+      }
+      else{
+        Alert.alert("Error", response.message);
+        if(Platform.OS == "web") alert("Invalid Api Url")
+      }
 
     } catch (err) {
-      console.log("Error setting API URL:", err);
       Alert.alert("Error", "Failed to set API URL.");
     }
   }
