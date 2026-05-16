@@ -103,7 +103,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#ffffff"
-  }
+  },
 })
 
 export default function LoginPage() {
