@@ -126,7 +126,26 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     marginBottom: 12,
-  }
+  },
+  floatingApiButton: {
+    position: "absolute",
+    bottom: 25,
+    left: 20,
+    backgroundColor: "#333",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 30,
+    zIndex: 999,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  floatingApiText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 14,
+  },
 })
 
 export default function RootLayout() {
@@ -141,23 +160,30 @@ export default function RootLayout() {
 
    useEffect(() => {
     const init = async () => {
-
-      // check for login
+      // login check
       const sessionToken = await AsyncStorage.getItem("session_token");
       setLoggedIn(!!sessionToken);
 
-      // check for backend url
-      const response = await BackEnd.setApiUrl(apiUrl);
+      // load saved api url
+      const savedUrl = await AsyncStorage.getItem("api_url");
 
-      if (response.success) {
-        setShowApiPopup(false);
-      } else {
+      if (!savedUrl) {
         setShowApiPopup(true);
+        return;
       }
-      
+
+      setApiUrl(savedUrl);
+
+      const response = await BackEnd.setApiUrl(savedUrl);
+
+      if (!response.success || !BackEnd.isApiAvailable()) {
+        setShowApiPopup(true);
+      } else {
+        setShowApiPopup(false);
+      }
     }
     init();
-  }, []);
+  }, [])
 
   const handleSaveApiUrl = async () => {
     try {
@@ -202,88 +228,107 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-    <Stack
-      screenOptions={{
-        headerShown: !hideHeader,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.push("/")} style={{ marginLeft: 15 }}>
-            <Image source={require("../assets/images/message_logo.png")} style={styles.homeIcon} />
-          </TouchableOpacity>
-        ),
+    <View style={{ flex: 1 }}>
 
-        headerRight: () => (
-          loggedIn ? (
-            <View style={styles.userSection}>
-              <TouchableOpacity onPress={() => router.push("/profile_page")}>
-                <Image
-                  source={require("../assets/images/default_profile.png")}
-                  style={styles.profileIcon}
-                />
+      <Stack
+        screenOptions={{
+          headerShown: !hideHeader,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/")}
+              style={{ marginLeft: 15 }}
+            >
+              <Image
+                source={require("../assets/images/message_logo.png")}
+                style={styles.homeIcon}
+              />
+            </TouchableOpacity>
+          ),
+
+          headerRight: () =>
+            loggedIn ? (
+              <View style={styles.userSection}>
+                <TouchableOpacity onPress={() => router.push("/profile_page")}>
+                  <Image
+                    source={require("../assets/images/default_profile.png")}
+                    style={styles.profileIcon}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => setLogoutPopupVisible(true)}>
+                  <Text style={styles.logoutButton}>LOGOUT</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.notLoggedInButtons}>
+                <TouchableOpacity onPress={() => router.push("/auth/login_page")}>
+                  <Text style={styles.loginButton}>LOGIN</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => router.push("/auth/signup_page")}>
+                  <Text style={styles.signupButton}>REGISTER</Text>
+                </TouchableOpacity>
+              </View>
+            ),
+        }}
+      />
+
+      {/* FLOATING API BUTTON */}
+      <TouchableOpacity
+        onPress={() => setShowApiPopup(true)}
+        style={styles.floatingApiButton}
+      >
+        <Text style={styles.floatingApiText}>API</Text>
+      </TouchableOpacity>
+
+      {/* LOGOUT MODAL */}
+      <Modal transparent visible={logoutPopupVisible} animationType="fade">
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupContainer}>
+            <Text style={styles.popupText}>Are you sure?</Text>
+
+            <View style={styles.popupButtons}>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={confirmLogout}
+              >
+                <Text style={styles.popupButtonText}>Confirm</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => setLogoutPopupVisible(true)}>
-                <Text style={styles.logoutButton}>LOGOUT</Text>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setLogoutPopupVisible(false)}
+              >
+                <Text style={styles.popupButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <View style={styles.notLoggedInButtons}>
-              <TouchableOpacity onPress={() => router.push("/auth/login_page")}>
-                <Text style={styles.loginButton}>LOGIN</Text>
-              </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-              <TouchableOpacity onPress={() => router.push("/auth/signup_page")}>
-                <Text style={styles.signupButton}>REGISTER</Text>
+      {/* API MODAL */}
+      <Modal transparent visible={showApiPopup} animationType="fade">
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupContainer}>
+            <Text style={styles.popupText}>Enter API URL</Text>
+
+            <TextInput
+              style={styles.backendInput}
+              value={apiUrl}
+              onChangeText={setApiUrl}
+            />
+
+            <View style={styles.popupButtons}>
+              <TouchableOpacity style={styles.confirmButton} onPress={handleSaveApiUrl}>
+                <Text style={styles.popupButtonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowApiPopup(false)}>
+                <Text style={styles.popupButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
-          )
-        ),
-      }}
-    />
-    
-    <Modal
-      transparent
-      animationType="fade"
-      visible={logoutPopupVisible}
-      onRequestClose={() => setLogoutPopupVisible(false)}
-    >
-      <View style={styles.popupOverlay}>
-        <View style={styles.popupContainer}>
-          <Text style={styles.popupText}>Are you sure?</Text>
-          <View style={styles.popupButtons}>
-            <TouchableOpacity style={styles.confirmButton} onPress={confirmLogout}>
-              <Text style={styles.popupButtonText}>Confirm</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setLogoutPopupVisible(false)}>
-              <Text style={styles.popupButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </Modal>
-
-    <Modal
-      transparent
-      animationType="fade"
-      visible={showApiPopup}
-    >
-      <View style={styles.popupOverlay}>
-        <View style={styles.popupContainer}>
-          <Text style={styles.popupText}>Enter API URL</Text>
-          <TextInput 
-            style={styles.backendInput}
-            value={apiUrl}
-            onChangeText={setApiUrl}
-          />
-          <View style={styles.popupButtons}>
-            <TouchableOpacity style={styles.confirmButton} onPress={handleSaveApiUrl}>
-              <Text style={styles.popupButtonText}>Save</Text>
-          </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-    </>
+      </Modal>
+    </View>
   )
 }
