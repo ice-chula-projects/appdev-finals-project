@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,7 +20,6 @@ import { File, Paths } from "expo-file-system";
 import * as LegacyFileSystem from "expo-file-system/legacy";
 
 export default function Index() {
-
   const params = useLocalSearchParams();
   const threadUuid = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -31,16 +30,16 @@ export default function Index() {
       </SafeAreaView>
     );
   }
-  
-  const [threadAttachment, setThreadAttachment] = useState<any>(null);
-  const [threadImage, setThreadImage] = useState<string | null>(null);
+const [threadAttachment, setThreadAttachment] =
+  useState<any>(null);
 
-  const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
+const [threadImage, setThreadImage] =
+  useState<string | null>(null);
+ const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [threadIsPrivate, setThreadIsPrivate] = useState(false);
-  const [threadIsFavorited, setThreadIsFavorited] = useState(false);
   const [threadData, setThreadData] = useState<DisplayThread>(null);
   const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
   const [users, setUsers] = useState<Record<string, DisplayUser>>({});
@@ -48,12 +47,7 @@ export default function Index() {
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
 
-  const [NewTitle, setNewTitle] = useState("");
-  const [NewDescription, setNewDescription] = useState("");
-  const [ThreadDesc, setThreadDesc] = useState(false);
-
   const [showPostBox, setShowPostBox] = useState(false);
-  const [showSecondPostBox, setShowSecondPostBox] = useState(false);
 
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
@@ -79,13 +73,13 @@ export default function Index() {
           return
       }
 
-      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150)) 
+      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 100)) 
 
       setCurrentUserUuid(userUuid);
 
       try {
         const getThreadResponse = await BackEnd.getThread(String(threadUuid));
-        
+
         if (!getThreadResponse.success) {
           Alert.alert("Error", getThreadResponse.message);
           if(Platform.OS == "web") alert(getThreadResponse.message);
@@ -96,23 +90,18 @@ export default function Index() {
         
         if(privateThread && password == null) return
         const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
-        
+
         if (!getThreadMessagesResponse.success) {
           if (privateThread) setPasswordError(getThreadMessagesResponse.message)
-            else {
-          Alert.alert("Error", getThreadMessagesResponse.message);
-          if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
+          else {
+            Alert.alert("Error", getThreadMessagesResponse.message);
+            if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
+          }
+          return
         }
-        return
-        }
-      
-        const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
-        if (getUserProfileResponse.success){
-          setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
-        }
-        
-      setThreadData(getThreadResponse.thread);
-      setThreadMessageData(getThreadMessagesResponse.messages);
+
+        setThreadData(getThreadResponse.thread);
+        setThreadMessageData(getThreadMessagesResponse.messages);
 
         const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
         const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
@@ -126,36 +115,11 @@ export default function Index() {
       }
     };
 
-    const submitChange = async () => {
-      const SESSION_TOKEN =
-        await AsyncStorage.getItem(
-          "session_token"
-        );
-
-
-        const parameters = new ThreadUpdateParametersBuilder();
-        if(NewTitle != null && NewTitle != "") parameters.setName(NewTitle);
-        if(NewDescription != null && NewDescription != "") parameters.setDescription(NewDescription);
-
-        const updateThreadResponse =await BackEnd.updateThread(SESSION_TOKEN, threadUuid, parameters);
-
-        if(updateThreadResponse.success){
-          fetchThread(threadPassword);
-
-          setNewTitle("");
-          setNewDescription("");
-          setShowSecondPostBox(false);
-        }
-    }
-
   const submitPost = async () => {
     const SESSION_TOKEN =
       await AsyncStorage.getItem(
         "session_token"
       );
-
-    if (!newPost.trim()) return;
-
     try {
       setPosting(true);
       const params =
@@ -375,25 +339,7 @@ function getMimeType(extension: string): string {
     }
 }
 
-async function favorite(){
-  const sessionToken = await AsyncStorage.getItem("session_token");
-
-  if(sessionToken == null) return;
-
-  if(!threadIsFavorited){
-    const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
-    if(saveThreadResponse.success) setThreadIsFavorited(true)
-  } else {
-    const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
-    if(unsaveThreadResponse.success) setThreadIsFavorited(false)
-}
-}
-
   if (!fontsLoaded) return null;
-
-  if(currentUserUuid == null){
-    return <View><Text>You must be logged in to view thread messages</Text></View>
-  }
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
@@ -403,6 +349,7 @@ async function favorite(){
     );
   }
 
+  // Private thread w/ password requirement
   if (threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
@@ -411,7 +358,11 @@ async function favorite(){
           maxWidth: 400, 
           backgroundColor: "white", 
           borderRadius: 15, 
-          padding: 25 
+          padding: 25,
+          elevation: 5,
+          shadowColor: "#000000",
+          shadowOpacity: 0.5,
+          shadowRadius: 6, 
           }}>
 
           <Text style={{
@@ -470,11 +421,7 @@ async function favorite(){
               borderRadius: 8, 
               alignItems: "center" 
             }}>
-              <Text style={{ 
-                fontWeight: "bold",
-                color: "white",
-                fontFamily: "NotoSans-Regular"
-              }}>
+              <Text style={{ fontWeight: "bold", color: "white", fontFamily: "NotoSans-Regular" }}>
                 Enter
               </Text>
             </TouchableOpacity>
@@ -501,44 +448,19 @@ async function favorite(){
     )
   }
 
-
   return (
     <>
       <Stack.Screen
         options={{
           headerTitle: () => (
-            <Text
-              style={{
-                fontSize: 40,
-                fontWeight: "bold",
-                fontFamily: "NotoSans-Regular",
-                marginLeft: 10
-              }}
-            >
-              Threads
-            </Text>
+            <Text style={{ fontSize: 40, fontWeight: "bold", fontFamily: "NotoSans-Regular", marginLeft: 10 }}>Threads</Text>
           ),
         }}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
-        <View
-          style={{
-            flex: 1,
-            paddingTop: 20,
-            paddingHorizontal: 30,
-          }}
-        >
-
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 6,
-            }}
-          >
+        <View style={{ flex: 1, paddingTop: 20, paddingHorizontal: 30, paddingBottom: 20 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
             <Image
               source={users[threadData.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
               style={{
@@ -549,74 +471,22 @@ async function favorite(){
               }}
             />
 
-            <Text
-              style={{
-                fontSize: 24,
-                marginBottom: 5,
-              }}
-            >
-              {threadData.name}
-            </Text>
-            <Text
-              style={{
-                fontSize: 24,
-                fontWeight: "bold",
-                marginBottom: 5,
-              }}
-            >by
-            </Text>
-            <Text
-              style={{
-                fontSize: 24,
-                marginBottom: 5,
-              }}
-            >
-              {users[threadData.authorUserUuid]?.name ?? "Unknown User"}
-            </Text>
-          <View style={{ alignItems: "flex-end" }}>
-          <TouchableOpacity onPress={favorite}>
-            <Ionicons name={threadIsFavorited? "star" : "star-outline"} size={40} color="rgb(218, 214, 32)"></Ionicons>
-          </TouchableOpacity>
-          </View>
+            <Text style={{ fontSize: 24, marginBottom: 5, fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>"{threadData.name}"</Text>
+            <Text style={{fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>by</Text>
+            <Text style={{ fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>{users[threadData.authorUserUuid]?.name ?? "Unknown User"}</Text>
+
           </View>
 
-
-          <Text
-            style={{
-              fontSize: 12,
-              marginBottom: 5,
-            }}
-          >
-
-            {"author id: "}
-            {threadData.authorUserUuid}
+          <Text style={{ fontSize: 12, marginTop: 5, fontFamily: "NotoSans-Regular" }}>
+            ("Author ID: "{threadData.authorUserUuid}) 
           </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              marginBottom: 10,
-            }}
-          >
+
+          <Text style={{ fontSize: 12, marginBottom: 10, marginTop: 5, fontFamily: "NotoSans-Regular" }}>
             {threadData.creationDate.toString()}
             {`\n`}
           </Text>
 
-          <Text
-            style={{
-              fontSize: 16,
-              marginBottom: 10,
-            }}
-          >
-            {threadData.description}
-          </Text>
-
-            <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    gap: 10,
-                  }}
-                >
+          <Text style={{ fontSize: 16,marginBottom: 10, fontFamily: "NotoSans-Regular" }}>{threadData.description}</Text>
 
           {currentUserUuid === threadData.authorUserUuid && (
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
@@ -632,7 +502,7 @@ async function favorite(){
                     opacity: deletingThread ? 0.5 : 1,
                   }}
                 >
-                  <Text style={{ color: "white", fontWeight: "bold" }}>
+                  <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
                     Delete Thread
                   </Text>
                 </TouchableOpacity>
@@ -649,8 +519,8 @@ async function favorite(){
                       opacity: deletingThread ? 0.5 : 1,
                     }}
                   >
-                    <Text style={{ color: "white", fontWeight: "bold" }}>
-                      {deletingThread ? "Deleting..." : "Confirm Delete"}
+                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
+                      {deletingThread ? "Deleting..." : "Confirm?"}
                     </Text>
                   </TouchableOpacity>
 
@@ -665,120 +535,12 @@ async function favorite(){
                       opacity: deletingThread ? 0.5 : 1,
                     }}
                   >
-                    <Text style={{ color: "white", fontWeight: "bold" }}>
-                      Cancel
-                    </Text>
+                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>Cancel</Text>
                   </TouchableOpacity>
                 </>
               )}
             </View>
           )}
-
-          {currentUserUuid === threadData.authorUserUuid && (
-          <>
-          <TouchableOpacity
-          onPress={() =>
-            setShowSecondPostBox(!showSecondPostBox)
-          }
-          style={{
-            backgroundColor: "#248aca",
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            borderRadius: 10,
-            marginBottom: 10,
-            alignSelf: "flex-start",
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontWeight: "bold",
-            }}
-          >
-            {showSecondPostBox
-              ? "Cancel"
-              : "Edit Thread"}
-          </Text>
-        </TouchableOpacity>
-
-        {showSecondPostBox && (
-          <View
-            style={{
-              padding: 12,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 10,
-              marginTop: 10,
-            }}
-          >
-            <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-            <TextInput
-              placeholder="Title"
-              multiline
-              value={NewTitle}
-              onChangeText={setNewTitle}
-              style={{
-                flex: 1,
-                height: 160,
-                width: 200,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 8,
-                padding: 10,
-                textAlignVertical: "top",
-                marginBottom: 10,
-                fontSize: 14,
-              }}
-            />
-            <TextInput
-              placeholder="Description"
-              multiline
-              value={NewDescription}
-              onChangeText={setNewDescription}
-              style={{
-                flex: 1,
-                height: 160,
-                width: 1000,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 8,
-                padding: 10,
-                textAlignVertical: "top",
-                marginBottom: 10,
-                fontSize: 14,
-              }}
-            />
-          </View>
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#2d635a",
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: "center",
-              }}
-              onPress={submitChange}
-              disabled={ThreadDesc}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              >
-                Submit Change
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        </>
-        )}
-      </View>
 
           <View
             style={{
@@ -792,20 +554,11 @@ async function favorite(){
                 paddingVertical: 10,
                 paddingHorizontal: 15,
                 borderRadius: 10,
-                marginBottom: 10,
+                marginBottom: 12,
                 alignSelf: "flex-start",
               }}
             >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                }}
-              >
-                {showPostBox
-                  ? "Close Post Box"
-                  : "Create Post"}
-              </Text>
+              <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular"}}>{showPostBox ? "Close Post Box" : "Create Post"}</Text>
             </TouchableOpacity>
 
             {showPostBox && (
@@ -815,6 +568,10 @@ async function favorite(){
                   borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 10,
+                  elevation: 5,
+                  shadowColor: "#000000",
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
                 }}
               >
                 <TextInput
@@ -831,6 +588,7 @@ async function favorite(){
                     textAlignVertical: "top",
                     marginBottom: 10,
                     fontSize: 14,
+                    fontFamily: "NotoSans-Regular"
                   }}
                 />
 
@@ -853,13 +611,8 @@ async function favorite(){
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons
-                      name="attach-outline"
-                      size={22}
-                      color="#fff"
-                    />
+                    <Ionicons name="attach-outline" size={22} color="#fff"/>
                   </TouchableOpacity>
-
 
                   <TouchableOpacity
                     onPress={submitPost}
@@ -874,16 +627,7 @@ async function favorite(){
                       opacity: posting ? 0.6 : 1,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {posting
-                        ? "Posting..."
-                        : "Post Message"}
-                    </Text>
+                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular"}}>{posting ? "Posting..." : "Post Message"}</Text>
                   </TouchableOpacity>
 
                 </View>
@@ -903,92 +647,65 @@ async function favorite(){
                     borderColor: "#ccc",
                     borderRadius: 8,
                     marginBottom: 15,
+                    elevation: 5,
+                    shadowColor: "#000000",
+                    shadowOpacity: 0.3,
+                    shadowRadius: 6,
+                    marginTop: 10,
+                    marginLeft: 5,
+                    marginRight: 10
                   }}
                 >
 
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 8,
-                    }}
-                  >
+                  <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
 
                     <Image
                       source={users[message.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 20,
-                      }}
+                      style={{ width: 30, height: 30, borderRadius: 20, borderWidth: 1, borderColor: "#636363" }}
                     />
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: "bold",
-                        marginBottom: 5,
-                      }}
-                    >
+                    <Text style={{ fontSize: 15, fontWeight: "bold", marginBottom: 5, fontFamily: "NotoSans-Regular" }}>
                       {users[message.authorUserUuid]?.name ?? "Unknown User"}
                     </Text>
 
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        marginBottom: 5,
-                      }}
-                    >
-                      {"user id:  "}
-                      {message.authorUserUuid}
-                    </Text>
-
+                    <Text style={{ fontSize: 13, marginBottom: 5, fontFamily: "NotoSans-Regular", color: "#5f5f5f" }}>("User id: "{message.authorUserUuid})</Text>
                   </View>
 
-                  <Text
-                    style={{
-                      fontSize: 20,
-                    }}
-                  >
+                  <Text style={{ fontSize: 20, marginTop: 5 }}>
                     {message.message}
                   </Text>
 
-                  {/*add media player here. audio player + image viewer + video downloader w/ viewable thumbnail*/}
-                  {message.attachment != null && <View
-                    style={{
-                      marginTop: 10,
-                      gap: 5,
-                    }}
-                  >
-                    {/* IMAGE VIEWER */}
+                  {message.attachment != null && <View style={{marginTop: 10, gap: 5 }}>
+
                     {message.attachment.mediaType == "image" && <Image
                       source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
                       style={{
-                        width: 150,
-                        height: 150,
-                        borderRadius: 10,
-                        resizeMode: "cover",
+                        width: 200,
+                        height: 200,
+                        aspectRatio: 1,
+                        borderRadius: 8,
+                        resizeMode: "stretch",
                       }}
                     />}
 
-                    {message.attachment.mediaType != "image" && <View style={{width:200}}>
-                      <Button
-                        onPress={()=>{saveAttachmentAs(message.attachment)}}
-                        title="Download Attachment"
-                      />
+                    {message.attachment.mediaType != "image" && <View style={{width:210}}>
+                      <TouchableOpacity onPress={()=>{saveAttachmentAs(message.attachment)}} 
+                      style={{
+                        fontFamily: "NotoSans-Regular",
+                        backgroundColor: "#0099ff",
+                        color: "#ffffff",
+                        fontWeight: "bold",
+                        alignItems: "center",
+                        paddingVertical: 5,
+                        paddingHorizontal: 10,
+                        borderRadius: 5,
+                        }}>
+                        Download Attachment
+                      </TouchableOpacity>
                     </View>}
 
                   </View>}
 
-
-
-                  <Text
-                    style={{
-                      color: "gray",
-                      marginTop: 5,
-                      fontSize: 12,
-                    }}
-                  >
+                  <Text style={{color: "gray", marginTop: 7, fontSize: 12, fontFamily: "NotoSans-Regular"}}>
                     {message.creationDate.toString()}
                   </Text>
                 </View>
