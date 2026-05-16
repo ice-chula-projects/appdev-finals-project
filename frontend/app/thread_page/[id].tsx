@@ -132,9 +132,6 @@ const [threadImage, setThreadImage] =
       await AsyncStorage.getItem(
         "session_token"
       );
-
-    if (!newPost.trim()) return;
-
     try {
       setPosting(true);
       const params =
@@ -942,7 +939,6 @@ const pickAttachment = async () => {
                       gap: 5,
                     }}
                   >
-                    message.attachment
                     {/* IMAGE VIEWER */}
                     {message.attachment.mediaType == "image" && <Image
                       source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
