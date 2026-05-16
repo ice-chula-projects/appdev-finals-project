@@ -136,10 +136,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 30,
-    zIndex: 999,
     elevation: 5,
     shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.5,
     shadowRadius: 6,
   },
   floatingApiText: {

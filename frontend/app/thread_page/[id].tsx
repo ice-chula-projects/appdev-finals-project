@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Button } from "@react-navigation/elements";
@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import Slider from "@react-native-community/slider";
 import { Audio, ResizeMode, Video } from "expo-av";
 import { useRef } from "react";
-import BackEnd from "@/components/backend";
+import BackEnd, { DisplayThread, DisplayUser, Message } from "@/components/backend";
 import {
   MessageParametersBuilder,
   MessageUpdateParametersBuilder,
@@ -25,14 +25,14 @@ import { Ionicons } from "@expo/vector-icons";
 export default function Index() {
 
   const params = useLocalSearchParams();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const threadUuid = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  if (!id) {
-  return (
-    <SafeAreaView>
-      <Text>Missing thread id</Text>
-    </SafeAreaView>
-  );
+  if (!threadUuid) {
+    return (
+      <SafeAreaView>
+        <Text>Missing thread id</Text>
+      </SafeAreaView>
+    );
   }
 
   const [username, setUsername] = useState("");
@@ -43,22 +43,27 @@ const [threadAttachment, setThreadAttachment] =
 
 const [threadImage, setThreadImage] =
   useState<string | null>(null);
-
-  const [currentUserUUID, setCurrentUserUUID] = useState("");
+ const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const [threadData, setThreadData] = useState<any>(null);
-  const [threadMessageData, setThreadMessageData] = useState<any>(null);
+  const [threadIsPrivate, setThreadIsPrivate] = useState(false);
+  const [threadData, setThreadData] = useState<DisplayThread>(null);
+  const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
+  const [users, setUsers] = useState<Record<string, DisplayUser>>({});
 
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
 
   const [showPostBox, setShowPostBox] = useState(false);
 
-  const [loading, setLoading] = useState(true);  
+  const [loading, setLoading] = useState(true);
   const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.5);
+
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [threadPassword, setThreadPassword] = useState<string | null>(null);
 
 
   const [fontsLoaded] = useFonts({
@@ -71,149 +76,113 @@ const [threadImage, setThreadImage] =
   }, [fontsLoaded]);
 
 
-useEffect(() => {
+  useEffect(() => {
+    if (threadUuid) fetchThread();
+  }, [threadUuid]);
+
   const fetchThread = async () => {
-    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      const userUuid = await AsyncStorage.getItem("user_uuid");
+      
+      if (sessionToken == null || userUuid == null){
+          return <View><Text>Error: you must be logged in to view a thread</Text></View>
+      }
 
-    const STORED_USER_UUID = await AsyncStorage.getItem("user_uuid");
+      setCurrentUserUuid(userUuid);
 
-    if (STORED_USER_UUID) {
-      setCurrentUserUUID(STORED_USER_UUID);
-    }
+      try {
+        const getThreadResponse = await BackEnd.getThread(String(threadUuid));
+
+        if (!getThreadResponse.success) {
+          Alert.alert("Error", getThreadResponse.message);
+          if(Platform.OS == "web") alert(getThreadResponse.message);
+          return <View><Text>Error: {getThreadResponse.message}</Text></View>;
+        }
+
+        setThreadIsPrivate(getThreadResponse.thread.private);
+
+        const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid));
+
+        if (!getThreadMessagesResponse.success) {
+          Alert.alert("Error", getThreadMessagesResponse.message);
+          if(Platform.OS == "web") alert(getThreadMessagesResponse.message);
+          return <View><Text>Error: {getThreadMessagesResponse.message}</Text></View>;
+        }
+
+        setThreadData(getThreadResponse.thread);
+        setThreadMessageData(getThreadMessagesResponse.messages);
+
+        const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
+        const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
+
+        if (getUsersResponse.success){
+          setUsers(getUsersResponse.users);
+        }
+      } catch (err) {
+        console.log("Network error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  const submitPost = async () => {
+    const SESSION_TOKEN =
+      await AsyncStorage.getItem(
+        "session_token"
+      );
+
+    if (!newPost.trim()) return;
 
     try {
-const threadResponse =
-  await BackEnd.getThread(
-    String(id)
-  );
+      setPosting(true);
+      const params =
+        new MessageParametersBuilder()
+          .setMessage(newPost);
 
-if (!threadResponse.success) {
-  console.log(threadResponse.message);
-  return;
-}
+      const response =
+        await BackEnd.createMessage(
+          SESSION_TOKEN!,
+          String(threadUuid),
+          params
+        );
 
-const messagesResponse =
-  await BackEnd.getThreadMessages(
-    SESSION_TOKEN!,
-    String(id)
-  );
+      if (response.success) {
 
-if (!messagesResponse.success) {
-  console.log(messagesResponse.message);
-  return;
-}
-
-const data = threadResponse;
-const dbtb = messagesResponse; 
-
-const thread = data.thread;
-
-let authorUsername = "Unknown User";
-
-const storedUUID = await AsyncStorage.getItem("user_uuid");
-
-if (storedUUID) {
-  const creatorData = await BackEnd.getUsers([storedUUID]);
-
-  if (creatorData.success) {
-    authorUsername =
-      creatorData.users?.[storedUUID]?.name ?? "Unknown User";
-    
-  }
-}
-thread.author_user_uuid = storedUUID
-thread.authorUsername = authorUsername;
-
-setThreadData(thread);
-setThreadMessageData(dbtb);
-
-
+        fetchThread();
+        setNewPost("");
+        setShowPostBox(false);
+      } else {
+        console.log(
+          "Post error:",
+          response.message
+        );
+      }
     } catch (err) {
-      console.log("Network error:", err);
+      console.log(
+        "Network error:",
+        err
+      );
     } finally {
-      setLoading(false);
+      setPosting(false);
     }
   };
 
-    if (id) fetchThread();
-  }, [id]);
+  const deleteThread = async () => {
+    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+    if (!SESSION_TOKEN) return;
 
-  const submitPost = async () => {
-  const SESSION_TOKEN =
-    await AsyncStorage.getItem(
-      "session_token"
-    );
+    setDeletingThread(true);
 
-  if (!newPost.trim()) return;
-
-  try {
-    setPosting(true);
-
-    const params =
-      new MessageParametersBuilder()
-        .setMessage(newPost);
-
-    const response =
-      await BackEnd.createMessage(
-        SESSION_TOKEN!,
-        String(id),
-        params
+    try {
+      const response = await BackEnd.deleteThread(
+        SESSION_TOKEN,
+        String(threadUuid)
       );
 
-    if (response.success) {
-      const createdMessage = {
-        author_user_uuid:
-          currentUserUUID,
-        authorUsername: "You",
-        message: newPost,
-        creation_date:
-          new Date().toLocaleString(),
-      };
-
-      setThreadMessageData(
-        (prev: any) => ({
-          ...prev,
-          messages: [
-            createdMessage,
-            ...prev.messages,
-          ],
-        })
-      );
-
-      setNewPost("");
-      setShowPostBox(false);
-    } else {
-      console.log(
-        "Post error:",
-        response.message
-      );
-    }
-  } catch (err) {
-    console.log(
-      "Network error:",
-      err
-    );
-  } finally {
-    setPosting(false);
-  }
-};
-
-const deleteThread = async () => {
-  const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
-  if (!SESSION_TOKEN) return;
-
-  setDeletingThread(true);
-
-  try {
-    const response = await BackEnd.deleteThread(
-      SESSION_TOKEN,
-      String(id)
-    );
-
-    if (response.success) {
-      router.replace("/");
-      return;
-    }
+      if (response.success) {
+        router.replace("/");
+        return;
+      }
 
     console.log("Delete error:", response.message);
   } catch (err) {
@@ -280,263 +249,381 @@ const deleteThread = async () => {
 };
 
 
-function AudioPlayer() {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  function AudioPlayer() {
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
 
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(1);
+    const [position, setPosition] = useState(0);
+    const [duration, setDuration] = useState(1);
 
-  useEffect(() => {
-    return () => {
+    useEffect(() => {
+      return () => {
+        if (sound) {
+          sound.unloadAsync();
+        }
+      };
+    }, [sound]);
+
+    const changeVolume = async (value: number) => {
+      setVolume(value);
+
       if (sound) {
-        sound.unloadAsync();
+        await sound.setVolumeAsync(value);
       }
     };
-  }, [sound]);
 
-  const changeVolume = async (value: number) => {
-  setVolume(value);
+    const loadAudio = async () => {
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        require("../../assets/audios/[Armroed Core] Sirius Executives.mp3"),
+        {
+          shouldPlay: false,
+          volume: volume,
+        }
+      );
 
-  if (sound) {
-    await sound.setVolumeAsync(value);
-  }
-  };
+      newSound.setOnPlaybackStatusUpdate((status: any) => {
+        if (!status.isLoaded) return;
 
-  const loadAudio = async () => {
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      require("../../assets/audios/[Armroed Core] Sirius Executives.mp3"),
-      {
-        shouldPlay: false,
-        volume: volume,
+        setPosition(status.positionMillis);
+        setDuration(status.durationMillis || 1);
+        setIsPlaying(status.isPlaying);
+
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      });
+
+      setSound(newSound);
+
+      return newSound;
+    };
+
+    const togglePlayback = async () => {
+      let activeSound = sound;
+
+      if (!activeSound) {
+        activeSound = await loadAudio();
       }
-    );
 
-    newSound.setOnPlaybackStatusUpdate((status: any) => {
+      const status = await activeSound.getStatusAsync();
+
       if (!status.isLoaded) return;
 
-      setPosition(status.positionMillis);
-      setDuration(status.durationMillis || 1);
-      setIsPlaying(status.isPlaying);
-
-      if (status.didJustFinish) {
-        setIsPlaying(false);
+      if (status.isPlaying) {
+        await activeSound.pauseAsync();
+      } else {
+        await activeSound.playAsync();
       }
-    });
+    };
 
-    setSound(newSound);
+    const stopAudio = async () => {
+      if (!sound) return;
 
-    return newSound;
-  };
+      await sound.stopAsync();
+      await sound.setPositionAsync(0);
 
-  const togglePlayback = async () => {
-    let activeSound = sound;
+      setPosition(0);
+      setIsPlaying(false);
+    };
 
-    if (!activeSound) {
-      activeSound = await loadAudio();
-    }
+    const seekAudio = async (value: number) => {
+      if (!sound) return;
 
-    const status = await activeSound.getStatusAsync();
+      await sound.setPositionAsync(value);
+      setPosition(value);
+    };
 
-    if (!status.isLoaded) return;
+    const formatTime = (millis: number) => {
+      const totalSeconds = Math.floor(millis / 1000);
 
-    if (status.isPlaying) {
-      await activeSound.pauseAsync();
-    } else {
-      await activeSound.playAsync();
-    }
-  };
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
 
-  const stopAudio = async () => {
-    if (!sound) return;
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
 
-    await sound.stopAsync();
-    await sound.setPositionAsync(0);
+    return (
+      <View>
+        <Slider
+          minimumValue={0}
+          maximumValue={duration}
+          value={position}
+          onSlidingComplete={seekAudio}
+        />
 
-    setPosition(0);
-    setIsPlaying(false);
-  };
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 5,
+          }}
+        >
+          <Text>{formatTime(position)}</Text>
 
-  const seekAudio = async (value: number) => {
-    if (!sound) return;
+          <Text>{formatTime(duration)}</Text>
+        </View>
 
-    await sound.setPositionAsync(value);
-    setPosition(value);
-  };
-
-  const formatTime = (millis: number) => {
-    const totalSeconds = Math.floor(millis / 1000);
-
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-          return (
-          <View>
-            <Slider
-              minimumValue={0}
-              maximumValue={duration}
-              value={position}
-              onSlidingComplete={seekAudio}
-            />
-
-            <View
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <TouchableOpacity
+            onPress={togglePlayback}
+            style={{
+              backgroundColor: "#007AFF",
+              paddingVertical: 6,
+              paddingHorizontal: 8,
+              borderRadius: 8,
+            }}
+          >
+            <Text
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 5,
+                color: "white",
+                fontWeight: "bold",
               }}
             >
-              <Text>{formatTime(position)}</Text>
+              {isPlaying ? "Pause" : "Play"}
+            </Text>
+          </TouchableOpacity>
 
-              <Text>{formatTime(duration)}</Text>
-            </View>
-
-            <View
+          <TouchableOpacity
+            onPress={stopAudio}
+            style={{
+              backgroundColor: "#FF3B30",
+              paddingVertical: 6,
+              paddingHorizontal: 8,
+              borderRadius: 8,
+            }}
+          >
+            <Text
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 10,
-                flexWrap: "wrap",
+                color: "white",
+                fontWeight: "bold",
               }}
             >
-              <TouchableOpacity
-                onPress={togglePlayback}
+              Stop
+            </Text>
+          </TouchableOpacity>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <TouchableOpacity
+              onPress={async () => {
+                let newVolume = Math.max(
+                  0,
+                  volume - 0.05
+                );
+
+                newVolume = Number(
+                  newVolume.toFixed(2)
+                );
+
+                setVolume(newVolume);
+
+                if (sound) {
+                  await sound.setVolumeAsync(
+                    newVolume
+                  );
+                }
+              }}
+              style={{
+                backgroundColor: "#666",
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderRadius: 8,
+              }}
+            >
+              <Text
                 style={{
-                  backgroundColor: "#007AFF",
-                  paddingVertical: 6,
-                  paddingHorizontal: 8,
-                  borderRadius: 8,
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
                 }}
               >
-                <Text
-                  style={{
-                    color: "white",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {isPlaying ? "Pause" : "Play"}
-                </Text>
-              </TouchableOpacity>
+                -
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={stopAudio}
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "bold",
+                minWidth: 70,
+                textAlign: "center",
+              }}
+            >
+              Vol {volume.toFixed(2)}
+            </Text>
+
+            <TouchableOpacity
+              onPress={async () => {
+                let newVolume = Math.min(
+                  1,
+                  volume + 0.05
+                );
+
+                newVolume = Number(
+                  newVolume.toFixed(2)
+                );
+
+                setVolume(newVolume);
+
+                if (sound) {
+                  await sound.setVolumeAsync(
+                    newVolume
+                  );
+                }
+              }}
+              style={{
+                backgroundColor: "#666",
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderRadius: 8,
+              }}
+            >
+              <Text
                 style={{
-                  backgroundColor: "#FF3B30",
-                  paddingVertical: 6,
-                  paddingHorizontal: 8,
-                  borderRadius: 8,
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 16,
                 }}
               >
-                <Text
-                  style={{
-                    color: "white",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Stop
-                </Text>
-              </TouchableOpacity>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={async () => {
-                    let newVolume = Math.max(
-                      0,
-                      volume - 0.05
-                    );
-
-                    newVolume = Number(
-                      newVolume.toFixed(2)
-                    );
-
-                    setVolume(newVolume);
-
-                    if (sound) {
-                      await sound.setVolumeAsync(
-                        newVolume
-                      );
-                    }
-                  }}
-                  style={{
-                    backgroundColor: "#666",
-                    paddingVertical: 6,
-                    paddingHorizontal: 8,
-                    borderRadius: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    -
-                  </Text>
-                </TouchableOpacity>
-
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    minWidth: 70,
-                    textAlign: "center",
-                  }}
-                >
-                  Vol {volume.toFixed(2)}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={async () => {
-                    let newVolume = Math.min(
-                      1,
-                      volume + 0.05
-                    );
-
-                    newVolume = Number(
-                      newVolume.toFixed(2)
-                    );
-
-                    setVolume(newVolume);
-
-                    if (sound) {
-                      await sound.setVolumeAsync(
-                        newVolume
-                      );
-                    }
-                  }}
-                  style={{
-                    backgroundColor: "#666",
-                    paddingVertical: 6,
-                    paddingHorizontal: 8,
-                    borderRadius: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: 16,
-                    }}
-                  >
-                    +
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                +
+              </Text>
+            </TouchableOpacity>
           </View>
-        );
-}
+        </View>
+      </View>
+    );
+  }
   if (!fontsLoaded) return null;
+
+  const enterThreadPassword = async () => {
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    if (!sessionToken) return;
+    setPasswordError("");
+
+    const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken, String(threadUuid), undefined, passwordInput);
+
+    if (!getThreadMessagesResponse.success) {
+      setPasswordError("Incorrect password. Please try again.");
+      return;
+    }
+    
+    setThreadPassword(passwordInput);
+    setThreadMessageData(getThreadMessagesResponse.messages);
+    const uniqueUserUuids = [...new Set([threadData?.authorUserUuid ?? "", ...getThreadMessagesResponse.messages.map(x => x.authorUserUuid)])];
+    const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
+    if (getUsersResponse.success) setUsers(getUsersResponse.users);
+    setThreadIsPrivate(false);
+  }
+
+  if (threadIsPrivate) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+        <View style={{ 
+          width: "100%", 
+          maxWidth: 400, 
+          backgroundColor: "white", 
+          borderRadius: 15, 
+          padding: 25 
+          }}>
+
+          <Text style={{
+            fontSize: 30, 
+            fontWeight: "bold", 
+            fontFamily: "RobotoSlab-Regular", 
+            marginBottom: 6, 
+            textAlign: "center" 
+          }}>
+            Private Thread
+          </Text>
+
+          <Text style={{ 
+            textAlign: "center", 
+            fontFamily: "NotoSans-Regular", 
+            fontSize: 14, 
+            color: "#505050", 
+            marginBottom: 20 
+          }}>
+            A password is required to access this thread.
+          </Text>
+
+          <TextInput
+            placeholder="Enter password"
+            value={passwordInput}
+            onChangeText={(text) => { setPasswordInput(text); setPasswordError(""); }}
+            secureTextEntry
+            style={{ 
+              borderWidth: 1, 
+              borderColor: passwordError ? "#ff0000" : "#ccc",
+              borderRadius: 10, 
+              padding: 10, 
+              marginBottom: 6, 
+              fontFamily: "NotoSans-Regular", 
+              fontSize: 14 
+          }} />
+
+          {passwordError ? (
+            <Text style={{ 
+              color: "#ff0000", 
+              fontFamily: "NotoSans-Regular", 
+              fontSize: 13, 
+              textAlign: "center", 
+              marginBottom: 10 
+            }}>
+              {passwordError}
+            </Text>
+          ) : <View style={{ marginBottom: 16 }} />}
+
+          <View style={{ flexDirection: "row", gap: 15 }}>
+
+            <TouchableOpacity onPress={enterThreadPassword} style={{ 
+              flex: 1, 
+              backgroundColor: "#0057b4", 
+              paddingVertical: 14, 
+              borderRadius: 8, 
+              alignItems: "center" 
+            }}>
+              <Text style={{ 
+                fontWeight: "bold",
+                color: "white",
+                fontFamily: "NotoSans-Regular"
+              }}>
+                Enter
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.replace("/")} style={{ 
+              flex: 1, 
+              backgroundColor: "#8b8b8b", 
+              paddingVertical: 14, 
+              borderRadius: 8, 
+              alignItems: "center"
+            }}>
+              <Text style={{ 
+                fontWeight: "bold", 
+                color: "white", 
+                fontFamily: "NotoSans-Regular" 
+              }}>
+              Go Back
+            </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   if (!threadMessageData || !threadData) {
     return (
@@ -545,7 +632,7 @@ function AudioPlayer() {
       </SafeAreaView>
     );
   }
-
+  
 
   return (
     <>
@@ -556,6 +643,8 @@ function AudioPlayer() {
               style={{
                 fontSize: 40,
                 fontWeight: "bold",
+                fontFamily: "NotoSans-Regular",
+                marginLeft: 10
               }}
             >
               Threads
@@ -582,29 +671,40 @@ function AudioPlayer() {
               gap: 6,
             }}
           >
-          <Image
-            source={require("../../assets/images/default_profile.png")}
-            style={{
-              width: 35,
-              height: 35,
-              borderRadius: 20,
-              marginRight: 10,
-            }}
-          />
+            <Image
+              source={users[threadData.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
+              style={{
+                width: 35,
+                height: 35,
+                borderRadius: 20,
+                marginRight: 10,
+              }}
+            />
 
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: "bold",
-              marginBottom: 5,
-            }}
-          >
-            {/* {id}
-            {"  -  "} */}
-            {threadData.name}
-            {"  by  "}
-            {threadData.authorUsername}
-          </Text>
+            <Text
+              style={{
+                fontSize: 24,
+                marginBottom: 5,
+              }}
+            >
+              {threadData.name}
+            </Text>
+            <Text
+              style={{
+                fontSize: 24,
+                fontWeight: "bold",
+                marginBottom: 5,
+              }}
+            >by
+            </Text>
+            <Text
+              style={{
+                fontSize: 24,
+                marginBottom: 5,
+              }}
+            >
+              {users[threadData.authorUserUuid]?.name ?? "Unknown User"}
+            </Text>
           </View>
 
           <Text
@@ -613,17 +713,17 @@ function AudioPlayer() {
               marginBottom: 5,
             }}
           >
-            
-            {"author id:  "}
-            {threadData.author_user_uuid}
+
+            {"author id: "}
+            {threadData.authorUserUuid}
           </Text>
-            <Text
+          <Text
             style={{
               fontSize: 12,
               marginBottom: 10,
             }}
           >
-            {threadData.creation_date}
+            {threadData.creationDate.toString()}
             {`\n`}
           </Text>
 
@@ -636,7 +736,7 @@ function AudioPlayer() {
             {threadData.description}
           </Text>
 
-          {currentUserUUID === threadData.author_user_uuid && (
+          {currentUserUuid === threadData.authorUserUuid && (
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
               {!confirmDelete ? (
                 <TouchableOpacity
@@ -805,8 +905,8 @@ function AudioPlayer() {
           </View>
 
           <ScrollView>
-            {Object.values(threadMessageData.messages).map(
-              (msg, index: number) => (
+            {Object.values(threadMessageData).map(
+              (message: Message, index: number) => (
                 <View
                   key={index}
                   style={{
@@ -818,93 +918,93 @@ function AudioPlayer() {
                   }}
                 >
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 8,
-                  }}
-                  >
-
-                  <Image
-                    source={require("../../assets/images/default_profile.png")}
+                  <View
                     style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 20,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "bold",
-                      marginBottom: 5,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
                     }}
                   >
-                    {msg.authorUsername}
-                  </Text>
 
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      marginBottom: 5,
-                    }}
-                  >
-                    {"user id:  "}
-                    {msg.author_user_uuid}
-                  </Text>
+                    <Image
+                      source={users[message.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 20,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "bold",
+                        marginBottom: 5,
+                      }}
+                    >
+                      {users[message.authorUserUuid]?.name ?? "Unknown User"}
+                    </Text>
 
-                </View>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        marginBottom: 5,
+                      }}
+                    >
+                      {"user id:  "}
+                      {message.authorUserUuid}
+                    </Text>
+
+                  </View>
 
                   <Text
                     style={{
                       fontSize: 20,
                     }}
                   >
-                    {msg.message}
+                    {message.message}
                   </Text>
 
                   {/* add media player here. audio player + image viewer + video downloader w/ viewable thumbnail  */}
-                                                <View
-                                                  style={{
-                                                    marginTop: 10,
-                                                    gap: 5,
-                                                  }}
-                                                >
+                  <View
+                    style={{
+                      marginTop: 10,
+                      gap: 5,
+                    }}
+                  >
 
-                                                  {/* IMAGE VIEWER */}
-                                                  <Image
-                                                    source={require("../../assets/images/18007564.jpg")}
-                                                    style={{
-                                                      width: 150,
-                                                      height: 150,
-                                                      borderRadius: 10,
-                                                      resizeMode: "cover",
-                                                    }}
-                                                  />
+                    {/* IMAGE VIEWER */}
+                    <Image
+                      source={require("../../assets/images/18007564.jpg")}
+                      style={{
+                        width: 150,
+                        height: 150,
+                        borderRadius: 10,
+                        resizeMode: "cover",
+                      }}
+                    />
 
-                                                  {/* AUDIO PLAYER */}
-                                                  <View
-                                                    style={{
-                                                      borderWidth: 1,
-                                                      borderColor: "#ccc",
-                                                      borderRadius: 10,
-                                                      padding: 8,
-                                                    }}
-                                                  >
-                                                    <Text
-                                                      style={{
-                                                        fontWeight: "bold",
-                                                        marginBottom: 8,
-                                                      }}
-                                                    >
-                                                      [Armored Core] Sirius Executives.mp3
-                                                    </Text>
+                    {/* AUDIO PLAYER */}
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#ccc",
+                        borderRadius: 10,
+                        padding: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontWeight: "bold",
+                          marginBottom: 8,
+                        }}
+                      >
+                        [Armored Core] Sirius Executives.mp3
+                      </Text>
 
-                                                    <AudioPlayer />
-                                                  </View>
-                                                </View>
+                      <AudioPlayer />
+                    </View>
+                  </View>
 
 
 
@@ -915,13 +1015,13 @@ function AudioPlayer() {
                       fontSize: 12,
                     }}
                   >
-                    {msg.creation_date}
+                    {message.creationDate.toString()}
                   </Text>
                 </View>
               )
             )}
 
-            
+
           </ScrollView>
         </View>
       </SafeAreaView>

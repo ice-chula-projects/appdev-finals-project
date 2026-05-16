@@ -59,11 +59,11 @@ export default function Index() {
         .setThumbnailImageUri(threadImage ?? null)
 
       if (isPrivateThread) {
-        if (!threadPassword || threadPassword.trim().length === 0) {
+        if (!threadPassword || threadPassword.length === 0) {
           setCreateThreadError("A password is required for private threads.");
           return;
         }
-        builder.setPassword(threadPassword.trim());
+        builder.setPassword(threadPassword);
       }
 
       const response = await BackEnd.createThread(sessionToken, builder);
@@ -243,7 +243,11 @@ export default function Index() {
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
+      zIndex: 999,
       elevation: 5,
+      shadowColor: "#000",
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
     },
     addThreadButtonText: {
       color: "white",
@@ -282,6 +286,68 @@ export default function Index() {
       fontSize: 14,
       fontFamily: "NotoSans-Regular",
     },
+    homepageContainer: {
+      flex: 1,
+      paddingTop: 30,
+      paddingHorizontal: 30,
+    },
+    threadTitleContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    threadsText: {
+      fontSize: 24,
+      fontWeight: "bold",
+      marginRight: 15,
+      fontFamily: "RobotoSlab-Regular"
+    },
+    threadsSearch: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      fontSize: 16,
+    },
+    threadBox: {
+      padding: 15,
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 8,
+      marginBottom: 15,
+    },
+    threadBoxContainer: {
+      flexDirection: "row",
+      alignItems: "center"
+    },
+    threadBoxImage: {
+      width: 100,
+      height: 100,
+      marginRight: 15,
+      borderRadius: 8
+    },
+    threadBoxContent: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    threadBoxTitle: {
+      fontSize: 25,
+      fontWeight: "bold",
+      color: "#007AFF",
+      marginBottom: 5,
+    },
+    threadBoxDescription: {
+      color: "#797979",
+      fontSize: 15,
+      fontFamily: "NotoSans-Regular"
+    },
+    threadBoxPublicPrivateDescription: {
+      color: "#797979",
+      fontSize: 10,
+      fontFamily: "NotoSans-Regular"
+    }
   })
 
   useEffect(() => {
@@ -380,105 +446,42 @@ export default function Index() {
           </View>
         </Modal>
 
-        <View style={{
-          flex: 1,
-          paddingTop: 30,
-          paddingHorizontal: 30,
-        }}
-        >
+        <View style={styles.homepageContainer}>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 24,
-                fontWeight: "bold",
-                marginRight: 15,
-              }}
-            >
-              Threads
-            </Text>
-
+          <View style={styles.threadTitleContainer}>
+            <Text style={styles.threadsText}>Threads</Text>
             <TextInput
               placeholder="Search threads..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={{
-                flex: 1,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 8,
-                fontSize: 16,
-              }}
+              style={styles.threadsSearch}
             />
           </View>
 
           <ScrollView>
             {threads.map((thread: DisplayThread) => (
-              <TouchableOpacity
-                key={thread.uuid}
-                onPress={() => router.push(`/thread_page/${thread.uuid}`)}
-                style={{
-                  padding: 15,
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 8,
-                  marginBottom: 15,
-                }}
-              >
+              <TouchableOpacity key={thread.uuid} onPress={() => router.push(`/thread_page/${thread.uuid}`)} style={styles.threadBox}>
                 <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center"
-                  }}>
+                  style={styles.threadBoxContainer}>
                   {thread.thumbnailUri != null && <Image
                     source={thread.thumbnailUri}
-                    style={{
-                      width: 100,
-                      height: 100,
-                      marginRight: 15,
-                      borderRadius: 8
-                    }}
+                    style={styles.threadBoxImage}
                   />}
-                  <View style={{
-                    flex: 1,
-                    justifyContent: "center",
-                  }}>
-                    <Text
-                      style={{
-                        fontSize: 25,
-                        fontWeight: "bold",
-                        color: "#007AFF",
-                        marginBottom: 5,
-                      }}
-                    >
-                      {thread.name}
-                    </Text>
-
-                    <Text
-                      style={{
-                        color: "gray",
-                        fontSize: 14,
-                      }}
-                    >
-                      {thread.description}
-                    </Text>
+                  <View style={styles.threadBoxContent}>
+                    <Text style={styles.threadBoxTitle}>{thread == null || thread.name == "" ? "Untitled Thread" : thread.name}</Text>
+                    <Text style={styles.threadBoxDescription}>{thread.description ?? ""}</Text>
+                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private?"\nprivate thread 🔒":"\npublic thread 🔓"}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
+
           <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
             <Text style={styles.addThreadButtonText}>Add Thread</Text>
             <Ionicons name="add-circle" size={40} color="white" />
           </TouchableOpacity>
+
         </View>
       </SafeAreaView>
     </>
