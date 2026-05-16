@@ -100,11 +100,16 @@ def validate_attachment(attachment) -> tuple[Attachment | None, str, int]:
 
 @app.route("/")
 def home():
-    return jsonify({"message": "Hello World!", "is_appdev_finals_message_board": True}), 200
+    return jsonify({"message": "Hello World!"}), 200
 
 @app.route("/ping")
 def ping():
     return jsonify({"message": "pong"}), 200
+
+@app.route("/get_board_info", methods=["GET"])
+def get_board_info():
+    return jsonify({"name": settings.name, "is_appdev_finals_message_board": True}), 200
+
 
 @app.route("/get_user_profile", methods=["GET"])
 def get_user_profile():

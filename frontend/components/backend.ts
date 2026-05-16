@@ -11,7 +11,7 @@ export default class BackEnd {
             if (apiUrl.at(-1) != "/") apiUrl += "/";
 
             //test the api
-            const apiResponse = await fetch(apiUrl);
+            const apiResponse = await fetch(apiUrl + "get_board_info");
             let valid = false;
 
             if (apiResponse.ok) {
@@ -72,6 +72,21 @@ export default class BackEnd {
         const file = new File(imageUri)
 
         return await file.base64()
+    }
+
+    static async getBoardInfo(): Promise<GetBoardInfoResponse> {
+        return await this.sendApiRequest(
+            new GetBoardInfoResponse(),
+            "get_board_info",
+            {
+                method: "GET"
+            },
+            (body, response) => {
+                response.name = body.name;
+
+                return response
+            }
+        )
     }
 
     static async login(username: string, password: string): Promise<LoginResponse> {
@@ -892,4 +907,11 @@ export class GetThreadsResponse implements BaseApiResponse {
     message: string;
 
     threads: Record<string, DisplayThread>;
+}
+
+export class GetBoardInfoResponse implements BaseApiResponse {
+    success: boolean;
+    message: string;
+
+    name: string
 }
