@@ -1,50 +1,32 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, ActivityIndicator, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import BackEnd, { UserUpdateParametersBuilder } from "@/components/backend";
+import BackEnd, { DisplayThread, UserUpdateParametersBuilder } from "@/components/backend";
+import { useProfile } from "@/components/profileContext";
 
 export default function ProfilePage() {
   const [profileName, setProfileName] = useState('');
   const [userUUID, setUserUUID] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profilePictureUri, setProfilePictureUri] = useState<string | null>(null);
 
   const [pendingPictureUri, setPendingPictureUri] = useState<string | null>(null);
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [postHistory, setPostHistory] = useState<any[]>([]);
-  const [commentHistory, setCommentHistory] = useState<any[]>([]);
+  const [threadHistory, setThreadHistory] = useState<DisplayThread[]>([]);
+  const [savedThreads, setSavedThreads] = useState<DisplayThread[]>([]);
   
   const [editDescription, setEditDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
 
-  const loadProfile = async () => {
-    try {
-      const username = await AsyncStorage.getItem("username");
-      const userUUID = await AsyncStorage.getItem("user_uuid");
-      const savedPicture = await AsyncStorage.getItem("profile_picture_base64");
-      const savedDescription = await AsyncStorage.getItem("motd");
-
-      console.log("Loaded username:", username);
-      console.log("Loaded UUID:", userUUID);
-      console.log("Loaded PFP:", savedPicture);
-      console.log("Loaded description:",savedDescription);
-
-      if (username) setProfileName(username);
-      if (userUUID) setUserUUID(userUUID);
-      if (savedPicture) setProfilePicture(savedPicture);
-      if (savedDescription) setProfileDescription(savedDescription);
-      } catch (err) {
-        console.log("Failed to load profile:", err);
-      }
-    }
+  const { reloadProfile } = useProfile();
 
   const fetchUserProfile = async () => {
     try {
@@ -56,22 +38,25 @@ export default function ProfilePage() {
     
       const response = await BackEnd.getUserProfile(uuid);
     
-      if (response.success && response.userProfile) {
-        console.log("Fetched user:", response.userProfile);
+      if (response.success) {
+        const userProfile = response.userProfile;
       
-        setProfileName(response.userProfile.name ?? "");
-        setUserUUID(response.userProfile.uuid ?? uuid);
-        setProfileDescription(response.userProfile.motd ?? "");
+        setProfileName(userProfile.name);
+        setUserUUID(userProfile.uuid);
+        setProfileDescription(userProfile.motd);
       
-        // Save to AsyncStorage
-        await AsyncStorage.setItem("username", response.userProfile.name ?? "");
-        await AsyncStorage.setItem("motd", response.userProfile.motd ?? "");
-      
-        if (response.userProfile.profilePictureUri) {
-          setProfilePicture(response.userProfile.profilePictureUri);
+        if (userProfile.profilePictureUri != null) {
+          setProfilePictureUri(userProfile.profilePictureUri);
+        }
+
+        const getThreadsResponse = await BackEnd.getThreads([... new Set([... userProfile.threadHistory, ... userProfile.savedThreads])])
+        if(getThreadsResponse.success){
+          setThreadHistory(userProfile.threadHistory.map(x=>getThreadsResponse.threads[x]));
+          setSavedThreads(userProfile.savedThreads.map(x=>getThreadsResponse.threads[x]));
         }
       } else {
-        console.log("Failed to fetch user:", response.message);
+        Alert.alert("Error", response.message);
+        if(Platform.OS == "web") alert(response.message);
       }
     } catch (err) {
       console.log("Failed to fetch user:", err);
@@ -80,7 +65,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const initializeProfile = async () => {
-      await loadProfile();
+      //wait a little bit for backend to initialize if it isnt currently loaded
+      if(!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve,100))
       await fetchUserProfile();
     }
   initializeProfile() }, []);
@@ -114,7 +100,7 @@ export default function ProfilePage() {
     const response = await BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setProfilePictureUri(profilePictureUri))
 
     if (!response.success) {
-      Alert.alert(response.message);
+      throw new Error(response.message);
     }
   }
 
@@ -122,8 +108,9 @@ export default function ProfilePage() {
     if (pendingPictureUri == null) return;
     setUploading(true);
     try {
-      const uploadedImage = await uploadProfilePicture(pendingPictureUri);
-      setProfilePicture(pendingPictureUri);
+      await uploadProfilePicture(pendingPictureUri);
+      reloadProfile()
+      setProfilePictureUri(pendingPictureUri);
 
       setPendingPictureUri(null);
       setConfirmVisible(false);
@@ -154,48 +141,6 @@ export default function ProfilePage() {
         Alert.alert("Error","Cannot update the description.");
     }
   }
-
-  const links = [
-    {
-      title: "Band of Brothers",
-      description: "Don't grab the luger.",
-      url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
-      image: require("../assets/images/images.jpg"),
-    },
-    {
-      title: "The Martian",
-      description: "Matt Damian gets stuck in space. Again.",
-      url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
-      image: require("../assets/images/18007564.jpg"),
-    },
-  ];
-
-  const comments = [
-    {
-      thread: "Rate my battalion setup",
-      comment: "Honestly the logistics section looks pretty solid.",
-      date: "13 May 2026 12:48",
-    },
-
-    {
-      thread: "React Native Help",
-      comment: "You forgot to close the ScrollView tag.",
-      date: "13 May 2026 13:02",
-    },
-
-    {
-      thread: "Movie Recommendations",
-      comment: "The Martian is peak engineering propaganda.",
-      date: "13 May 2026 13:17",
-    },
-
-    {
-      thread: "Forum Lore",
-      comment: "This thread is becoming historically significant.",
-      date: "13 May 2026 13:44",
-    },
-  ];
-
 
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
@@ -380,7 +325,7 @@ export default function ProfilePage() {
             <Text style={styles.yourProfile}>Your Profile</Text>
             <TouchableOpacity onPress={pickImage}>
               <Image
-                source={pendingPictureUri ? { uri: pendingPictureUri } : (profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png"))}
+                source={pendingPictureUri != null ? { uri: pendingPictureUri } : (profilePictureUri != null ? { uri: profilePictureUri } : require("../assets/images/default_profile.png"))}
                 style={styles.profilePictureIcon}
               />
             </TouchableOpacity>
@@ -445,10 +390,10 @@ export default function ProfilePage() {
             >
 
         <ScrollView>
-            {links.map((link, index) => (
+            {threadHistory.map((thread, index) => (
               <TouchableOpacity
                 key={index}
-                onPress={() => Linking.openURL(link.url)}
+                onPress={() => router.push(`/thread_page/${thread.uuid}`)}
                 style={{
                   padding: 5,
                   borderWidth: 1,
@@ -462,15 +407,15 @@ export default function ProfilePage() {
                   flexDirection: "row", 
                   alignItems: "center" 
                   }}>
-                  <Image
-                    source={link.image}
+                    {thread?.thumbnailUri != null && <Image
+                    source={thread.thumbnailUri}
                     style={{ 
                       width: 75, 
                       height: 75, 
                       marginRight: 15,
                       borderRadius: 8
                     }}
-                  />
+                  />}
               <View style={{ 
                 width: 500,
                 height: 50,
@@ -484,7 +429,7 @@ export default function ProfilePage() {
                     marginBottom: 5,
                   }}
                 >
-                  {link.title}
+                  {thread?.name}
                 </Text>
 
                 <Text
@@ -493,7 +438,7 @@ export default function ProfilePage() {
                     fontSize: 14,
                   }}
                 >
-                  {link.description}
+                  {thread?.description}
                 </Text>
               </View>
               </View>
@@ -501,15 +446,14 @@ export default function ProfilePage() {
             ))}
         </ScrollView>
         </View>
-
-        <Text
+                <Text
             style={{
               fontSize: 20,
               fontWeight: "bold",
               marginBottom: 5,
             }}
           >
-            Text History
+            Saved Threads
           </Text>
             <View
             style={{
@@ -520,10 +464,12 @@ export default function ProfilePage() {
                 overflow: "hidden",
             }}
             >
-          <ScrollView>
-            {comments.map((comment, index) => (
-              <View
+
+        <ScrollView>
+            {savedThreads.map((thread, index) => (
+              <TouchableOpacity
                 key={index}
+                onPress={() => router.push(`/thread_page/${thread.uuid}`)}
                 style={{
                   padding: 5,
                   borderWidth: 1,
@@ -532,38 +478,50 @@ export default function ProfilePage() {
                   marginBottom: 5,
                 }}
               >
+                <View 
+                  style={{ 
+                  flexDirection: "row", 
+                  alignItems: "center" 
+                  }}>
+                    {thread?.thumbnailUri != null && <Image
+                    source={thread.thumbnailUri}
+                    style={{ 
+                      width: 75, 
+                      height: 75, 
+                      marginRight: 15,
+                      borderRadius: 8
+                    }}
+                  />}
+              <View style={{ 
+                width: 500,
+                height: 50,
+                justifyContent: "center", 
+                }}>
                 <Text
                   style={{
-                    fontSize: 18,
+                    fontSize: 25,
                     fontWeight: "bold",
                     color: "#007AFF",
-                    marginBottom: 4,
+                    marginBottom: 5,
                   }}
                 >
-                  {comment.thread}
-                </Text>
-
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginBottom: 4,
-                  }}
-                >
-                  {comment.comment}
+                  {thread?.name}
                 </Text>
 
                 <Text
                   style={{
                     color: "gray",
-                    fontSize: 12,
+                    fontSize: 14,
                   }}
                 >
-                  {comment.date}
+                  {thread?.description}
                 </Text>
               </View>
+              </View>
+              </TouchableOpacity>
             ))}
-          </ScrollView>
-            </View>
+        </ScrollView>
+        </View>
         </View>
       </SafeAreaView>
     </>

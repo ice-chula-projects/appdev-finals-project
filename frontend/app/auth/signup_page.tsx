@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Keyboa
 import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackEnd from '../../components/backend';
+import { useProfile } from '@/components/profileContext';
 
 export const styles = StyleSheet.create({
   container: { 
@@ -108,6 +109,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
+  const { reloadProfile } = useProfile();
 
   // Initial loading screen
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function SignupPage() {
         await AsyncStorage.setItem("session_token", loginResponse.sessionToken);
         await AsyncStorage.setItem("user_uuid", loginResponse.userUuid);
         await AsyncStorage.setItem("username", username);
+        reloadProfile();
 
         router.replace("/");
       } else {

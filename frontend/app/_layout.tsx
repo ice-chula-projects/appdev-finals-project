@@ -1,8 +1,9 @@
 import { Stack, router, usePathname } from "expo-router";
-import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput } from "react-native";
+import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 import BackEnd from "../components/backend";
+import { ProfileContext } from "@/components/profileContext";
 
 const styles = StyleSheet.create({
   homeIcon: {
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [profileImageUri, setProfileImageUri] = useState(null);
   const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
 
   const [apiUrl, setApiUrl] = useState("");
@@ -160,10 +162,6 @@ export default function RootLayout() {
 
    useEffect(() => {
     const init = async () => {
-      // login check
-      const sessionToken = await AsyncStorage.getItem("session_token");
-      setLoggedIn(!!sessionToken);
-
       // load saved api url
       const savedUrl = await AsyncStorage.getItem("api_url");
 
@@ -176,15 +174,23 @@ export default function RootLayout() {
 
       const response = await BackEnd.setApiUrl(savedUrl);
 
-      if (!response.success || !BackEnd.isApiAvailable()) {
+      if (!response.success) {
         setShowApiPopup(true);
+        Alert.alert(response.message);
       } else {
         setShowApiPopup(false);
+        const sessionToken = await AsyncStorage.getItem("session_token");
+        const loggedIn = sessionToken != null;
+        setLoggedIn(loggedIn);
+        ;
+        if(loggedIn){
+          reloadProfile();
+        }
       }
     }
     init();
   }, [])
-
+  
   const handleSaveApiUrl = async () => {
     try {
       const cleanedUrl = apiUrl.trim();
@@ -194,28 +200,30 @@ export default function RootLayout() {
         return;
       }
 
-      await BackEnd.setApiUrl(cleanedUrl);
-      await AsyncStorage.setItem("api_url", cleanedUrl);
+      const response = await BackEnd.setApiUrl(cleanedUrl);
+      if(response.success){
+        await AsyncStorage.setItem("api_url", cleanedUrl);
+        setShowApiPopup(false);
+        Alert.alert("Success", "Backend connected!");
 
-      setShowApiPopup(false);
-
-      Alert.alert("Success", "Backend connected!");
-      console.log("Backend URL set:", cleanedUrl);
+      }
+      else{
+        Alert.alert("Error", response.message);
+        if(Platform.OS == "web") alert("Invalid Api Url")
+      }
 
     } catch (err) {
-      console.log("Error setting API URL:", err);
       Alert.alert("Error", "Failed to set API URL.");
     }
   }
 
   // Check session token
   useEffect(() => {
-    const checkLogin = async () => {
-      const sessionToken =await AsyncStorage.getItem("session_token");
-      console.log("Session token:", sessionToken);
-      setLoggedIn(!!sessionToken);
-    };
-    checkLogin();
+    (async () => {
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      const loggedIn = sessionToken != null;
+      setLoggedIn(loggedIn);
+    })();
   }, [pathname]);
 
   // Logout
@@ -227,8 +235,20 @@ export default function RootLayout() {
     router.replace("/");
   }
 
+  const reloadProfile = async () => {
+    const uuid = await AsyncStorage.getItem("user_uuid");
+
+    if (!uuid) return;
+
+    const response = await BackEnd.getUsers([uuid]);
+    if (response.success) {
+        setProfileImageUri(response.users[uuid].profilePictureUri);
+    }
+};
+
   return (
-    <View style={{ flex: 1 }}>
+    <ProfileContext.Provider value={{ reloadProfile }}>
+      <View style={{ flex: 1 }}>
 
       <Stack
         screenOptions={{
@@ -250,7 +270,7 @@ export default function RootLayout() {
               <View style={styles.userSection}>
                 <TouchableOpacity onPress={() => router.push("/profile_page")}>
                   <Image
-                    source={require("../assets/images/default_profile.png")}
+                    source={profileImageUri != null? profileImageUri : require("../assets/images/default_profile.png")}
                     style={styles.profileIcon}
                   />
                 </TouchableOpacity>
@@ -330,5 +350,6 @@ export default function RootLayout() {
         </View>
       </Modal>
     </View>
+    </ProfileContext.Provider>
   )
 }
