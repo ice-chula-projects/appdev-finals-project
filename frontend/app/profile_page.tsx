@@ -7,6 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import BackEnd, { UserUpdateParametersBuilder } from "@/components/backend";
+import { useProfile } from "@/components/profileContext";
 
 export default function ProfilePage() {
   const [profileName, setProfileName] = useState('');
@@ -24,6 +25,8 @@ export default function ProfilePage() {
   
   const [editDescription, setEditDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
+
+  const { reloadProfile } = useProfile();
 
   const loadProfile = async () => {
     try {
@@ -114,7 +117,7 @@ export default function ProfilePage() {
     const response = await BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setProfilePictureUri(profilePictureUri))
 
     if (!response.success) {
-      Alert.alert(response.message);
+      throw new Error(response.message);
     }
   }
 
@@ -122,7 +125,8 @@ export default function ProfilePage() {
     if (pendingPictureUri == null) return;
     setUploading(true);
     try {
-      const uploadedImage = await uploadProfilePicture(pendingPictureUri);
+      await uploadProfilePicture(pendingPictureUri);
+      reloadProfile()
       setProfilePicture(pendingPictureUri);
 
       setPendingPictureUri(null);
