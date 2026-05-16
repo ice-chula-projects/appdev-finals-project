@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { Button } from "@react-navigation/elements";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import Slider from "@react-native-community/slider";
-import { Audio, ResizeMode, Video } from "expo-av";
-import { useRef } from "react";
 import BackEnd, { DisplayThread, DisplayUser, MediaType, Message } from "@/components/backend";
 import {
   MessageParametersBuilder,
@@ -33,10 +29,6 @@ export default function Index() {
       </SafeAreaView>
     );
   }
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  
 const [threadAttachment, setThreadAttachment] =
   useState<any>(null);
 
@@ -56,13 +48,8 @@ const [threadImage, setThreadImage] =
 
   const [showPostBox, setShowPostBox] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
-  const [volume, setVolume] = useState(0.5);
-
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
-
 
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
@@ -73,7 +60,6 @@ const [threadImage, setThreadImage] =
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
-
   useEffect(() => {
     if (threadUuid) fetchThread(threadPassword);
   }, [threadUuid]);
@@ -83,8 +69,10 @@ const [threadImage, setThreadImage] =
       const userUuid = await AsyncStorage.getItem("user_uuid");
       
       if (sessionToken == null || userUuid == null){
-          return <View><Text>Error: you must be logged in to view a thread</Text></View>
+          return
       }
+
+      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 100)) 
 
       setCurrentUserUuid(userUuid);
 
@@ -123,7 +111,6 @@ const [threadImage, setThreadImage] =
       } catch (err) {
         console.log("Network error:", err);
       } finally {
-        setLoading(false);
       }
     };
 
@@ -150,11 +137,11 @@ const [threadImage, setThreadImage] =
         );
 
       if (response.success) {
-
-        fetchThread(threadPassword);
         setNewPost("");
         setThreadAttachment(null);
         setShowPostBox(false);
+        fetchThread(threadPassword);
+
       } else {
         console.log(
           "Post error:",
@@ -235,263 +222,6 @@ const pickAttachment = async () => {
   setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
 };
 
-
-  function AudioPlayer() {
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    const [position, setPosition] = useState(0);
-    const [duration, setDuration] = useState(1);
-
-    useEffect(() => {
-      return () => {
-        if (sound) {
-          sound.unloadAsync();
-        }
-      };
-    }, [sound]);
-
-    const changeVolume = async (value: number) => {
-      setVolume(value);
-
-      if (sound) {
-        await sound.setVolumeAsync(value);
-      }
-    };
-
-    const loadAudio = async () => {
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        require("../../assets/audios/[Armroed Core] Sirius Executives.mp3"),
-        {
-          shouldPlay: false,
-          volume: volume,
-        }
-      );
-
-      newSound.setOnPlaybackStatusUpdate((status: any) => {
-        if (!status.isLoaded) return;
-
-        setPosition(status.positionMillis);
-        setDuration(status.durationMillis || 1);
-        setIsPlaying(status.isPlaying);
-
-        if (status.didJustFinish) {
-          setIsPlaying(false);
-        }
-      });
-
-      setSound(newSound);
-
-      return newSound;
-    };
-
-    const togglePlayback = async () => {
-      let activeSound = sound;
-
-      if (!activeSound) {
-        activeSound = await loadAudio();
-      }
-
-      const status = await activeSound.getStatusAsync();
-
-      if (!status.isLoaded) return;
-
-      if (status.isPlaying) {
-        await activeSound.pauseAsync();
-      } else {
-        await activeSound.playAsync();
-      }
-    };
-
-    const stopAudio = async () => {
-      if (!sound) return;
-
-      await sound.stopAsync();
-      await sound.setPositionAsync(0);
-
-      setPosition(0);
-      setIsPlaying(false);
-    };
-
-    const seekAudio = async (value: number) => {
-      if (!sound) return;
-
-      await sound.setPositionAsync(value);
-      setPosition(value);
-    };
-
-    const formatTime = (millis: number) => {
-      const totalSeconds = Math.floor(millis / 1000);
-
-      const mins = Math.floor(totalSeconds / 60);
-      const secs = totalSeconds % 60;
-
-      return `${mins}:${secs.toString().padStart(2, "0")}`;
-    };
-
-    return (
-      <View>
-        <Slider
-          minimumValue={0}
-          maximumValue={duration}
-          value={position}
-          onSlidingComplete={seekAudio}
-        />
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 5,
-          }}
-        >
-          <Text>{formatTime(position)}</Text>
-
-          <Text>{formatTime(duration)}</Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
-          <TouchableOpacity
-            onPress={togglePlayback}
-            style={{
-              backgroundColor: "#007AFF",
-              paddingVertical: 6,
-              paddingHorizontal: 8,
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              {isPlaying ? "Pause" : "Play"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={stopAudio}
-            style={{
-              backgroundColor: "#FF3B30",
-              paddingVertical: 6,
-              paddingHorizontal: 8,
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              Stop
-            </Text>
-          </TouchableOpacity>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <TouchableOpacity
-              onPress={async () => {
-                let newVolume = Math.max(
-                  0,
-                  volume - 0.05
-                );
-
-                newVolume = Number(
-                  newVolume.toFixed(2)
-                );
-
-                setVolume(newVolume);
-
-                if (sound) {
-                  await sound.setVolumeAsync(
-                    newVolume
-                  );
-                }
-              }}
-              style={{
-                backgroundColor: "#666",
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                -
-              </Text>
-            </TouchableOpacity>
-
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "bold",
-                minWidth: 70,
-                textAlign: "center",
-              }}
-            >
-              Vol {volume.toFixed(2)}
-            </Text>
-
-            <TouchableOpacity
-              onPress={async () => {
-                let newVolume = Math.min(
-                  1,
-                  volume + 0.05
-                );
-
-                newVolume = Number(
-                  newVolume.toFixed(2)
-                );
-
-                setVolume(newVolume);
-
-                if (sound) {
-                  await sound.setVolumeAsync(
-                    newVolume
-                  );
-                }
-              }}
-              style={{
-                backgroundColor: "#666",
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                +
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  }
   if (!fontsLoaded) return null;
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
@@ -950,26 +680,17 @@ const pickAttachment = async () => {
                       }}
                     />}
 
-                    {/* AUDIO PLAYER */}
-                    <View
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#ccc",
-                        borderRadius: 10,
-                        padding: 8,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontWeight: "bold",
-                          marginBottom: 8,
-                        }}
-                      >
-                        [Armored Core] Sirius Executives.mp3
-                      </Text>
+                    {message.attachment.mediaType != "image" && <View>
+                      <Button style={{
+                        backgroundColor: "#007AFF",
+                        paddingVertical: 10,
+                        paddingHorizontal: 16,
+                        borderRadius: 8,
+                        width: 10,
+                        alignItems: "center",
+                      }}><Text>Download Attachment</Text></Button>
+                    </View>}
 
-                      <AudioPlayer />
-                    </View>
                   </View>}
 
 
@@ -986,8 +707,6 @@ const pickAttachment = async () => {
                 </View>
               )
             )}
-
-
           </ScrollView>
         </View>
       </SafeAreaView>
