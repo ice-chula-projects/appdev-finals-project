@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image, ScrollView, useWindowDimensions } from 'react-native'
 import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BackEnd from '../../components/backend';
 
-const GLOBAL_URL = "http://localhost:5000/"
+const URL = "http://192.168.1.53:5000/"
 
 export const styles = StyleSheet.create({
   container: { 
@@ -110,8 +111,6 @@ export default function SignupPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const { width } = useWindowDimensions();
-
   // Initial loading screen
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -135,33 +134,28 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const signupResponse = await fetch(GLOBAL_URL+'create_user', {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "name": username, "password": password }),
-        });
+      await BackEnd.setApiUrl(URL);
+      const signupResponse = await BackEnd.createUser(username,password);
 
-      const signupData = await signupResponse.json();
-
-      if (!signupResponse.ok) {
-        setError(signupData.error);
+      if (!signupResponse.success) {
+        setError(signupResponse.message || "Signup failed.");
         setLoading(false);
         return;
       }
 
-      const loginResponse = await fetch(GLOBAL_URL+'login', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "name": username, "password": password }),
-      })
+      const loginResponse = await BackEnd.login(username, password);
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const loginData = await loginResponse.json();
-      if (loginResponse.ok) {
-        await AsyncStorage.setItem("session_token", loginData.session_token);
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Brief loading time
+      if (loginResponse.success) {
+        console.log("Backend connected.");
+        await AsyncStorage.setItem("session_token", loginResponse.sessionToken);
+        await AsyncStorage.setItem("user_uuid", loginResponse.userUuid);
+        await AsyncStorage.setItem("username", username);
+
         router.replace("/");
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log("Invalid backend link.");
+        setError("Signup successful, but login failed. Please login manually.");
         router.replace("/auth/login_page");
       }
 
