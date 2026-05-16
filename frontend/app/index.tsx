@@ -342,6 +342,11 @@ export default function Index() {
       color: "#797979",
       fontSize: 15,
       fontFamily: "NotoSans-Regular"
+    },
+    threadBoxPublicPrivateDescription: {
+      color: "#797979",
+      fontSize: 10,
+      fontFamily: "NotoSans-Regular"
     }
   })
 
@@ -463,8 +468,9 @@ export default function Index() {
                     style={styles.threadBoxImage}
                   />}
                   <View style={styles.threadBoxContent}>
-                    <Text style={styles.threadBoxTitle}>{thread.name}</Text>
-                    <Text style={styles.threadBoxDescription}>{thread.description}</Text>
+                    <Text style={styles.threadBoxTitle}>{thread == null || thread.name == "" ? "Untitled Thread" : thread.name}</Text>
+                    <Text style={styles.threadBoxDescription}>{thread.description ?? ""}</Text>
+                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private?"\nprivate thread 🔒":"\npublic thread 🔓"}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
