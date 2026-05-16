@@ -51,10 +51,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     borderColor: "#550101",
-    boxShadow: "0px 0px 6px rgba(0, 0, 0, 0.5)",
     fontWeight: "600",
     fontSize: 18,
     fontFamily: "RobotoSlab-Regular",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
   },
   userSection: {
     flexDirection: "row",
@@ -68,7 +71,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     borderColor: "#a7a7a7",
-    boxShadow: "0px 0px 6px rgba(0, 0, 0, 0.5)",
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
   },
   popupOverlay: {
     flex: 1,
@@ -128,7 +134,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  floatingApiButton: {
+  apiButton: {
     position: "absolute",
     bottom: 25,
     left: 20,
@@ -141,7 +147,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 6,
   },
-  floatingApiText: {
+  apiText: {
     color: "white",
     fontWeight: "700",
     fontSize: 14,
@@ -253,14 +259,8 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: !hideHeader,
           headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/")}
-              style={{ marginLeft: 15 }}
-            >
-              <Image
-                source={require("../assets/images/message_logo.png")}
-                style={styles.homeIcon}
-              />
+            <TouchableOpacity onPress={() => router.push("/")} style={{ marginLeft: 15 }}>
+              <Image source={require("../assets/images/message_logo.png")} style={styles.homeIcon} />
             </TouchableOpacity>
           ),
 
@@ -292,15 +292,13 @@ export default function RootLayout() {
         }}
       />
 
-      {/* FLOATING API BUTTON */}
       <TouchableOpacity
         onPress={() => setShowApiPopup(true)}
-        style={styles.floatingApiButton}
+        style={styles.apiButton}
       >
-        <Text style={styles.floatingApiText}>API</Text>
+        <Text style={styles.apiText}>API</Text>
       </TouchableOpacity>
 
-      {/* LOGOUT MODAL */}
       <Modal transparent visible={logoutPopupVisible} animationType="fade">
         <View style={styles.popupOverlay}>
           <View style={styles.popupContainer}>
@@ -325,7 +323,6 @@ export default function RootLayout() {
         </View>
       </Modal>
 
-      {/* API MODAL */}
       <Modal transparent visible={showApiPopup} animationType="fade">
         <View style={styles.popupOverlay}>
           <View style={styles.popupContainer}>

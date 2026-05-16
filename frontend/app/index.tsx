@@ -243,7 +243,6 @@ export default function Index() {
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      zIndex: 999,
       elevation: 5,
       shadowColor: "#000",
       shadowOpacity: 0.5,
@@ -290,6 +289,7 @@ export default function Index() {
       flex: 1,
       paddingTop: 30,
       paddingHorizontal: 30,
+      paddingBottom: 20,
     },
     threadTitleContainer: {
       flexDirection: "row",
@@ -310,17 +310,30 @@ export default function Index() {
       paddingHorizontal: 10,
       paddingVertical: 8,
       fontSize: 16,
+      fontFamily: "NotoSans-Regular",
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
     },
     threadBox: {
       padding: 15,
       borderWidth: 1,
-      borderColor: "#ccc",
+      borderColor: "#a7a7a7",
       borderRadius: 8,
       marginBottom: 15,
+      marginLeft: 5,
+      marginRight: 5,
+      marginTop: 5,
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
     },
     threadBoxContainer: {
       flexDirection: "row",
-      alignItems: "center"
+      alignItems: "center",
+
     },
     threadBoxImage: {
       width: 100,
@@ -345,8 +358,15 @@ export default function Index() {
     },
     threadBoxPublicPrivateDescription: {
       color: "#797979",
-      fontSize: 10,
+      fontSize: 12,
       fontFamily: "NotoSans-Regular"
+    },
+    divider: {
+      height: 2,
+      width: "100%",
+      backgroundColor: "#a1a1a1",
+      marginTop:-5,
+      marginBottom:15,
     }
   })
 
@@ -370,7 +390,7 @@ export default function Index() {
           animationType="fade"
           transparent
           onRequestClose={() => setCreateVisible(false)}
-          >
+        >
             <View style={styles.createThreadBackground}>
               <View style={styles.createThreadPopup}>
                 <Text style={styles.createThreadText}>Create Thread</Text>
@@ -451,12 +471,14 @@ export default function Index() {
           <View style={styles.threadTitleContainer}>
             <Text style={styles.threadsText}>Threads</Text>
             <TextInput
-              placeholder="Search threads..."
+              placeholder="🔍︎ Search threads..."
               value={searchQuery}
               onChangeText={setSearchQuery}
               style={styles.threadsSearch}
             />
           </View>
+
+          <View style={styles.divider}/>
 
           <ScrollView>
             {threads.map((thread: DisplayThread) => (
@@ -470,7 +492,7 @@ export default function Index() {
                   <View style={styles.threadBoxContent}>
                     <Text style={styles.threadBoxTitle}>{thread == null || thread.name == "" ? "Untitled Thread" : thread.name}</Text>
                     <Text style={styles.threadBoxDescription}>{thread.description ?? ""}</Text>
-                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private?"\nprivate thread 🔒":"\npublic thread 🔓"}</Text>
+                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private ? "\nPrivate 🔒" : "\nPublic 🔓" }</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -485,5 +507,5 @@ export default function Index() {
         </View>
       </SafeAreaView>
     </>
-  );
+  )
 }

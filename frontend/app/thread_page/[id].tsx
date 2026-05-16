@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { Button } from "@react-navigation/elements";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import Slider from "@react-native-community/slider";
-import { Audio, ResizeMode, Video } from "expo-av";
-import { useRef } from "react";
 import BackEnd, { DisplayThread, DisplayUser, MediaType, Message } from "@/components/backend";
 import {
   MessageParametersBuilder,
@@ -20,6 +16,8 @@ import {
 } from "@/components/backend";
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { File, Paths } from "expo-file-system";
+import * as LegacyFileSystem from "expo-file-system/legacy";
 
 export default function Index() {
 
@@ -45,6 +43,7 @@ export default function Index() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [threadIsPrivate, setThreadIsPrivate] = useState(false);
+  const [threadIsFavorited, setThreadIsFavorited] = useState(false);
   const [threadData, setThreadData] = useState<DisplayThread>(null);
   const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
   const [users, setUsers] = useState<Record<string, DisplayUser>>({});
@@ -66,7 +65,6 @@ export default function Index() {
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
 
-
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
     "NotoSans-Regular": require("../../assets/fonts/NotoSans-Regular.ttf"),
@@ -75,7 +73,6 @@ export default function Index() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
-
 
   useEffect(() => {
     if (threadUuid) fetchThread(threadPassword);
@@ -86,14 +83,16 @@ export default function Index() {
       const userUuid = await AsyncStorage.getItem("user_uuid");
       
       if (sessionToken == null || userUuid == null){
-          return <View><Text>Error: you must be logged in to view a thread</Text></View>
+          return
       }
+
+      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150)) 
 
       setCurrentUserUuid(userUuid);
 
       try {
         const getThreadResponse = await BackEnd.getThread(String(threadUuid));
-
+        
         if (!getThreadResponse.success) {
           Alert.alert("Error", getThreadResponse.message);
           if(Platform.OS == "web") alert(getThreadResponse.message);
@@ -104,18 +103,23 @@ export default function Index() {
         
         if(privateThread && password == null) return
         const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
-
+        
         if (!getThreadMessagesResponse.success) {
           if (privateThread) setPasswordError(getThreadMessagesResponse.message)
-          else {
-            Alert.alert("Error", getThreadMessagesResponse.message);
-            if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
-          }
-          return
+            else {
+          Alert.alert("Error", getThreadMessagesResponse.message);
+          if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
         }
-
-        setThreadData(getThreadResponse.thread);
-        setThreadMessageData(getThreadMessagesResponse.messages);
+        return
+        }
+      
+        const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
+        if (getUserProfileResponse.success){
+          setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
+        }
+        
+      setThreadData(getThreadResponse.thread);
+      setThreadMessageData(getThreadMessagesResponse.messages);
 
         const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
         const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
@@ -168,11 +172,11 @@ export default function Index() {
         );
 
       if (response.success) {
-
-        fetchThread(threadPassword);
         setNewPost("");
         setThreadAttachment(null);
         setShowPostBox(false);
+        fetchThread(threadPassword);
+
       } else {
         console.log(
           "Post error:",
@@ -253,264 +257,141 @@ const pickAttachment = async () => {
   setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
 };
 
+async function saveAttachmentAs(
+    attachment: Attachment,
+    defaultFileName: string = "attachment"
+) {
+    const fileName =
+        `${defaultFileName}.${attachment.extensionType}`;
 
-  function AudioPlayer() {
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+    //
+    // WEB
+    //
+    if (Platform.OS === "web") {
+        // Convert base64 -> bytes
+        const binaryString = atob(attachment.dataBase64);
 
-    const [position, setPosition] = useState(0);
-    const [duration, setDuration] = useState(1);
+        const bytes = new Uint8Array(binaryString.length);
 
-    useEffect(() => {
-      return () => {
-        if (sound) {
-          sound.unloadAsync();
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
-      };
-    }, [sound]);
 
-    const changeVolume = async (value: number) => {
-      setVolume(value);
+        // Create blob
+        const blob = new Blob([bytes]);
 
-      if (sound) {
-        await sound.setVolumeAsync(value);
-      }
-    };
+        // Create download link
+        const url = URL.createObjectURL(blob);
 
-    const loadAudio = async () => {
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        require("../../assets/audios/[Armroed Core] Sirius Executives.mp3"),
-        {
-          shouldPlay: false,
-          volume: volume,
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+        return;
+    }
+
+    //
+    // ANDROID
+    //
+    if (Platform.OS === "android") {
+        const permissions =
+            await LegacyFileSystem.StorageAccessFramework
+                .requestDirectoryPermissionsAsync();
+
+        if (!permissions.granted) {
+            return;
         }
-      );
 
-      newSound.setOnPlaybackStatusUpdate((status: any) => {
-        if (!status.isLoaded) return;
+        const mimeType =
+            getMimeType(attachment.extensionType);
 
-        setPosition(status.positionMillis);
-        setDuration(status.durationMillis || 1);
-        setIsPlaying(status.isPlaying);
-
-        if (status.didJustFinish) {
-          setIsPlaying(false);
-        }
-      });
-
-      setSound(newSound);
-
-      return newSound;
-    };
-
-    const togglePlayback = async () => {
-      let activeSound = sound;
-
-      if (!activeSound) {
-        activeSound = await loadAudio();
-      }
-
-      const status = await activeSound.getStatusAsync();
-
-      if (!status.isLoaded) return;
-
-      if (status.isPlaying) {
-        await activeSound.pauseAsync();
-      } else {
-        await activeSound.playAsync();
-      }
-    };
-
-    const stopAudio = async () => {
-      if (!sound) return;
-
-      await sound.stopAsync();
-      await sound.setPositionAsync(0);
-
-      setPosition(0);
-      setIsPlaying(false);
-    };
-
-    const seekAudio = async (value: number) => {
-      if (!sound) return;
-
-      await sound.setPositionAsync(value);
-      setPosition(value);
-    };
-
-    const formatTime = (millis: number) => {
-      const totalSeconds = Math.floor(millis / 1000);
-
-      const mins = Math.floor(totalSeconds / 60);
-      const secs = totalSeconds % 60;
-
-      return `${mins}:${secs.toString().padStart(2, "0")}`;
-    };
-
-    return (
-      <View>
-        <Slider
-          minimumValue={0}
-          maximumValue={duration}
-          value={position}
-          onSlidingComplete={seekAudio}
-        />
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: 5,
-          }}
-        >
-          <Text>{formatTime(position)}</Text>
-
-          <Text>{formatTime(duration)}</Text>
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            flexWrap: "wrap",
-          }}
-        >
-          <TouchableOpacity
-            onPress={togglePlayback}
-            style={{
-              backgroundColor: "#007AFF",
-              paddingVertical: 6,
-              paddingHorizontal: 8,
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              {isPlaying ? "Pause" : "Play"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={stopAudio}
-            style={{
-              backgroundColor: "#FF3B30",
-              paddingVertical: 6,
-              paddingHorizontal: 8,
-              borderRadius: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              Stop
-            </Text>
-          </TouchableOpacity>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <TouchableOpacity
-              onPress={async () => {
-                let newVolume = Math.max(
-                  0,
-                  volume - 0.05
+        const uri =
+            await LegacyFileSystem.StorageAccessFramework
+                .createFileAsync(
+                    permissions.directoryUri,
+                    defaultFileName,
+                    mimeType
                 );
 
-                newVolume = Number(
-                  newVolume.toFixed(2)
-                );
+        await LegacyFileSystem.writeAsStringAsync(
+            uri,
+            attachment.dataBase64,
+            {
+                encoding: LegacyFileSystem.EncodingType.Base64,
+            }
+        );
 
-                setVolume(newVolume);
+        return;
+    }
 
-                if (sound) {
-                  await sound.setVolumeAsync(
-                    newVolume
-                  );
-                }
-              }}
-              style={{
-                backgroundColor: "#666",
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                -
-              </Text>
-            </TouchableOpacity>
+    //
+    // IOS
+    //
+    // iOS has no true save dialog.
+    // Save into app documents folder instead.
+    const file = new File(Paths.document, fileName);
 
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "bold",
-                minWidth: 70,
-                textAlign: "center",
-              }}
-            >
-              Vol {volume.toFixed(2)}
-            </Text>
+    file.write(attachment.dataBase64, {
+        encoding: "base64",
+    });
 
-            <TouchableOpacity
-              onPress={async () => {
-                let newVolume = Math.min(
-                  1,
-                  volume + 0.05
-                );
+    return file;
+}
 
-                newVolume = Number(
-                  newVolume.toFixed(2)
-                );
+function getMimeType(extension: string): string {
+    switch (extension.toLowerCase()) {
+        case "png":
+            return "image/png";
 
-                setVolume(newVolume);
+        case "jpg":
+        case "jpeg":
+            return "image/jpeg";
 
-                if (sound) {
-                  await sound.setVolumeAsync(
-                    newVolume
-                  );
-                }
-              }}
-              style={{
-                backgroundColor: "#666",
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                +
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  }
+        case "gif":
+            return "image/gif";
+
+        case "pdf":
+            return "application/pdf";
+
+        case "txt":
+            return "text/plain";
+
+        case "mp4":
+            return "video/mp4";
+
+        case "mp3":
+            return "audio/mpeg";
+
+        default:
+            return "application/octet-stream";
+    }
+}
+
+async function favorite(){
+  const sessionToken = await AsyncStorage.getItem("session_token");
+
+  if(sessionToken == null) return;
+
+  if(!threadIsFavorited){
+    const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
+    if(saveThreadResponse.success) setThreadIsFavorited(true)
+  } else {
+    const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
+    if(unsaveThreadResponse.success) setThreadIsFavorited(false)
+}
+}
+
   if (!fontsLoaded) return null;
+
+  if(currentUserUuid == null){
+    return <View><Text>You must be logged in to view thread messages</Text></View>
+  }
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
@@ -690,7 +571,13 @@ const pickAttachment = async () => {
             >
               {users[threadData.authorUserUuid]?.name ?? "Unknown User"}
             </Text>
+          <View style={{ alignItems: "flex-end" }}>
+          <TouchableOpacity onPress={favorite}>
+            <Ionicons name={threadIsFavorited? "star" : "star-outline"} size={40} color="rgb(218, 214, 32)"></Ionicons>
+          </TouchableOpacity>
           </View>
+          </View>
+
 
           <Text
             style={{
@@ -1071,7 +958,6 @@ const pickAttachment = async () => {
                       gap: 5,
                     }}
                   >
-                    message.attachment
                     {/* IMAGE VIEWER */}
                     {message.attachment.mediaType == "image" && <Image
                       source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
@@ -1083,26 +969,13 @@ const pickAttachment = async () => {
                       }}
                     />}
 
-                    {/* AUDIO PLAYER */}
-                    <View
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#ccc",
-                        borderRadius: 10,
-                        padding: 8,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontWeight: "bold",
-                          marginBottom: 8,
-                        }}
-                      >
-                        [Armored Core] Sirius Executives.mp3
-                      </Text>
+                    {message.attachment.mediaType != "image" && <View style={{width:200}}>
+                      <Button
+                        onPress={()=>{saveAttachmentAs(message.attachment)}}
+                        title="Download Attachment"
+                      />
+                    </View>}
 
-                      <AudioPlayer />
-                    </View>
                   </View>}
 
 
@@ -1119,8 +992,6 @@ const pickAttachment = async () => {
                 </View>
               )
             )}
-
-
           </ScrollView>
         </View>
       </SafeAreaView>
