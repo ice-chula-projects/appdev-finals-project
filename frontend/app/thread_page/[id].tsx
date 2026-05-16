@@ -362,6 +362,10 @@ async function favorite(){
 
   if (!fontsLoaded) return null;
 
+  if(currentUserUuid == null){
+    return <View><Text>You must be logged in to view thread messages</Text></View>
+  }
+
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
       <SafeAreaView>
