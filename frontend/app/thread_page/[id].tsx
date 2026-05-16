@@ -51,7 +51,6 @@ export default function Index() {
   const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.5);
 
-  const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
 
@@ -67,10 +66,10 @@ export default function Index() {
 
 
   useEffect(() => {
-    if (threadUuid) fetchThread();
+    if (threadUuid) fetchThread(threadPassword);
   }, [threadUuid]);
 
-  const fetchThread = async () => {
+  const fetchThread = async (password?: string) => {
       const sessionToken = await AsyncStorage.getItem("session_token");
       const userUuid = await AsyncStorage.getItem("user_uuid");
       
@@ -88,15 +87,19 @@ export default function Index() {
           if(Platform.OS == "web") alert(getThreadResponse.message);
           return <View><Text>Error: {getThreadResponse.message}</Text></View>;
         }
-
-        setThreadIsPrivate(getThreadResponse.thread.private);
-
-        const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid));
+        const privateThread = getThreadResponse.thread.private;
+        setThreadIsPrivate(privateThread);
+        
+        if(privateThread && password == null) return
+        const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
 
         if (!getThreadMessagesResponse.success) {
-          Alert.alert("Error", getThreadMessagesResponse.message);
-          if(Platform.OS == "web") alert(getThreadMessagesResponse.message);
-          return <View><Text>Error: {getThreadMessagesResponse.message}</Text></View>;
+          if (privateThread) setPasswordError(getThreadMessagesResponse.message)
+          else {
+            Alert.alert("Error", getThreadMessagesResponse.message);
+            if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
+          }
+          return
         }
 
         setThreadData(getThreadResponse.thread);
@@ -133,12 +136,13 @@ export default function Index() {
         await BackEnd.createMessage(
           SESSION_TOKEN!,
           String(threadUuid),
-          params
+          params,
+          threadPassword
         );
 
       if (response.success) {
 
-        fetchThread();
+        fetchThread(threadPassword);
         setNewPost("");
         setShowPostBox(false);
       } else {
@@ -462,7 +466,16 @@ export default function Index() {
     setThreadIsPrivate(false);
   }
 
-  if (threadIsPrivate) {
+
+  if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
+    return (
+      <SafeAreaView>
+        <Text>Loading thread...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
         <View style={{ 
@@ -495,8 +508,8 @@ export default function Index() {
 
           <TextInput
             placeholder="Enter password"
-            value={passwordInput}
-            onChangeText={(text) => { setPasswordInput(text); setPasswordError(""); }}
+            value={threadPassword}
+            onChangeText={(text) => { setThreadPassword(text); setPasswordError(""); }}
             secureTextEntry
             style={{ 
               borderWidth: 1, 
@@ -522,7 +535,7 @@ export default function Index() {
 
           <View style={{ flexDirection: "row", gap: 15 }}>
 
-            <TouchableOpacity onPress={enterThreadPassword} style={{ 
+            <TouchableOpacity onPress={()=>{fetchThread(threadPassword)}} style={{ 
               flex: 1, 
               backgroundColor: "#0057b4", 
               paddingVertical: 14, 
@@ -560,13 +573,6 @@ export default function Index() {
     )
   }
 
-  if (!threadMessageData || !threadData) {
-    return (
-      <SafeAreaView>
-        <Text>Loading thread...</Text>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <>
