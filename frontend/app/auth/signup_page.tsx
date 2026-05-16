@@ -4,7 +4,7 @@ import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackEnd from '../../components/backend';
 
-const URL = "http://192.168.1.53:5000/"
+const URL = "http://localhost:5000/"
 
 export const styles = StyleSheet.create({
   container: { 

@@ -1,9 +1,8 @@
 import { Stack, router, usePathname } from "expo-router";
-import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal } from "react-native";
+import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
-
-const GLOBAL_URL = "http://localhost:5000/"
+import BackEnd from "../components/backend";
 
 const styles = StyleSheet.create({
   homeIcon: {
@@ -119,6 +118,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
     fontFamily: "RobotoSlab-Regular",
+  },
+  backendInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
   }
 })
 
@@ -126,8 +133,54 @@ export default function RootLayout() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
 
+  const [apiUrl, setApiUrl] = useState("");
+  const [showApiPopup, setShowApiPopup] = useState(false);
+
   const pathname = usePathname();
   const hideHeader = pathname.startsWith("/auth/login_page") || pathname.startsWith("/auth/signup_page")
+
+   useEffect(() => {
+    const init = async () => {
+
+      // check for login
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      setLoggedIn(!!sessionToken);
+
+      // check for backend url
+      const response = await BackEnd.setApiUrl(apiUrl);
+
+      if (response.success) {
+        setShowApiPopup(false);
+      } else {
+        setShowApiPopup(true);
+      }
+      
+    }
+    init();
+  }, []);
+
+  const handleSaveApiUrl = async () => {
+    try {
+      const cleanedUrl = apiUrl.trim();
+
+      if (!cleanedUrl) {
+        Alert.alert("Error", "API URL cannot be empty");
+        return;
+      }
+
+      await BackEnd.setApiUrl(cleanedUrl);
+      await AsyncStorage.setItem("api_url", cleanedUrl);
+
+      setShowApiPopup(false);
+
+      Alert.alert("Success", "Backend connected!");
+      console.log("Backend URL set:", cleanedUrl);
+
+    } catch (err) {
+      console.log("Error setting API URL:", err);
+      Alert.alert("Error", "Failed to set API URL.");
+    }
+  }
 
   // Check session token
   useEffect(() => {
@@ -210,6 +263,27 @@ export default function RootLayout() {
       </View>
     </Modal>
 
+    <Modal
+      transparent
+      animationType="fade"
+      visible={showApiPopup}
+    >
+      <View style={styles.popupOverlay}>
+        <View style={styles.popupContainer}>
+          <Text style={styles.popupText}>Enter API URL</Text>
+          <TextInput 
+            style={styles.backendInput}
+            value={apiUrl}
+            onChangeText={setApiUrl}
+          />
+          <View style={styles.popupButtons}>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleSaveApiUrl}>
+              <Text style={styles.popupButtonText}>Save</Text>
+          </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
     </>
   )
 }

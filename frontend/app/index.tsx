@@ -9,9 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
 import { randomCreateThreadSubtitles } from '../components/randomSubtitles';
-import { BackEnd } from "../components/backend";
-
-const GLOBAL_URL = "http://192.168.1.53:5000/"
+import BackEnd, { ThreadParametersBuilder, DisplayThread } from "../components/backend";
 
 export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
@@ -43,7 +41,6 @@ export default function Index() {
 
   const handleCreateThread = async () => {
     setCreateThreadError("");
-
     try {
       const sessionToken = await AsyncStorage.getItem("session_token");
       if (!sessionToken) {
@@ -51,25 +48,21 @@ export default function Index() {
         return;
       }
 
-      const response = await fetch(GLOBAL_URL+"create_thread", {
-        method: "POST",
-        headers: {"Content-Type": "application/json", "session-token": sessionToken},
-        body: JSON.stringify({
-          name: threadTitle.trim() || "Untitled Thread", 
-          description: threadDescription, 
-          thumbnail_base64: threadImageBase64
-        })
-      })
+      const response = await BackEnd.createThread(
+        sessionToken, 
+        new ThreadParametersBuilder()
+        .setName(threadTitle)
+        .setDescription(threadDescription)
+        .setThumbnailImageUri(threadImage ?? null)
+      );
 
-      const data = await response.json();
-      console.log("CREATE THREAD:", data);
-
-      if (!response.ok) {
-        setCreateThreadError(data.error || "Failed to create thread.");
+      if (!response.success) {
+        setCreateThreadError(response.message || "Failed to create thread.");
         return;
       }
+
       const createdThread = {
-        uuid: data.thread_uuid,
+        uuid: response.threadUuid,
         name: threadTitle.trim() || "Untitled Thread",
         description: threadDescription,
         image: threadImage ? {uri: threadImage} : require("../assets/images/message_logo.png")
@@ -81,9 +74,8 @@ export default function Index() {
       setThreadDescription("");
       setThreadImage(null);
       setCreateVisible(false);
-      setCreateThreadError("");
       
-      router.push(`/thread_page/${data.thread_uuid}`);
+      router.push(`/thread_page/${response.threadUuid}`);
       
     } catch (err) {
       console.log("Error:",err);
