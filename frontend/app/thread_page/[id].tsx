@@ -41,6 +41,7 @@ const [threadImage, setThreadImage] =
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [threadIsPrivate, setThreadIsPrivate] = useState(false);
+  const [threadIsFavorited, setThreadIsFavorited] = useState(false);
   const [threadData, setThreadData] = useState<DisplayThread>(null);
   const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
   const [users, setUsers] = useState<Record<string, DisplayUser>>({});
@@ -74,13 +75,13 @@ const [threadImage, setThreadImage] =
           return
       }
 
-      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 100)) 
+      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150)) 
 
       setCurrentUserUuid(userUuid);
 
       try {
         const getThreadResponse = await BackEnd.getThread(String(threadUuid));
-
+        
         if (!getThreadResponse.success) {
           Alert.alert("Error", getThreadResponse.message);
           if(Platform.OS == "web") alert(getThreadResponse.message);
@@ -91,18 +92,23 @@ const [threadImage, setThreadImage] =
         
         if(privateThread && password == null) return
         const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
-
+        
         if (!getThreadMessagesResponse.success) {
           if (privateThread) setPasswordError(getThreadMessagesResponse.message)
-          else {
-            Alert.alert("Error", getThreadMessagesResponse.message);
-            if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
-          }
-          return
+            else {
+          Alert.alert("Error", getThreadMessagesResponse.message);
+          if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
         }
-
-        setThreadData(getThreadResponse.thread);
-        setThreadMessageData(getThreadMessagesResponse.messages);
+        return
+        }
+      
+        const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
+        if (getUserProfileResponse.success){
+          setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
+        }
+        
+      setThreadData(getThreadResponse.thread);
+      setThreadMessageData(getThreadMessagesResponse.messages);
 
         const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
         const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
@@ -340,6 +346,20 @@ function getMimeType(extension: string): string {
     }
 }
 
+async function favorite(){
+  const sessionToken = await AsyncStorage.getItem("session_token");
+
+  if(sessionToken == null) return;
+
+  if(!threadIsFavorited){
+    const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
+    if(saveThreadResponse.success) setThreadIsFavorited(true)
+  } else {
+    const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
+    if(unsaveThreadResponse.success) setThreadIsFavorited(false)
+}
+}
+
   if (!fontsLoaded) return null;
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
@@ -520,7 +540,13 @@ function getMimeType(extension: string): string {
             >
               {users[threadData.authorUserUuid]?.name ?? "Unknown User"}
             </Text>
+          <View style={{ alignItems: "flex-end" }}>
+          <TouchableOpacity onPress={favorite}>
+            <Ionicons name={threadIsFavorited? "star" : "star-outline"} size={40} color="rgb(218, 214, 32)"></Ionicons>
+          </TouchableOpacity>
           </View>
+          </View>
+
 
           <Text
             style={{
