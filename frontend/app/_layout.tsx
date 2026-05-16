@@ -162,20 +162,6 @@ export default function RootLayout() {
 
    useEffect(() => {
     const init = async () => {
-      // login check
-      const sessionToken = await AsyncStorage.getItem("session_token");
-      const loggedIn = sessionToken != null;
-      setLoggedIn(loggedIn);
-
-      if(loggedIn){
-        const uuid = await AsyncStorage.getItem("user_uuid");
-        const response = await BackEnd.getUsers([uuid]);
-        
-        if (response.success){
-          setProfileImageUri(response.users[uuid].profilePictureUri);
-        }
-      }
-
       // load saved api url
       const savedUrl = await AsyncStorage.getItem("api_url");
 
@@ -192,11 +178,18 @@ export default function RootLayout() {
         setShowApiPopup(true);
       } else {
         setShowApiPopup(false);
+        const sessionToken = await AsyncStorage.getItem("session_token");
+        const loggedIn = sessionToken != null;
+        setLoggedIn(loggedIn);
+        ;
+        if(loggedIn){
+          reloadProfile();
+        }
       }
     }
     init();
   }, [])
-
+  
   const handleSaveApiUrl = async () => {
     try {
       const cleanedUrl = apiUrl.trim();
@@ -222,12 +215,11 @@ export default function RootLayout() {
 
   // Check session token
   useEffect(() => {
-    const checkLogin = async () => {
-      const sessionToken =await AsyncStorage.getItem("session_token");
-      console.log("Session token:", sessionToken);
-      setLoggedIn(!!sessionToken);
-    };
-    checkLogin();
+    (async () => {
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      const loggedIn = sessionToken != null;
+      setLoggedIn(loggedIn);
+    })();
   }, [pathname]);
 
   // Logout
@@ -245,7 +237,6 @@ export default function RootLayout() {
     if (!uuid) return;
 
     const response = await BackEnd.getUsers([uuid]);
-
     if (response.success) {
         setProfileImageUri(response.users[uuid].profilePictureUri);
     }
