@@ -235,6 +235,7 @@ export default function ProfilePage() {
       borderColor: "#ccc",
       borderRadius: 8,
       padding: 15,
+      
     },
     profilePictureIcon: {
       width: 100,
@@ -244,6 +245,10 @@ export default function ProfilePage() {
       borderRadius: 15,
       borderWidth: 2,
       borderColor: "#c2c2c2",
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
     },
     profileUsername: {
       fontSize: 30,
