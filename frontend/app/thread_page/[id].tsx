@@ -452,6 +452,8 @@ export default function Index() {
               style={{
                 fontSize: 40,
                 fontWeight: "bold",
+                fontFamily: "NotoSans-Regular",
+                marginLeft: 10
               }}
             >
               Threads
