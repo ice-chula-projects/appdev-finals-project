@@ -3,6 +3,7 @@ import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInpu
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 import BackEnd from "../components/backend";
+import { ProfileContext } from "@/components/profileContext";
 
 const styles = StyleSheet.create({
   homeIcon: {
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [profileImageUri, setProfileImageUri] = useState(null);
   const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
 
   const [apiUrl, setApiUrl] = useState("");
@@ -162,7 +164,17 @@ export default function RootLayout() {
     const init = async () => {
       // login check
       const sessionToken = await AsyncStorage.getItem("session_token");
-      setLoggedIn(!!sessionToken);
+      const loggedIn = sessionToken != null;
+      setLoggedIn(loggedIn);
+
+      if(loggedIn){
+        const uuid = await AsyncStorage.getItem("user_uuid");
+        const response = await BackEnd.getUsers([uuid]);
+        
+        if (response.success){
+          setProfileImageUri(response.users[uuid].profilePictureUri);
+        }
+      }
 
       // load saved api url
       const savedUrl = await AsyncStorage.getItem("api_url");
@@ -227,8 +239,21 @@ export default function RootLayout() {
     router.replace("/");
   }
 
+  const reloadProfile = async () => {
+    const uuid = await AsyncStorage.getItem("user_uuid");
+
+    if (!uuid) return;
+
+    const response = await BackEnd.getUsers([uuid]);
+
+    if (response.success) {
+        setProfileImageUri(response.users[uuid].profilePictureUri);
+    }
+};
+
   return (
-    <View style={{ flex: 1 }}>
+    <ProfileContext.Provider value={{ reloadProfile }}>
+      <View style={{ flex: 1 }}>
 
       <Stack
         screenOptions={{
@@ -250,7 +275,7 @@ export default function RootLayout() {
               <View style={styles.userSection}>
                 <TouchableOpacity onPress={() => router.push("/profile_page")}>
                   <Image
-                    source={require("../assets/images/default_profile.png")}
+                    source={profileImageUri != null? profileImageUri : require("../assets/images/default_profile.png")}
                     style={styles.profileIcon}
                   />
                 </TouchableOpacity>
@@ -330,5 +355,6 @@ export default function RootLayout() {
         </View>
       </Modal>
     </View>
+    </ProfileContext.Provider>
   )
 }

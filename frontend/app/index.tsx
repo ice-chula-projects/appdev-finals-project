@@ -277,7 +277,7 @@ export default function Index() {
   if (!fontsLoaded) return null;
 
   return (
-    <View>
+    <>
       <Stack.Screen
         options={{
           headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
@@ -467,6 +467,6 @@ export default function Index() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </View>
+    </>
   );
 }
