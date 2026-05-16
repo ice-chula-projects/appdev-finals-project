@@ -411,7 +411,11 @@ async function favorite(){
           maxWidth: 400, 
           backgroundColor: "white", 
           borderRadius: 15, 
-          padding: 25 
+          padding: 25,
+          elevation: 5,
+          shadowColor: "#000000",
+          shadowOpacity: 0.5,
+          shadowRadius: 6,
           }}>
 
           <Text style={{
