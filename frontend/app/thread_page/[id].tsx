@@ -16,6 +16,8 @@ import {
 } from "@/components/backend";
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { File, Paths } from "expo-file-system";
+import * as LegacyFileSystem from "expo-file-system/legacy";
 
 export default function Index() {
 
@@ -221,6 +223,122 @@ const pickAttachment = async () => {
   );
   setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
 };
+
+async function saveAttachmentAs(
+    attachment: Attachment,
+    defaultFileName: string = "attachment"
+) {
+    const fileName =
+        `${defaultFileName}.${attachment.extensionType}`;
+
+    //
+    // WEB
+    //
+    if (Platform.OS === "web") {
+        // Convert base64 -> bytes
+        const binaryString = atob(attachment.dataBase64);
+
+        const bytes = new Uint8Array(binaryString.length);
+
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Create blob
+        const blob = new Blob([bytes]);
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+
+        return;
+    }
+
+    //
+    // ANDROID
+    //
+    if (Platform.OS === "android") {
+        const permissions =
+            await LegacyFileSystem.StorageAccessFramework
+                .requestDirectoryPermissionsAsync();
+
+        if (!permissions.granted) {
+            return;
+        }
+
+        const mimeType =
+            getMimeType(attachment.extensionType);
+
+        const uri =
+            await LegacyFileSystem.StorageAccessFramework
+                .createFileAsync(
+                    permissions.directoryUri,
+                    defaultFileName,
+                    mimeType
+                );
+
+        await LegacyFileSystem.writeAsStringAsync(
+            uri,
+            attachment.dataBase64,
+            {
+                encoding: LegacyFileSystem.EncodingType.Base64,
+            }
+        );
+
+        return;
+    }
+
+    //
+    // IOS
+    //
+    // iOS has no true save dialog.
+    // Save into app documents folder instead.
+    const file = new File(Paths.document, fileName);
+
+    file.write(attachment.dataBase64, {
+        encoding: "base64",
+    });
+
+    return file;
+}
+
+function getMimeType(extension: string): string {
+    switch (extension.toLowerCase()) {
+        case "png":
+            return "image/png";
+
+        case "jpg":
+        case "jpeg":
+            return "image/jpeg";
+
+        case "gif":
+            return "image/gif";
+
+        case "pdf":
+            return "application/pdf";
+
+        case "txt":
+            return "text/plain";
+
+        case "mp4":
+            return "video/mp4";
+
+        case "mp3":
+            return "audio/mpeg";
+
+        default:
+            return "application/octet-stream";
+    }
+}
 
   if (!fontsLoaded) return null;
 
@@ -680,15 +798,11 @@ const pickAttachment = async () => {
                       }}
                     />}
 
-                    {message.attachment.mediaType != "image" && <View>
-                      <Button style={{
-                        backgroundColor: "#007AFF",
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
-                        borderRadius: 8,
-                        width: 10,
-                        alignItems: "center",
-                      }}><Text>Download Attachment</Text></Button>
+                    {message.attachment.mediaType != "image" && <View style={{width:200}}>
+                      <Button
+                        onPress={()=>{saveAttachmentAs(message.attachment)}}
+                        title="Download Attachment"
+                      />
                     </View>}
 
                   </View>}
