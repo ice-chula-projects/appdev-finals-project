@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import Slider from "@react-native-community/slider";
 import { Audio, ResizeMode, Video } from "expo-av";
 import { useRef } from "react";
-import BackEnd, { DisplayThread, DisplayUser, Message } from "@/components/backend";
+import BackEnd, { DisplayThread, DisplayUser, MediaType, Message } from "@/components/backend";
 import {
   MessageParametersBuilder,
   MessageUpdateParametersBuilder,
@@ -142,6 +142,9 @@ const [threadImage, setThreadImage] =
         new MessageParametersBuilder()
           .setMessage(newPost);
 
+        if(threadAttachment != null)
+          params.setAttachment(threadAttachment);
+
       const response =
         await BackEnd.createMessage(
           SESSION_TOKEN!,
@@ -154,6 +157,7 @@ const [threadImage, setThreadImage] =
 
         fetchThread(threadPassword);
         setNewPost("");
+        setThreadAttachment(null);
         setShowPostBox(false);
       } else {
         console.log(
@@ -219,14 +223,11 @@ const [threadImage, setThreadImage] =
   if (result.canceled) return;
 
   const asset = result.assets[0];
-
   const uri = asset.uri;
 
-  const extension =
-    uri.split(".").pop()?.toLowerCase() || "file"; 
+  let mediaType: MediaType = "application";
 
-  let mediaType: | "image" | "audio" | "video" | "file" = "file";
-
+  console.log(asset.mimeType)
   if (asset.mimeType?.startsWith("image")) {
     mediaType = "image";
   } else if (
@@ -244,12 +245,7 @@ const [threadImage, setThreadImage] =
       ? uri
       : null
   );
-
-  setThreadAttachment({
-    data_base64: asset.base64,
-    extension_type: extension,
-    media_type: mediaType,
-  });
+  setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
 };
 
 
@@ -510,27 +506,6 @@ const [threadImage, setThreadImage] =
     );
   }
   if (!fontsLoaded) return null;
-
-  const enterThreadPassword = async () => {
-    const sessionToken = await AsyncStorage.getItem("session_token");
-    if (!sessionToken) return;
-    setPasswordError("");
-
-    const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken, String(threadUuid), undefined, passwordInput);
-
-    if (!getThreadMessagesResponse.success) {
-      setPasswordError("Incorrect password. Please try again.");
-      return;
-    }
-    
-    setThreadPassword(passwordInput);
-    setThreadMessageData(getThreadMessagesResponse.messages);
-    const uniqueUserUuids = [...new Set([threadData?.authorUserUuid ?? "", ...getThreadMessagesResponse.messages.map(x => x.authorUserUuid)])];
-    const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
-    if (getUsersResponse.success) setUsers(getUsersResponse.users);
-    setThreadIsPrivate(false);
-  }
-
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
@@ -970,8 +945,8 @@ const [threadImage, setThreadImage] =
                     {message.message}
                   </Text>
 
-                  {/* add media player here. audio player + image viewer + video downloader w/ viewable thumbnail  */}
-                  <View
+                  {/*add media player here. audio player + image viewer + video downloader w/ viewable thumbnail*/}
+                  {message.attachment != null && <View
                     style={{
                       marginTop: 10,
                       gap: 5,
@@ -979,15 +954,15 @@ const [threadImage, setThreadImage] =
                   >
 
                     {/* IMAGE VIEWER */}
-                    <Image
-                      source={require("../../assets/images/18007564.jpg")}
+                    {message.attachment.mediaType == "image" && <Image
+                      source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
                       style={{
                         width: 150,
                         height: 150,
                         borderRadius: 10,
                         resizeMode: "cover",
                       }}
-                    />
+                    />}
 
                     {/* AUDIO PLAYER */}
                     <View
@@ -1009,7 +984,7 @@ const [threadImage, setThreadImage] =
 
                       <AudioPlayer />
                     </View>
-                  </View>
+                  </View>}
 
 
 

@@ -707,23 +707,22 @@ export class Attachment {
     extensionType: string
     mediaType: MediaType
 
-    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment> {
+    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType, extension?:string): Promise<Attachment> {
         if(Platform.OS !== "web"){
             const file = new File(attachmentUri);
 
-            return new Attachment(await file.base64(), file.extension, mediaType);
+            return new Attachment(await file.base64(), extension ?? file.extension, mediaType);
         }
 
         try {
         const response = await fetch(attachmentUri);
         const blob = await response.blob();
-        
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result as string;
                 const base64Clean = result.split(',')[1];
-                resolve(new Attachment(base64Clean, attachmentUri.split("?")[0].split(".").pop()?.toLowerCase() || "", mediaType));
+                resolve(new Attachment(base64Clean, extension ?? "", mediaType));
             };
             reader.onerror = reject;
             reader.readAsDataURL(blob);

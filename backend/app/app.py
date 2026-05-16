@@ -95,7 +95,7 @@ def validate_attachment(attachment) -> tuple[Attachment | None, str, int]:
             media_type = AttachmentMediaTypes.APPLICATION
         case _:
             return None, "Attachment media type is invalid.", 400
-    
+        
     return Attachment(data_base64 = data_base64,extension_type = extension_type, media_type = media_type), "Success.", 200
 
 @app.route("/")

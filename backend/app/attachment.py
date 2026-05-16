@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from dataclasses import dataclass
 from PIL import Image
 import io
@@ -25,7 +25,7 @@ def validate_base64_string(base64_str:str):
 class InvalidBase64ImageError(Exception):
     pass
 
-class AttachmentMediaTypes(Enum):
+class AttachmentMediaTypes(StrEnum):
     TEXT = "text"
     IMAGE = "image"
     AUDIO = "audio"
