@@ -48,7 +48,7 @@ export default class BackEnd {
         const response = new LoginResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "login", {
+            const apiResponse = await fetch(this.#apiUrl + "login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -58,9 +58,9 @@ export default class BackEnd {
                     password: password
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
 
                 response.success = true;
                 response.message = body.message;
@@ -79,27 +79,27 @@ export default class BackEnd {
         return response;
     }
 
-    static async logout(sessionToken: string): Promise<ApiReponse> {
+    static async logout(sessionToken: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "logout", {
+            const apiResponse = await fetch(this.#apiUrl + "logout", {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -127,7 +127,7 @@ export default class BackEnd {
         const response = new LoginResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "create_user", {
+            const apiResponse = await fetch(this.#apiUrl + "create_user", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -137,9 +137,9 @@ export default class BackEnd {
                     password: password
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
 
                 response.success = true;
                 response.message = body.message;
@@ -172,12 +172,12 @@ export default class BackEnd {
 
         params.append("uuid", userUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "get_user_profile?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "get_user_profile?" + params.toString(), {
                 method: "GET"
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -222,12 +222,12 @@ export default class BackEnd {
         }
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "get_users?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "get_users?" + params.toString(), {
                 method: "GET"
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -257,19 +257,19 @@ export default class BackEnd {
         return response;
     }
 
-    static async updateUser(sessionToken: string, userUpdateParameters: UserUpdateParameters): Promise<ApiReponse> {
+    static async updateUser(sessionToken: string, userUpdateParameters: UserUpdateParameters): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "update_user", {
+            const apiResponse = await fetch(this.#apiUrl + "update_user", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -282,9 +282,9 @@ export default class BackEnd {
                     password: userUpdateParameters.password
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -300,27 +300,27 @@ export default class BackEnd {
         return response;
     }
 
-    static async deleteUser(sessionToken: string): Promise<ApiReponse> {
+    static async deleteUser(sessionToken: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "delete_user", {
+            const apiResponse = await fetch(this.#apiUrl + "delete_user", {
                 method: "DELETE",
                 headers: {
                     "session-token": sessionToken
                 }
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -338,7 +338,7 @@ export default class BackEnd {
 
     static async createThread(sessionToken: string, threadParameters: ThreadParameters): Promise<CreateThreadResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
@@ -348,7 +348,7 @@ export default class BackEnd {
         const response = new CreateThreadResponse();
 
         try {
-            const apiReponse = await fetch(this.#apiUrl + "create_thread", {
+            const apiResponse = await fetch(this.#apiUrl + "create_thread", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -361,9 +361,9 @@ export default class BackEnd {
                     password: threadParameters.password
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -396,12 +396,12 @@ export default class BackEnd {
         if (page != null) params.append("page", page.toFixed(0));
         if (searchString != null) params.append("search", searchString);
         try {
-            const apiReponse = await fetch(this.#apiUrl + "search_threads?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "search_threads?" + params.toString(), {
                 method: "GET"
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -450,12 +450,12 @@ export default class BackEnd {
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "get_thread?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "get_thread?" + params.toString(), {
                 method: "GET"
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -548,21 +548,21 @@ export default class BackEnd {
     return response;
 }
 
-    static async updateThread(sessionToken: string, threadUuid: string, threadUpdateParameters: ThreadUpdateParameters): Promise<ApiReponse> {
+    static async updateThread(sessionToken: string, threadUuid: string, threadUpdateParameters: ThreadUpdateParameters): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "update_thread?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "update_thread?" + params.toString(), {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -576,9 +576,9 @@ export default class BackEnd {
                     remove_thumbnail: threadUpdateParameters.removeThumbnail
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -594,29 +594,29 @@ export default class BackEnd {
         return response;
     }
 
-    static async deleteThread(sessionToken: string, threadUuid: string): Promise<ApiReponse> {
+    static async deleteThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "delete_thread?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "delete_thread?" + params.toString(), {
                 method: "DELETE",
                 headers: {
                     "session-token": sessionToken
                 }
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -663,14 +663,14 @@ export default class BackEnd {
                     mdia_type: messageParameters.attachment.mediaType
                 }
             }
-            const apiReponse = await fetch(this.#apiUrl + "create_message?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "create_message?" + params.toString(), {
                 method: "POST",
                 headers: headers,
                 body: JSON.stringify(requestBody)
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -709,13 +709,13 @@ export default class BackEnd {
                 }
             if (threadPassword != null) headers["thread-password"] = threadPassword;
 
-            const apiReponse = await fetch(this.#apiUrl + "get_thread_messages?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "get_thread_messages?" + params.toString(), {
                 method: "GET",
                 headers: headers
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
 
@@ -749,16 +749,16 @@ export default class BackEnd {
         return response;
     }
 
-    static async updateMessage(sessionToken: string, threadUuid: string, messageUuid: string, messageUpdateParameters: MessageUpdateParameters): Promise<ApiReponse> {
+    static async updateMessage(sessionToken: string, threadUuid: string, messageUuid: string, messageUpdateParameters: MessageUpdateParameters): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
@@ -778,7 +778,7 @@ export default class BackEnd {
                 }
             }
 
-            const apiReponse = await fetch(this.#apiUrl + "update_message?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "update_message?" + params.toString(), {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -786,9 +786,9 @@ export default class BackEnd {
                 },
                 body: JSON.stringify(requestBody)
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -804,21 +804,21 @@ export default class BackEnd {
         return response;
     }
 
-    static async deleteMessage(sessionToken: string, threadUuid: string, messageUuid: string): Promise<ApiReponse> {
+    static async deleteMessage(sessionToken: string, threadUuid: string, messageUuid: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "delete_message?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "delete_message?" + params.toString(), {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -828,9 +828,9 @@ export default class BackEnd {
                     message_uuid: messageUuid,
                 })
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -846,29 +846,29 @@ export default class BackEnd {
         return response;
     }
 
-    static async saveThread(sessionToken: string, threadUuid: string): Promise<ApiReponse> {
+    static async saveThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "save_thread?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "save_thread?" + params.toString(), {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -884,29 +884,29 @@ export default class BackEnd {
         return response;
     }
 
-    static async unsaveThread(sessionToken: string, threadUuid: string): Promise<ApiReponse> {
+    static async unsaveThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
         if (this.#apiUrl == null) {
-            const response = new ApiReponse();
+            const response = new ApiResponse();
 
             response.success = false;
             response.message = "Invalid Api Url";
             return response;
         }
 
-        const response = new ApiReponse();
+        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         try {
-            const apiReponse = await fetch(this.#apiUrl + "unsave_thread?" + params.toString(), {
+            const apiResponse = await fetch(this.#apiUrl + "unsave_thread?" + params.toString(), {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
             })
-            const body = await apiReponse.json();
+            const body = await apiResponse.json();
 
-            if (apiReponse.ok) {
+            if (apiResponse.ok) {
                 response.success = true;
                 response.message = body.message;
             }
@@ -1124,7 +1124,7 @@ export interface BaseApiResponse {
     message: string;
 }
 
-export class ApiReponse implements BaseApiResponse {
+export class ApiResponse implements BaseApiResponse {
     success: boolean;
     message: string;
 }
