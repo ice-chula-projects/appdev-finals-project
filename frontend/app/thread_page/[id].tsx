@@ -18,6 +18,9 @@ import {
   UserUpdateParametersBuilder,
   Attachment,
 } from "@/components/backend";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Index() {
 
@@ -32,8 +35,15 @@ export default function Index() {
     );
   }
 
-  const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  
+const [threadAttachment, setThreadAttachment] =
+  useState<any>(null);
 
+const [threadImage, setThreadImage] =
+  useState<string | null>(null);
+ const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -178,14 +188,69 @@ export default function Index() {
         return;
       }
 
-      console.log("Delete error:", response.message);
-    } catch (err) {
-      console.log("Network error:", err);
-    } finally {
-      setDeletingThread(false);
-      setConfirmDelete(false);
-    }
-  };
+    console.log("Delete error:", response.message);
+  } catch (err) {
+    console.log("Network error:", err);
+  } finally {
+    setDeletingThread(false);
+    setConfirmDelete(false);
+  }
+};
+
+
+  const pickAttachment = async () => {
+  const permission =
+    await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    alert("Permission required");
+    return;
+  }
+
+  const result =
+    await ImagePicker.launchImageLibraryAsync({
+      mediaTypes:
+        ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.7,
+      base64: true,
+    });
+
+  if (result.canceled) return;
+
+  const asset = result.assets[0];
+
+  const uri = asset.uri;
+
+  const extension =
+    uri.split(".").pop()?.toLowerCase() || "file"; 
+
+  let mediaType: | "image" | "audio" | "video" | "file" = "file";
+
+  if (asset.mimeType?.startsWith("image")) {
+    mediaType = "image";
+  } else if (
+    asset.mimeType?.startsWith("audio")
+  ) {
+    mediaType = "audio";
+  } else if (
+    asset.mimeType?.startsWith("video")
+  ) {
+    mediaType = "video";
+  }
+
+  setThreadImage(
+    mediaType === "image"
+      ? uri
+      : null
+  );
+
+  setThreadAttachment({
+    data_base64: asset.base64,
+    extension_type: extension,
+    media_type: mediaType,
+  });
+};
 
 
   function AudioPlayer() {
@@ -663,7 +728,7 @@ export default function Index() {
               marginBottom: 10,
             }}
           >
-            {threadData.creation_date}
+            {threadData.creationDate.toString()}
             {`\n`}
           </Text>
 
@@ -786,27 +851,60 @@ export default function Index() {
                   }}
                 />
 
-                <TouchableOpacity
-                  onPress={submitPost}
-                  disabled={posting}
+                <View
                   style={{
-                    backgroundColor: "#34C759",
-                    paddingVertical: 10,
-                    borderRadius: 8,
+                    flexDirection: "row",
                     alignItems: "center",
+                    gap: 10,
                   }}
                 >
-                  <Text
+
+                  <TouchableOpacity
+                    onPress={pickAttachment}
                     style={{
-                      color: "white",
-                      fontWeight: "bold",
+                      width: 45,
+                      height: 45,
+                      borderRadius: 10,
+                      backgroundColor: "#333",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {posting
-                      ? "Posting..."
-                      : "Post Message"}
-                  </Text>
-                </TouchableOpacity>
+                    <Ionicons
+                      name="attach-outline"
+                      size={22}
+                      color="#fff"
+                    />
+                  </TouchableOpacity>
+
+
+                  <TouchableOpacity
+                    onPress={submitPost}
+                    disabled={posting}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#34C759",
+                      paddingVertical: 12,
+                      borderRadius: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: posting ? 0.6 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {posting
+                        ? "Posting..."
+                        : "Post Message"}
+                    </Text>
+                  </TouchableOpacity>
+
+                </View>
+
               </View>
             )}
           </View>
