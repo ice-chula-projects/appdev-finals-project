@@ -15,12 +15,17 @@ export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
   const [threadTitle, setThreadTitle] = useState("");
   const [threadDescription, setThreadDescription] = useState("");
+
   const [threadImage, setThreadImage] = useState<string | null>(null);
-  const [threadImageBase64, setThreadImageBase64] = useState<string | null>(null);
   const [createThreadError, setCreateThreadError] = useState("");
   const [threads, setThreads] = useState<any[]>([]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
+
+  const [isPrivateThread, setIsPrivateThread] = useState(false);
+  const [threadPassword, setThreadPassword] = useState("");
+
   const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
 
   const pickThreadImage = async () => {
@@ -48,13 +53,20 @@ export default function Index() {
         return;
       }
 
-      const response = await BackEnd.createThread(
-        sessionToken,
-        new ThreadParametersBuilder()
-          .setName(threadTitle)
-          .setDescription(threadDescription)
-          .setThumbnailImageUri(threadImage ?? null)
-      );
+      const builder = new ThreadParametersBuilder()
+        .setName(threadTitle)
+        .setDescription(threadDescription)
+        .setThumbnailImageUri(threadImage ?? null)
+
+      if (isPrivateThread) {
+        if (!threadPassword || threadPassword.trim().length === 0) {
+          setCreateThreadError("A password is required for private threads.");
+          return;
+        }
+        builder.setPassword(threadPassword.trim());
+      }
+
+      const response = await BackEnd.createThread(sessionToken, builder);
 
       if (!response.success) {
         setCreateThreadError(response.message || "Failed to create thread.");
@@ -64,6 +76,10 @@ export default function Index() {
       setThreadTitle("");
       setThreadDescription("");
       setThreadImage(null);
+
+      setIsPrivateThread(false);
+      setThreadPassword("");
+
       setCreateVisible(false);
 
       router.push(`/thread_page/${response.threadUuid}`);
@@ -235,7 +251,24 @@ export default function Index() {
       fontWeight: "bold",
       marginRight: 5,
       fontFamily: "RobotoSlab-Regular"
-    }
+    },
+    visibilityOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    visibilityText: {
+      marginLeft: 8,
+      fontSize: 14
+    },
+    threadPasswordInput: {
+      borderWidth: 1,
+      borderColor: "#ccc",
+      borderRadius: 10,
+      padding: 10,
+      marginTop: 8,
+      fontFamily: "NotoSans-Regular",
+    },
   })
 
   useEffect(() => {
@@ -258,54 +291,76 @@ export default function Index() {
           animationType="fade"
           transparent
           onRequestClose={() => setCreateVisible(false)}
-        >
-          <View style={styles.createThreadBackground}>
-            <View style={styles.createThreadPopup}>
-              <Text style={styles.createThreadText}>Create Thread</Text>
-              <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
-              <View style={styles.createThreadMargins}>
-                <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
-                  {threadImage ? (
-                    <Image source={{ uri: threadImage }} style={{ width: "100%", height: "100%" }} />
-                  ) : (
+          >
+            <View style={styles.createThreadBackground}>
+              <View style={styles.createThreadPopup}>
+                <Text style={styles.createThreadText}>Create Thread</Text>
+                <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
+                
+                <View style={styles.createThreadMargins}>
+                  <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
+                    {threadImage ? (
+                      <Image
+                      source={{ uri: threadImage }}
+                      style={{ width: "100%", height: "100%" }}
+                      />
+                    ) : (
                     <>
                       <Ionicons name="image-outline" size={36} color="#8f8f8f" />
                       <Text style={styles.imagePickerText}>Select Image</Text>
+                      <Text style={styles.imagePickerText}>(.png, .jpg, .jpeg, .gif)</Text>
                     </>
                   )}
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                  
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      placeholder="Thread Title"
+                      value={threadTitle}
+                      onChangeText={setThreadTitle}
+                      style={styles.threadNameInput}
+                    />
 
-                <View style={{ flex: 1 }}>
-                  <TextInput
-                    placeholder="Thread Title"
-                    value={threadTitle}
-                    onChangeText={setThreadTitle}
-                    style={styles.threadNameInput}
-                  />
-                  <TextInput
-                    placeholder="Description"
-                    value={threadDescription}
-                    onChangeText={setThreadDescription}
-                    style={styles.threadDescInput}
-                    multiline
-                  />
+                    <TextInput
+                      placeholder="Description"
+                      value={threadDescription}
+                      onChangeText={setThreadDescription}
+                      style={styles.threadDescInput}
+                      multiline
+                    />
+                    
+                    <View style={{ marginTop: 10 }}>
+                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.visibilityOption}>
+                        <Ionicons name={isPrivateThread ? "lock-closed" : "lock-open"} size={18} color="#333" />
+                        <Text style={styles.visibilityText}>{isPrivateThread ? "Private Thread" : "Public Thread"}</Text>
+                        {isPrivateThread && (
+                          <TextInput
+                            placeholder="Thread Password"
+                            value={threadPassword}
+                            onChangeText={setThreadPassword}
+                            secureTextEntry
+                            style={styles.threadPasswordInput}
+                          />
+                          )}
+                        </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
-              </View>
-
-              {createThreadError ? (
+                {createThreadError ? (
                 <Text style={styles.threadErrorText}>{createThreadError}</Text>
               ) : null}
 
               <View style={styles.alignButtons}>
-
                 <TouchableOpacity onPress={handleCreateThread} style={styles.confirmThreadButton}>
                   <Text style={styles.threadButtonText}>Confirm</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setCreateVisible(false)} style={styles.cancelThreadButton}>
+                <TouchableOpacity
+                  onPress={() => setCreateVisible(false)}
+                  style={styles.cancelThreadButton}
+                >
                   <Text style={styles.threadButtonText}>Cancel</Text>
                 </TouchableOpacity>
-
               </View>
             </View>
           </View>
