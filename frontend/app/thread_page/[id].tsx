@@ -37,12 +37,10 @@ export default function Index() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   
-const [threadAttachment, setThreadAttachment] =
-  useState<any>(null);
+  const [threadAttachment, setThreadAttachment] = useState<any>(null);
+  const [threadImage, setThreadImage] = useState<string | null>(null);
 
-const [threadImage, setThreadImage] =
-  useState<string | null>(null);
- const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
+  const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -54,7 +52,12 @@ const [threadImage, setThreadImage] =
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
 
+  const [NewTitle, setNewTitle] = useState("");
+  const [NewDescription, setNewDescription] = useState("");
+  const [ThreadDesc, setThreadDesc] = useState(false);
+
   const [showPostBox, setShowPostBox] = useState(false);
+  const [showSecondPostBox, setShowSecondPostBox] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
@@ -126,6 +129,18 @@ const [threadImage, setThreadImage] =
         setLoading(false);
       }
     };
+
+    const submitChange = async () => {
+      const SESSION_TOKEN =
+        await AsyncStorage.getItem(
+          "session_token"
+        );
+
+      if (!newPost.trim()) return;
+
+
+    }
+    // Do Backend Here // 
 
   const submitPost = async () => {
     const SESSION_TOKEN =
@@ -706,6 +721,14 @@ const pickAttachment = async () => {
             {threadData.description}
           </Text>
 
+            <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 10,
+                  }}
+                >
+
           {currentUserUuid === threadData.authorUserUuid && (
             <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
               {!confirmDelete ? (
@@ -761,6 +784,112 @@ const pickAttachment = async () => {
               )}
             </View>
           )}
+
+          {currentUserUuid === threadData.authorUserUuid && (
+          <>
+          <TouchableOpacity
+          onPress={() =>
+            setShowSecondPostBox(!showSecondPostBox)
+          }
+          style={{
+            backgroundColor: "#248aca",
+            paddingVertical: 10,
+            paddingHorizontal: 15,
+            borderRadius: 10,
+            marginBottom: 10,
+            alignSelf: "flex-start",
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              fontWeight: "bold",
+            }}
+          >
+            {showSecondPostBox
+              ? "Cancel"
+              : "Edit Thread"}
+          </Text>
+        </TouchableOpacity>
+
+        {showSecondPostBox && (
+          <View
+            style={{
+              padding: 12,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 10,
+              marginTop: 10,
+            }}
+          >
+            <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+            <TextInput
+              placeholder="Title"
+              multiline
+              value={NewTitle}
+              onChangeText={setNewTitle}
+              style={{
+                flex: 1,
+                height: 160,
+                width: 200,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                padding: 10,
+                textAlignVertical: "top",
+                marginBottom: 10,
+                fontSize: 14,
+              }}
+            />
+            <TextInput
+              placeholder="Description"
+              multiline
+              value={NewDescription}
+              onChangeText={setNewDescription}
+              style={{
+                flex: 1,
+                height: 160,
+                width: 1000,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                padding: 10,
+                textAlignVertical: "top",
+                marginBottom: 10,
+                fontSize: 14,
+              }}
+            />
+          </View>
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#2d635a",
+                paddingVertical: 12,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+              onPress={submitChange}
+              disabled={ThreadDesc}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Submit Change
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        </>
+        )}
+      </View>
 
           <View
             style={{
