@@ -6,6 +6,7 @@ import { Stack, router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { BackEnd } from "../components/backend";
 
 const GLOBAL_URL = "http://localhost:5000/"
 
@@ -17,6 +18,7 @@ export default function ProfilePage() {
 
   const [pendingPicture, setPendingPicture] = useState<string | null>(null);
   const [pendingBase64, setPendingBase64] = useState<string | null>(null);
+  const [pendingMimeType, setPendingMimeType] = useState<string>("image/jpeg");
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -27,27 +29,67 @@ export default function ProfilePage() {
   const [editDescription, setEditDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
 
+  const loadProfile = async () => {
+    try {
+      const username = await AsyncStorage.getItem("username");
+      const userUUID = await AsyncStorage.getItem("user_uuid");
+      const savedPicture = await AsyncStorage.getItem("profile_picture_base64");
+      const savedDescription = await AsyncStorage.getItem("motd");
+
+      console.log("Loaded username:", username);
+      console.log("Loaded UUID:", userUUID);
+      console.log("Loaded PFP:", savedPicture);
+      console.log("Loaded description:",savedDescription);
+
+      if (username) setProfileName(username);
+      if (userUUID) setUserUUID(userUUID);
+      if (savedPicture) setProfilePicture(savedPicture);
+      if (savedDescription) setProfileDescription(savedDescription);
+      } catch (err) {
+        console.log("Failed to load profile:", err);
+      }
+    }
+
+  const fetchUserProfile = async () => {
+    try {
+      const uuid = await AsyncStorage.getItem("user_uuid");
+      if (!uuid) {
+        console.log("No UUID found.");
+        return;
+      }
+    
+      const response = await BackEnd.getUserProfile(uuid);
+    
+      if (response.success && response.userProfile) {
+        console.log("Fetched user:", response.userProfile);
+      
+        setProfileName(response.userProfile.name ?? "");
+        setUserUUID(response.userProfile.uuid ?? uuid);
+        setProfileDescription(response.userProfile.motd ?? "");
+      
+        // Save to AsyncStorage
+        await AsyncStorage.setItem("username", response.userProfile.name ?? "");
+        await AsyncStorage.setItem("motd", response.userProfile.motd ?? "");
+      
+        if (response.userProfile.profilePictureUri) {
+          setProfilePicture(response.userProfile.profilePictureUri);
+          await AsyncStorage.setItem("profile_picture_base64", response.userProfile.profilePictureUri);
+        }
+      } else {
+        console.log("Failed to fetch user:", response.message);
+      }
+    } catch (err) {
+      console.log("Failed to fetch user:", err);
+    }
+  }
+
   useEffect(() => {
-    const loadProfile = async () => {
-        try {
-            const username = await AsyncStorage.getItem("username");
-            const userUUID = await AsyncStorage.getItem("user_uuid");
-            const savedPicture = await AsyncStorage.getItem("profile_picture_base64");
-            const savedDescription = await AsyncStorage.getItem("motd");
+    const initializeProfile = async () => {
+      await loadProfile();
+      await fetchUserProfile();
+    }
+  initializeProfile() }, []);
 
-            console.log("Loaded username:", username);
-            console.log("Loaded UUID:", userUUID);
-
-            if (username) setProfileName(username);
-            if (userUUID) setUserUUID(userUUID);
-            if (savedPicture) setProfilePicture(savedPicture);
-            if (savedDescription) setProfileDescription(savedDescription);
-            } catch (err) {
-                console.log("Failed to load profile:", err);
-            }
-        }   
-        loadProfile();
-    }, [])
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -65,44 +107,51 @@ export default function ProfilePage() {
     })
 
     if (!result.canceled) {
-        setProfilePicture(result.assets[0].uri);
-        setPendingBase64(result.assets[0].base64 ?? null);
+        const asset = result.assets[0];
+        setPendingPicture(asset.uri);
+        setPendingBase64(asset.base64 ?? null);
+        setPendingMimeType(asset.mimeType ?? "image/jpeg");
         setConfirmVisible(true);
     }
   }
 
-  const uploadProfilePicture = async (base64: String, uri: string) => {
+  const uploadProfilePicture = async (base64: String, mimeType: string) => {
     const sessionToken = await AsyncStorage.getItem("session_token");
-    const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
-    const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+    const cleanedBase64 = base64.replace(/\s/g,"");
+    const imageData = `data:${mimeType};base64,${base64}`;
+
+    console.log("Sending mime type:", mimeType);
 
     const response = await fetch(GLOBAL_URL+"update_user", {
-        method: "UPDATE",
+        method: "PATCH",
         headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ''},
-        body: JSON.stringify({profile_picture_base64: `data:${mimeType};base64,${base64}`})
+        body: JSON.stringify({profile_picture_base64: imageData})
     })
 
+    const data = await response.json();
+    console.log("Upload response:",data);
+
     if (!response.ok) {
-      const data = await response.json();
       throw new Error(data.error ?? 'Upload failed.');
     }
-    return response.json();
+    return imageData;
   }
 
   const handleConfirmPFP = async () => {
     if (!pendingPicture || !pendingBase64) return;
     setUploading(true);
     try {
-      await uploadProfilePicture(pendingBase64, pendingPicture);
+      const uploadedImage = await uploadProfilePicture(pendingBase64, pendingPicture);
 
-      setProfilePicture(pendingPicture);
+      setProfilePicture(uploadedImage);
 
-      await AsyncStorage.setItem("profile_picture_base64", pendingBase64);
+      await AsyncStorage.setItem("profile_picture_base64",uploadedImage);
 
-      setConfirmVisible(false);
       setPendingPicture(null);
       setPendingBase64(null);
+      setConfirmVisible(false);
     } catch (err: any) {
+      console.log(err);
       Alert.alert('Upload failed', err.message ?? 'Something went wrong. Please try again.');
     } finally {
       setUploading(false);
@@ -112,48 +161,8 @@ export default function ProfilePage() {
   const handleCancelPFP = () => {
     setPendingPicture(null);
     setPendingBase64(null);
-    setProfilePicture(null);
     setConfirmVisible(false);
   }
-
-  const fetchUserProfile = async () => {
-  try {
-    const uuid = await AsyncStorage.getItem("user_uuid");
-    if (!uuid) {
-      console.log("No UUID found.");
-      return;
-    }
-    const response = await fetch(GLOBAL_URL+`get_users?uuid=${uuid}`, { method: "GET" });
-    const data = await response.json();
-
-    if (response.ok) {
-      const user = data.users?.[uuid];
-
-      if (!user) {
-        console.log("User not found.");
-        return;
-      }
-
-      console.log("Fetched user:", user);
-
-      setProfileName(user.name ?? "");
-      setUserUUID(user.user_uuid ?? uuid);
-      setProfileDescription(user.motd ?? "");
-
-        if (user.profile_picture) {
-            setProfilePicture(user.profile_picture);
-        }
-        await AsyncStorage.setItem("username", user.name ?? "");
-        await AsyncStorage.setItem("motd", user.motd ?? "");
-        } else {
-        console.log(data.error);
-        }
-    } catch (err) {
-        console.log("Failed to fetch user:", err);
-      }
-    }
-
-  useEffect(() => { fetchUserProfile() }, []);
 
   const updateDescription = async () => {
     try {
@@ -163,7 +172,9 @@ export default function ProfilePage() {
             headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ""},
             body: JSON.stringify({motd: tempDescription})
         })
-        if (!response.ok) throw new Error("Failed to update the description.");
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to update the description.");
         setProfileDescription(tempDescription);
         await AsyncStorage.setItem("motd", tempDescription);
         setEditDescription(false);
@@ -247,7 +258,7 @@ export default function ProfilePage() {
       fontFamily: "RobotoSlab-Regular",
     },
     pickImagePopup: {
-      backgroundColor: '#c7c7c7',
+      backgroundColor: '#ffffff',
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       padding: 20,

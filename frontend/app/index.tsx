@@ -9,19 +9,18 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
 import { randomCreateThreadSubtitles } from '../components/randomSubtitles';
+import { BackEnd } from "../components/backend";
 
-const GLOBAL_URL = "http://localhost:5000/"
+const GLOBAL_URL = "http://192.168.1.53:5000/"
 
 export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
   const [threadTitle, setThreadTitle] = useState("");
   const [threadDescription, setThreadDescription] = useState("");
   const [threadImage, setThreadImage] = useState<string | null>(null);
+  const [threadImageBase64, setThreadImageBase64] = useState<string | null>(null);
   const [createThreadError, setCreateThreadError] = useState("");
-  const [loginPopupVisible, setLoginPopupVisible] = useState(false);
   const [threads, setThreads] = useState<any[]>([]);
-  const [showCreateThread, setShowCreateThread] = useState(false);
-  const [creatingThread, setCreatingThread] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
@@ -45,32 +44,21 @@ export default function Index() {
   const handleCreateThread = async () => {
     setCreateThreadError("");
 
-    if (!threadTitle.trim()) {
-      setCreateThreadError("Please enter a thread title.");
-      return;
-    }
-    if (!threadDescription.trim()) {
-      setCreateThreadError("Please enter a thread description.");
-      return;
-    }
-    if (!threadImage) {
-      setCreateThreadError("Please select a thread image.");
-      return;
-    }
-
     try {
       const sessionToken = await AsyncStorage.getItem("session_token");
       if (!sessionToken) {
         setCreateThreadError("Only registered users can create threads.");
         return;
       }
-      const file = new File(threadImage);
-      const imageBase64 = await file.base64();
 
       const response = await fetch(GLOBAL_URL+"create_thread", {
         method: "POST",
         headers: {"Content-Type": "application/json", "session-token": sessionToken},
-        body: JSON.stringify({name: threadTitle, description: threadDescription, thumbnail_base64: `data:image/jpeg;base64,${imageBase64}`})
+        body: JSON.stringify({
+          name: threadTitle.trim() || "Untitled Thread", 
+          description: threadDescription, 
+          thumbnail_base64: threadImageBase64
+        })
       })
 
       const data = await response.json();
@@ -82,10 +70,9 @@ export default function Index() {
       }
       const createdThread = {
         uuid: data.thread_uuid,
-        name: threadTitle,
+        name: threadTitle.trim() || "Untitled Thread",
         description: threadDescription,
-        url: `http://localhost:8081/thread_page/${data.thread_uuid}`,
-        image: {uri: threadImage}
+        image: threadImage ? {uri: threadImage} : require("../assets/images/message_logo.png")
       }
 
       setThreads((prev) => [createdThread, ...prev])
@@ -95,6 +82,7 @@ export default function Index() {
       setThreadImage(null);
       setCreateVisible(false);
       setCreateThreadError("");
+      
       router.push(`/thread_page/${data.thread_uuid}`);
       
     } catch (err) {
