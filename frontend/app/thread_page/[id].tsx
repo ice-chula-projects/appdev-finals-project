@@ -108,14 +108,6 @@ const dbtb = messagesResponse;
 
 const thread = data.thread;
 
-
-
-
-
-
-
-
-
 let authorUsername = "Unknown User";
 
 const storedUUID = await AsyncStorage.getItem("user_uuid");
