@@ -59,11 +59,11 @@ export default function Index() {
         .setThumbnailImageUri(threadImage ?? null)
 
       if (isPrivateThread) {
-        if (!threadPassword || threadPassword.trim().length === 0) {
+        if (!threadPassword || threadPassword.length === 0) {
           setCreateThreadError("A password is required for private threads.");
           return;
         }
-        builder.setPassword(threadPassword.trim());
+        builder.setPassword(threadPassword);
       }
 
       const response = await BackEnd.createThread(sessionToken, builder);
