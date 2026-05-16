@@ -6,9 +6,7 @@ import { Stack, router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { BackEnd } from "../components/backend";
-
-const GLOBAL_URL = "http://localhost:5000/"
+import BackEnd, { UserUpdateParametersBuilder } from "@/components/backend";
 
 export default function ProfilePage() {
   const [profileName, setProfileName] = useState('');
@@ -167,14 +165,10 @@ export default function ProfilePage() {
   const updateDescription = async () => {
     try {
         const sessionToken = await AsyncStorage.getItem("session_token");
-        const response = await fetch(GLOBAL_URL+"update_user", {
-            method: "PATCH",
-            headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ""},
-            body: JSON.stringify({motd: tempDescription})
-        })
+        const response = BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setMotd(tempDescription))
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Failed to update the description.");
+        if (!(await response).success) Alert.alert((await response).message);
+
         setProfileDescription(tempDescription);
         await AsyncStorage.setItem("motd", tempDescription);
         setEditDescription(false);
@@ -182,7 +176,6 @@ export default function ProfilePage() {
         Alert.alert("Error","Cannot update the description.");
     }
   }
-
 
   const links = [
     {
