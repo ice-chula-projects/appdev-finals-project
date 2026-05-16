@@ -28,7 +28,7 @@ class ThreadManager:
 
         threads = []
         for thread in database_threads:
-            thread: Thread = Thread.from_database_representation(threads)
+            thread: Thread = Thread.from_database_representation(thread)
 
             threads.append(thread)
         
