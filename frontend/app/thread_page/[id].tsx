@@ -9,8 +9,18 @@ import { useFonts } from 'expo-font';
 import Slider from "@react-native-community/slider";
 import { Audio, ResizeMode, Video } from "expo-av";
 import { useRef } from "react";
+import BackEnd from "@/components/backend";
+import {
+  MessageParametersBuilder,
+  MessageUpdateParametersBuilder,
+  ThreadParametersBuilder,
+  ThreadUpdateParametersBuilder,
+  UserUpdateParametersBuilder,
+  Attachment,
+} from "@/components/backend";
 
 export default function Index() {
+
   const { id } = useLocalSearchParams();
 
   const [username, setUsername] = useState("");
@@ -54,78 +64,71 @@ useEffect(() => {
     }
 
     try {
-      const bes = await fetch(
-        `http://localhost:5000/get_thread?uuid=${id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "session-token": SESSION_TOKEN,
-          },
-        }
-      );
-
-      const cess = await fetch(
-        `http://localhost:5000/get_thread_messages?uuid=${id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "session-token": SESSION_TOKEN,
-          },
-        }
-      );
-
-      const data = await bes.json();
-      const dbtb = await cess.json();
-      try {
-  const creatorRes = await fetch(
-    `http://localhost:5000/get_user_profile?uuid=${data.thread.author_user_uuid}`
+const threadResponse =
+  await BackEnd.getThread(
+    id.toString()
   );
 
-  const creatorData = await creatorRes.json();
+if (!threadResponse.success) {
+  console.log(threadResponse.message);
+  return;
+}
 
-  if (creatorRes.ok) {
-    data.thread.author_username = creatorData.user.name;
-  } else {
-    data.thread.author_username = "Unknown User";
-  }
-} catch {
-  data.thread.author_username = "Unknown User";
+const messagesResponse =
+  await BackEnd.getThreadMessages(
+    SESSION_TOKEN!,
+    id.toString()
+  );
+
+if (!messagesResponse.success) {
+  console.log(messagesResponse.message);
+  return;
+}
+
+const data: any = threadResponse;
+const dbtb: any = messagesResponse;
+
+const thread = data.thread;
+
+const creatorData =
+  await BackEnd.getUserProfile(
+    thread.author_user_uuid
+  );
+
+if (creatorData.success) {
+  thread.authorUsername = creatorData.userProfile.name;
+} else {
+  thread.authorUsername =
+    "Unknown User";
 }
 
 // get usernames for messages
-const updatedMessages = await Promise.all(
-  Object.values(dbtb.messages).map(async (msg: any) => {
-    try {
-      const userRes = await fetch(
-        `http://localhost:5000/get_user_profile?uuid=${msg.author_user_uuid}`
-      );
-
-      const userData = await userRes.json();
-
-      return {
-        ...msg,
-        author_username: userRes.ok
-          ? userData.user.name
-          : "Unknown User",
-      };
-    } catch {
-      return {
-        ...msg,
-        author_username: "Unknown User",
-      };
-    }
-  })
+const userUuids = dbtb.messages.map(
+  (msg: any) => msg.author_user_uuid
 );
 
-dbtb.messages = updatedMessages;
-      if (bes.ok && cess.ok) {
-        setThreadData(data);
-        setThreadMessageData(dbtb);
-      } else {
-        console.log("Backend error:", data.error);
-      }
+const usersResponse =
+  await BackEnd.getUsers(userUuids);
+
+if (usersResponse.success) {
+  const updatedMessages =
+    dbtb.messages.map((msg: any) => ({
+      ...msg,
+      authorUsername:
+        usersResponse.users[
+          msg.author_user_uuid
+        ]?.name || "Unknown User",
+    }));
+
+  dbtb.messages = updatedMessages;
+} else {
+  console.log(usersResponse.message)
+}
+
+setThreadData(thread);
+setThreadMessageData(dbtb);
+
+
     } catch (err) {
       console.log("Network error:", err);
     } finally {
@@ -137,86 +140,99 @@ dbtb.messages = updatedMessages;
   }, [id]);
 
   const submitPost = async () => {
-    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
-    if (!newPost.trim()) return;
+  const SESSION_TOKEN =
+    await AsyncStorage.getItem(
+      "session_token"
+    );
 
-    try {
-      setPosting(true);
+  if (!newPost.trim()) return;
 
-      const res = await fetch(
-        `http://localhost:5000/create_message?uuid=${encodeURIComponent(id.toString())}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "session-token": SESSION_TOKEN,
-          },
-          body: JSON.stringify({
-            message: newPost,
-          }),
-        }
+  try {
+    setPosting(true);
+
+    const params =
+      new MessageParametersBuilder()
+        .setMessage(newPost);
+
+    const response =
+      await BackEnd.createMessage(
+        SESSION_TOKEN!,
+        id.toString(),
+        params
       );
 
-      const data = await res.json();
+    if (response.success) {
+      const createdMessage = {
+        author_user_uuid:
+          currentUserUUID,
+        authorUsername: "You",
+        message: newPost,
+        creation_date:
+          new Date().toLocaleString(),
+      };
 
-      if (res.ok) {
-        const createdMessage = {
-          author_user_uuid: "You", // Replace with actual user identifier if available
-          message: newPost,
-          creation_date: new Date().toLocaleString(),
-        };
-
-        setThreadMessageData((prev: any) => ({
+      setThreadMessageData(
+        (prev: any) => ({
           ...prev,
           messages: [
             createdMessage,
             ...prev.messages,
           ],
-        }));
+        })
+      );
 
-        setNewPost("");
-        setShowPostBox(false);
-      } else {
-        console.log("Post error:", data.error);
-      }
-    } catch (err) {
-      console.log("Network error:", err);
-    } finally {
-      setPosting(false);
+      setNewPost("");
+      setShowPostBox(false);
+    } else {
+      console.log(
+        "Post error:",
+        response.message
+      );
     }
-  };
+  } catch (err) {
+    console.log(
+      "Network error:",
+      err
+    );
+  } finally {
+    setPosting(false);
+  }
+};
 
 const deleteThread = async () => {
-  const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+  const SESSION_TOKEN =
+    await AsyncStorage.getItem(
+      "session_token"
+    );
 
   try {
     setDeletingThread(true);
 
-    const res = await fetch(
-      `http://localhost:5000/delete_thread?uuid=${encodeURIComponent(id.toString())}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "session-token": SESSION_TOKEN,
-        },
-      }
-    );
+    const response =
+      await BackEnd.deleteThread(
+        SESSION_TOKEN!,
+        id.toString()
+      );
 
-    const data = await res.json();
-
-    if (res.ok) {
+    if (response.success) {
       router.replace("/");
     } else {
-      console.log("Delete error:", data.error);
+      console.log(
+        "Delete error:",
+        response.message
+      );
     }
   } catch (err) {
-    console.log("Network error:", err);
+    console.log(
+      "Network error:",
+      err
+    );
   } finally {
     setDeletingThread(false);
     setConfirmDelete(false);
   }
 };
+
 
 function AudioPlayer() {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -539,9 +555,9 @@ function AudioPlayer() {
           >
             {/* {id}
             {"  -  "} */}
-            {threadData.thread.name}
+            {threadData.name}
             {"  by  "}
-            {threadData.thread.author_username}
+            {threadData.authorUsername}
           </Text>
           </View>
 
@@ -553,7 +569,7 @@ function AudioPlayer() {
           >
             
             {"author id:  "}
-            {threadData.thread.author_user_uuid}
+            {threadData.author_user_uuid}
           </Text>
             <Text
             style={{
@@ -561,7 +577,7 @@ function AudioPlayer() {
               marginBottom: 10,
             }}
           >
-            {threadData.thread.creation_date}
+            {threadData.creation_date}
             {`\n`}
           </Text>
 
@@ -571,11 +587,11 @@ function AudioPlayer() {
               marginBottom: 10,
             }}
           >
-            {threadData.thread.description}
+            {threadData.description}
           </Text>
 
           {currentUserUUID ===
-            threadData.thread.author_user_uuid && (
+            threadData.author_user_uuid && (
             <View
               style={{
                 flexDirection: "row",
@@ -763,7 +779,7 @@ function AudioPlayer() {
                       marginBottom: 5,
                     }}
                   >
-                    {msg.author_username}
+                    {msg.authorUsername}
                   </Text>
 
                   <Text

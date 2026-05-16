@@ -1,4 +1,5 @@
 import { File } from "expo-file-system";
+import { Platform } from "react-native";
 
 export default class BackEnd {
     static #apiUrl: string = null
@@ -67,11 +68,30 @@ export default class BackEnd {
         return emptyResponse;
     }
 
-
     private static async imageUriToBase64(imageUri: string): Promise<string> {
-        const file = new File(imageUri)
-
-        return await file.base64()
+        if (Platform.OS != "web"){
+            const file = new File(imageUri);
+            return await file.base64()
+        }
+        try {
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                const base64Clean = result.split(',')[1];
+                resolve(base64Clean);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error("Failed to convert image to base64 on web", error);
+        throw error;
+    }
+        
     }
 
     static isApiAvailable(): boolean{
@@ -688,9 +708,30 @@ export class Attachment {
     mediaType: MediaType
 
     static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment> {
-        const file = new File(attachmentUri);
+        if(Platform.OS !== "web"){
+            const file = new File(attachmentUri);
 
-        return new Attachment(await file.base64(), file.extension, mediaType)
+            return new Attachment(await file.base64(), file.extension, mediaType);
+        }
+
+        try {
+        const response = await fetch(attachmentUri);
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                const base64Clean = result.split(',')[1];
+                resolve(new Attachment(base64Clean, attachmentUri.split("?")[0].split(".").pop()?.toLowerCase() || "", mediaType));
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error("Failed to convert image to base64 on web", error);
+        throw error;
+    }
     }
 
     constructor(dataBase64: string, extenstionType: string, mediaType: MediaType) {

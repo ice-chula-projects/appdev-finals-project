@@ -5,8 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomLoginSubtitles } from '../../components/randomSubtitles';
 import BackEnd from '../../components/backend';
 
-const URL = "http://192.168.1.53:5000/"
-
 export const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -140,7 +138,6 @@ export default function LoginPage() {
 
     try {
 
-      await BackEnd.setApiUrl(URL);
       const response = await BackEnd.login(username, password);
       await new Promise(resolve => setTimeout(resolve, 1500));
 

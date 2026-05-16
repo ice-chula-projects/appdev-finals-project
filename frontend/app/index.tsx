@@ -32,7 +32,7 @@ export default function Index() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
-      aspect: [1,1],
+      aspect: [1, 1],
       quality: 0.7,
       base64: true,
     })
@@ -49,11 +49,11 @@ export default function Index() {
       }
 
       const response = await BackEnd.createThread(
-        sessionToken, 
+        sessionToken,
         new ThreadParametersBuilder()
-        .setName(threadTitle)
-        .setDescription(threadDescription)
-        .setThumbnailImageUri(threadImage ?? null)
+          .setName(threadTitle)
+          .setDescription(threadDescription)
+          .setThumbnailImageUri(threadImage ?? null)
       );
 
       if (!response.success) {
@@ -61,121 +61,31 @@ export default function Index() {
         return;
       }
 
-      const createdThread = {
-        uuid: response.threadUuid,
-        name: threadTitle.trim() || "Untitled Thread",
-        description: threadDescription,
-        image: threadImage ? {uri: threadImage} : require("../assets/images/message_logo.png")
-      }
-
-      setThreads((prev) => [createdThread, ...prev])
-
       setThreadTitle("");
       setThreadDescription("");
       setThreadImage(null);
       setCreateVisible(false);
-      
+
       router.push(`/thread_page/${response.threadUuid}`);
-      
+
     } catch (err) {
-      console.log("Error:",err);
+      console.error(err)
       setCreateThreadError("Could not connect to backend.");
     }
   }
 
-  const links = [
-    {
-      uuid: "preset-1",
-      name: "Yall gotta see this",
-      description: "Quintuple thumbs down.",
-      url: "https://www.bilibili.tv/en/video/4799492271643648?bstar_from=bstar-web.homepage.recommend.all",
-      image: require("../assets/images/HG2RsZhbIAAbpWj.jpg"),
-    },
-    {
-      uuid: "preset-2",
-      name: "Band of Brothers",
-      description: "Don't grab the luger.",
-      url: "https://archive.org/download/brockie/Band%20of%20Brothers%20%281080p%20x265%20Joy%29/",
-      image: require("../assets/images/images.jpg"),
-    },
-    {
-      uuid: "preset-3",
-      name: "The Martian",
-      description: "Matt Damian gets stuck in space. Again.",
-      url: "https://www.bilibili.tv/en/video/2003112852?bstar_from=bstar-web.ugc-video-detail.related-recommend.all",
-      image: require("../assets/images/18007564.jpg"),
-    },
-    {
-      uuid: "preset-4",
-      name: "Expo Router Docs",
-      description: "Official documentation for Expo Router navigation.",
-      url: "https://docs.expo.dev/router/introduction/",
-      image: require("../assets/images/icon.png"),
-    },
-    {
-      uuid: "preset-5",
-      name: "Test Threads",
-      description: "Testing if i can link threads.",
-      url: "http://localhost:8081/thread_page/abb5916a-031b-41fd-bba6-8e8c706bca45",
-      image: require("../assets/images/message_logo.png"),
-    },
-  ];
-
   const searchThreads = async (query: string) => {
     try {
       setSearching(true);
+      const response = await BackEnd.searchThreads(null, query);
 
-      const filteredPresets = links.filter(
-        (thread) =>
-          thread.name
-            .toLowerCase()
-            .includes(query.toLowerCase()) ||
-          thread.description
-            .toLowerCase()
-            .includes(query.toLowerCase())
-      );
-
-      const response = await fetch(
-        `http://localhost:5000/search_threads?search=${encodeURIComponent(query)}&page=1`
-      );
-
-      const data = await response.json();
-      console.log("SEARCH THREADS:", data);
-
-      if (response.ok) {
-        const formattedThreads = data.threads.map(
-          (thread: any) => ({
-            uuid: thread.uuid,
-            name: thread.name || thread.title,
-            description: thread.description,
-            url: `http://localhost:8081/thread_page/${thread.uuid}`,
-            image: require("../assets/images/message_logo.png"),
-          })
-        );
-
-        setThreads([
-          ...filteredPresets,
-          ...formattedThreads,
-        ]);
+      if (response.success) {
+        setThreads(response.threads);
       } else {
-        console.log(data.error);
-
-        setThreads(filteredPresets);
+        console.error(response.message);
       }
     } catch (err) {
       console.log(err);
-
-      const filteredPresets = links.filter(
-        (thread) =>
-          thread.name
-            .toLowerCase()
-            .includes(query.toLowerCase()) ||
-          thread.description
-            .toLowerCase()
-            .includes(query.toLowerCase())
-      );
-
-      setThreads(filteredPresets);
     } finally {
       setSearching(false);
     }
@@ -203,14 +113,14 @@ export default function Index() {
       fontFamily: "NotoSans-Regular",
     },
     createThreadBackground: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.45)",
-        justifyContent: "center",
-        alignItems: "center",
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      justifyContent: "center",
+      alignItems: "center",
     },
     createThreadPopup: {
       width: Math.min(width * 0.85, 550), // 85% on mobile devices, max 550 on web
-      maxHeight: height*0.75,
+      maxHeight: height * 0.75,
       backgroundColor: "white",
       borderRadius: 15,
       padding: 25,
@@ -312,7 +222,7 @@ export default function Index() {
       right: 25,
       backgroundColor: "#003b7a",
       width: 150,
-      height: 50, 
+      height: 50,
       borderRadius: 15,
       flexDirection: "row",
       justifyContent: "center",
@@ -320,9 +230,9 @@ export default function Index() {
       elevation: 5,
     },
     addThreadButtonText: {
-      color: "white", 
-      fontSize: 15, 
-      fontWeight: "bold", 
+      color: "white",
+      fontSize: 15,
+      fontWeight: "bold",
       marginRight: 5,
       fontFamily: "RobotoSlab-Regular"
     }
@@ -334,10 +244,10 @@ export default function Index() {
   if (!fontsLoaded) return null;
 
   return (
-    <>
+    <View>
       <Stack.Screen
         options={{
-          headerTitle: () => ( <Text style={styles.pageName}>Board of Mess</Text> ),
+          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
         }}
       />
 
@@ -356,7 +266,7 @@ export default function Index() {
               <View style={styles.createThreadMargins}>
                 <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
                   {threadImage ? (
-                    <Image source={{ uri: threadImage }} style={{ width: "100%", height: "100%"}}/>
+                    <Image source={{ uri: threadImage }} style={{ width: "100%", height: "100%" }} />
                   ) : (
                     <>
                       <Ionicons name="image-outline" size={36} color="#8f8f8f" />
@@ -382,9 +292,9 @@ export default function Index() {
                 </View>
               </View>
 
-                {createThreadError ? (
-                  <Text style={styles.threadErrorText}>{createThreadError}</Text>
-                ) : null }
+              {createThreadError ? (
+                <Text style={styles.threadErrorText}>{createThreadError}</Text>
+              ) : null}
 
               <View style={styles.alignButtons}>
 
@@ -402,12 +312,12 @@ export default function Index() {
         </Modal>
 
         <View style={{
-            flex: 1,
-            paddingTop: 30,
-            paddingHorizontal: 30,
-          }}
+          flex: 1,
+          paddingTop: 30,
+          paddingHorizontal: 30,
+        }}
         >
-          
+
           <View
             style={{
               flexDirection: "row",
@@ -442,10 +352,10 @@ export default function Index() {
           </View>
 
           <ScrollView>
-            {threads.map((thread) => (
+            {threads.map((thread: DisplayThread) => (
               <TouchableOpacity
                 key={thread.uuid}
-                onPress={() => Linking.openURL(thread.url)}
+                onPress={() => router.push(`/thread_page/${thread.uuid}`)}
                 style={{
                   padding: 15,
                   borderWidth: 1,
@@ -454,54 +364,54 @@ export default function Index() {
                   marginBottom: 15,
                 }}
               >
-                <View 
-                  style={{ 
-                  flexDirection: "row", 
-                  alignItems: "center" 
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center"
                   }}>
-                  <Image
-                    source={thread.image}
-                    style={{ 
-                      width: 100, 
-                      height: 100, 
+                  {thread.thumbnailUri != null && <Image
+                    source={thread.thumbnailUri}
+                    style={{
+                      width: 100,
+                      height: 100,
                       marginRight: 15,
                       borderRadius: 8
                     }}
-                  />
-              <View style={{ 
-                flex: 1,
-                justifyContent: "center", 
-                }}>
-                <Text
-                  style={{
-                    fontSize: 25,
-                    fontWeight: "bold",
-                    color: "#007AFF",
-                    marginBottom: 5,
-                  }}
-                >
-                  {thread.name}
-                </Text>
+                  />}
+                  <View style={{
+                    flex: 1,
+                    justifyContent: "center",
+                  }}>
+                    <Text
+                      style={{
+                        fontSize: 25,
+                        fontWeight: "bold",
+                        color: "#007AFF",
+                        marginBottom: 5,
+                      }}
+                    >
+                      {thread.name}
+                    </Text>
 
-                <Text
-                  style={{
-                    color: "gray",
-                    fontSize: 14,
-                  }}
-                >
-                  {thread.description}
-                </Text>
-              </View>
-              </View>
+                    <Text
+                      style={{
+                        color: "gray",
+                        fontSize: 14,
+                      }}
+                    >
+                      {thread.description}
+                    </Text>
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
-              <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
-              <Text style={styles.addThreadButtonText}>Add Thread</Text>
-              <Ionicons name="add-circle" size={40} color="white" />
-            </TouchableOpacity>
+          <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
+            <Text style={styles.addThreadButtonText}>Add Thread</Text>
+            <Ionicons name="add-circle" size={40} color="white" />
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </>
+    </View>
   );
 }
