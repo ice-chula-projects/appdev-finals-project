@@ -1,12 +1,18 @@
-import { useState, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native'
-import { Stack, router } from 'expo-router'
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image, TouchableOpacity } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomLoginSubtitles } from '../../components/randomSubtitles';
 import BackEnd from '../../components/backend';
 import { useProfile } from '@/components/profileContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export const styles = StyleSheet.create({
+  safeView: {
+    flex: 1,
+    backgroundColor: "#fffff",
+  },
   container: { 
     flex: 1, 
     backgroundColor: '#ffffff',
@@ -103,6 +109,20 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ffffff"
   },
+  headerText: {
+    fontSize: 40,
+    fontWeight: "bold",
+    fontFamily: "RobotoSlab-Regular"
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
+  }
 })
 
 export default function LoginPage() {
@@ -166,7 +186,6 @@ export default function LoginPage() {
     }
   }
 
-  // Initial loading screen
   if (pageLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -180,27 +199,12 @@ export default function LoginPage() {
 
   // Login Page UI
   return (
-  <>
-    <Stack.Screen
-      options={{
-        headerTitle: () => (
-          <Text
-            style={{
-              fontSize: 40,
-              fontWeight: "bold",
-              fontFamily: "RobotoSlab-Regular"
-            }}
-          >
-            Login
-          </Text>
-        ),
-      }}
-    />
+  <SafeAreaView style={styles.safeView}>
+    <TouchableOpacity style={styles.closeButton} onPress={ () => router.replace("/")}>
+      <Ionicons name="close" size={32} color="#5c5c5c" />
+    </TouchableOpacity>
 
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.inner}>
         <Image style={styles.logo} source={require('../../assets/images/message_logo.png')} />
         <Text style={styles.title}>Login</Text>
@@ -225,7 +229,7 @@ export default function LoginPage() {
 
         <Text style={styles.error}>{error || ' '}</Text>
 
-        <Pressable
+        <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
           disabled={loading}
@@ -234,17 +238,17 @@ export default function LoginPage() {
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.buttonText}>Login</Text>
           }
-        </Pressable>
+        </TouchableOpacity>
 
         <View style={styles.signup}>
           <Text style={styles.signupText}>New to the service? </Text>
-          <Pressable onPress={() => router.push('/auth/signup_page')}>
+          <TouchableOpacity onPress={() => router.push('/auth/signup_page')}>
             <Text style={styles.link}>Sign Up</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
       </View>
     </KeyboardAvoidingView>
-    </>
+    </SafeAreaView>
   )
 }

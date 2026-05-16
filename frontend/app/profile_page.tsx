@@ -26,7 +26,16 @@ export default function ProfilePage() {
   const [editDescription, setEditDescription] = useState(false);
   const [tempDescription, setTempDescription] = useState("");
 
+  const [pageLoading, setPageLoading] = useState(true);
+
   const { reloadProfile } = useProfile();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const fetchUserProfile = async () => {
     try {
@@ -277,8 +286,21 @@ export default function ProfilePage() {
       marginTop: 8, 
       fontFamily: "RobotoSlab-Regular" 
     },
-
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#ffffff"
+    }
   })
+
+  if (pageLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2f5ae9" />
+        </View>
+      )
+    }
 
   return (
     <>

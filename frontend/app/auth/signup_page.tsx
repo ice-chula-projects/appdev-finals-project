@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image, ScrollView, useWindowDimensions } from 'react-native'
-import { Stack, router } from 'expo-router'
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Image, TouchableOpacity } from 'react-native';
+import { Stack, router } from 'expo-router';
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackEnd from '../../components/backend';
 import { useProfile } from '@/components/profileContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export const styles = StyleSheet.create({
+  safeView: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
   container: { 
     flex: 1, 
     backgroundColor: '#ffffff',
@@ -99,6 +105,15 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#ffffff"
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
   }
 })
 
@@ -181,25 +196,12 @@ export default function SignupPage() {
 
   // Signup Page UI
   return (
+  <SafeAreaView style={styles.safeView}>
 
-  <>
-    <Stack.Screen
-      options={{
-        headerTitle: () => (
-          <Text
-            style={{
-              fontSize: 40,
-              fontWeight: "bold",
-              fontFamily: "RobotoSlab-Regular"
-            }}
-          >
-            Signup
-          </Text>
-        ),
-      }}
-    />
+    <TouchableOpacity style={styles.closeButton} onPress={ () => router.replace("/")}>
+      <Ionicons name="close" size={32} color="#5c5c5c" />
+    </TouchableOpacity>
 
-    
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -235,7 +237,7 @@ export default function SignupPage() {
 
         <Text style={styles.error}>{error || ' '}</Text>
 
-        <Pressable
+        <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSignup}
           disabled={loading}
@@ -244,17 +246,17 @@ export default function SignupPage() {
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.buttonText}>Sign Up</Text>
           }
-        </Pressable>
+        </TouchableOpacity>
 
         <View style={styles.login}>
           <Text style={styles.loginText}>Already have an account? </Text>
-          <Pressable onPress={() => router.push('/auth/login_page')}>
+          <TouchableOpacity onPress={() => router.push('/auth/login_page')}>
             <Text style={styles.link}>Login</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
       </View>
     </KeyboardAvoidingView>
-  </>
+  </SafeAreaView>
   )
 }
