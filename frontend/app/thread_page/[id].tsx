@@ -51,6 +51,10 @@ export default function Index() {
   const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.5);
 
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [threadPassword, setThreadPassword] = useState<string | null>(null);
+
 
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
@@ -438,10 +442,123 @@ export default function Index() {
   }
   if (!fontsLoaded) return null;
 
-  //PUT POPUP HERE
-  if (threadIsPrivate) return <View>
-      <Text>This thread is private</Text>
-  </View>
+  const enterThreadPassword = async () => {
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    if (!sessionToken) return;
+    setPasswordError("");
+
+    const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken, String(threadUuid), undefined, passwordInput);
+
+    if (!getThreadMessagesResponse.success) {
+      setPasswordError("Incorrect password. Please try again.");
+      return;
+    }
+    
+    setThreadPassword(passwordInput);
+    setThreadMessageData(getThreadMessagesResponse.messages);
+    const uniqueUserUuids = [...new Set([threadData?.authorUserUuid ?? "", ...getThreadMessagesResponse.messages.map(x => x.authorUserUuid)])];
+    const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
+    if (getUsersResponse.success) setUsers(getUsersResponse.users);
+    setThreadIsPrivate(false);
+  }
+
+  if (threadIsPrivate) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+        <View style={{ 
+          width: "100%", 
+          maxWidth: 400, 
+          backgroundColor: "white", 
+          borderRadius: 15, 
+          padding: 25 
+          }}>
+
+          <Text style={{
+            fontSize: 30, 
+            fontWeight: "bold", 
+            fontFamily: "RobotoSlab-Regular", 
+            marginBottom: 6, 
+            textAlign: "center" 
+          }}>
+            Private Thread
+          </Text>
+
+          <Text style={{ 
+            textAlign: "center", 
+            fontFamily: "NotoSans-Regular", 
+            fontSize: 14, 
+            color: "#505050", 
+            marginBottom: 20 
+          }}>
+            A password is required to access this thread.
+          </Text>
+
+          <TextInput
+            placeholder="Enter password"
+            value={passwordInput}
+            onChangeText={(text) => { setPasswordInput(text); setPasswordError(""); }}
+            secureTextEntry
+            style={{ 
+              borderWidth: 1, 
+              borderColor: passwordError ? "#ff0000" : "#ccc",
+              borderRadius: 10, 
+              padding: 10, 
+              marginBottom: 6, 
+              fontFamily: "NotoSans-Regular", 
+              fontSize: 14 
+          }} />
+
+          {passwordError ? (
+            <Text style={{ 
+              color: "#ff0000", 
+              fontFamily: "NotoSans-Regular", 
+              fontSize: 13, 
+              textAlign: "center", 
+              marginBottom: 10 
+            }}>
+              {passwordError}
+            </Text>
+          ) : <View style={{ marginBottom: 16 }} />}
+
+          <View style={{ flexDirection: "row", gap: 15 }}>
+
+            <TouchableOpacity onPress={enterThreadPassword} style={{ 
+              flex: 1, 
+              backgroundColor: "#0057b4", 
+              paddingVertical: 14, 
+              borderRadius: 8, 
+              alignItems: "center" 
+            }}>
+              <Text style={{ 
+                fontWeight: "bold",
+                color: "white",
+                fontFamily: "NotoSans-Regular"
+              }}>
+                Enter
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.replace("/")} style={{ 
+              flex: 1, 
+              backgroundColor: "#8b8b8b", 
+              paddingVertical: 14, 
+              borderRadius: 8, 
+              alignItems: "center"
+            }}>
+              <Text style={{ 
+                fontWeight: "bold", 
+                color: "white", 
+                fontFamily: "NotoSans-Regular" 
+              }}>
+              Go Back
+            </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   if (!threadMessageData || !threadData) {
     return (
