@@ -188,6 +188,7 @@ def delete_user():
 
     try:
         user_manager.delete_user(user.uuid)
+        session_manager.delete_session(request.headers.get("session-token"))
     except Exception:
         return jsonify({"error": "Something went wrong."}), 500
     
