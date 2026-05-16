@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Image } from 'react-native'
 import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { randomLoginSubtitles } from '../../components/randomSubtitles'
+import { randomLoginSubtitles } from '../../components/randomSubtitles';
+import BackEnd from '../../components/backend';
 
-const GLOBAL_URL = "http://localhost:5000/"
+const URL = "http://192.168.1.53:5000/"
 
 export const styles = StyleSheet.create({
   container: { 
@@ -138,18 +139,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(GLOBAL_URL+"login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "name": username, "password": password }),
-        });
 
-      const data = await response.json();
+      await BackEnd.setApiUrl(URL);
+      const response = await BackEnd.login(username, password);
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (response.ok) {
-        const sessionToken = data.session_token;
-        const userUUID = data.user_uuid;
+      if (response.success) {
+        console.log("Backend connected.");
+        const sessionToken = response.sessionToken;
+        const userUUID = response.userUuid;
         console.log("Token received:", sessionToken);
 
         await AsyncStorage.setItem("session_token", sessionToken);
@@ -163,7 +161,8 @@ export default function LoginPage() {
         router.replace('/');
 
       } else {
-        setError(data.error || "Login failed, try again.");
+        console.log("Invalid backend link.");
+        setError(response.message || "Login failed, try again.");
       }
     } catch (error) {
       console.log("Error:", err);
