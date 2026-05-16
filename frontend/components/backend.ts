@@ -36,19 +36,49 @@ export default class BackEnd {
         return response;
     }
 
-    static async login(username: string, password: string): Promise<LoginResponse> {
+    private static async sendApiRequest<T extends BaseApiResponse>(emptyResponse: T, endpoint: string, fetchApiRequestInit: RequestInit, onSuccess?: (apiResponseBody: any, emptyResponse: T) => T | Promise<T>, params?: URLSearchParams): Promise<T> {
         if (this.#apiUrl == null) {
-            const response = new LoginResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
+            emptyResponse.success = false;
+            emptyResponse.message = "Invalid Api Url.";
+            return emptyResponse
         }
 
-        const response = new LoginResponse();
+        let url = this.#apiUrl + endpoint
+        if (params != null) url += `?${params.toString()}`;
 
         try {
-            const apiResponse = await fetch(this.#apiUrl + "login", {
+            const apiResponse = await fetch(url, fetchApiRequestInit);
+            const body = await apiResponse.json();
+
+            if (apiResponse.ok) {
+                emptyResponse.success = true;
+                emptyResponse.message = body.message;
+                if (onSuccess != null) emptyResponse = await onSuccess(body, emptyResponse);
+            }
+            else {
+                emptyResponse.success = false;
+                emptyResponse.message = body.error;
+            }
+        } catch (error) {
+            emptyResponse.success = false;
+            emptyResponse.message = String(error)
+        }
+
+        return emptyResponse;
+    }
+
+
+    private static async imageUriToBase64(imageUri: string): Promise<string> {
+        const file = new File(imageUri)
+
+        return await file.base64()
+    }
+
+    static async login(username: string, password: string): Promise<LoginResponse> {
+        return await this.sendApiRequest<LoginResponse>(
+            new LoginResponse(),
+            "login",
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -57,77 +87,33 @@ export default class BackEnd {
                     name: username,
                     password: password
                 })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-
-                response.success = true;
-                response.message = body.message;
+            },
+            (body, response) => {
                 response.sessionToken = body.session_token;
                 response.userUuid = body.user_uuid;
+                return response
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async logout(sessionToken: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
-
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "logout", {
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "logout",
+            {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async createUser(username: string, password: string): Promise<LoginResponse> {
-        if (this.#apiUrl == null) {
-            const response = new LoginResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new LoginResponse();
-
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "create_user", {
+        return await this.sendApiRequest<LoginResponse>(
+            new LoginResponse(),
+            "create_user",
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -135,52 +121,27 @@ export default class BackEnd {
                 body: JSON.stringify({
                     name: username,
                     password: password
-                })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-
-                response.success = true;
-                response.message = body.message;
+                }),
+            },
+            (body, response) => {
                 response.sessionToken = body.session_token;
                 response.userUuid = body.user_uuid;
+                return response
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async getUserProfile(userUuid: string): Promise<GetUserProfileResponse> {
-        if (this.#apiUrl == null) {
-            const response = new GetUserProfileResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response
-        }
-
-        const response = new GetUserProfileResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", userUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "get_user_profile?" + params.toString(), {
+        return await this.sendApiRequest<GetUserProfileResponse>(
+            new GetUserProfileResponse(),
+            "get_user_profile",
+            {
                 method: "GET"
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
+            },
+            (body, response) => {
                 const user = body.user;
                 const userProfile: UserProfile = {
                     uuid: user.uuid,
@@ -192,46 +153,27 @@ export default class BackEnd {
                 }
 
                 response.userProfile = userProfile;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                return response;
+            },
+            params
+        )
     }
 
     static async getUsers(userUuids: string[]): Promise<GetUsersResponse> {
-        if (this.#apiUrl == null) {
-            const response = new GetUsersResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response
-        }
-
-        const response = new GetUsersResponse();
         const params = new URLSearchParams();
 
         for (const userUuid of userUuids) {
             params.append("uuid", userUuid);
         }
 
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "get_users?" + params.toString(), {
+        return await this.sendApiRequest<GetUsersResponse>(
+            new GetUsersResponse(),
+            "get_users",
+            {
                 method: "GET"
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
-                const users = {}
+            },
+            (body, response) => {
+                const users: Record<string, DisplayUser> = {}
 
                 for (const uuid of Object.keys(body.users)) {
                     const user = body.users[uuid];
@@ -240,178 +182,110 @@ export default class BackEnd {
                         uuid: user.uuid,
                         name: user.name,
                         profilePictureUri: "data:image/png;base64," + user.profile_picture_base64
-                    } as DisplayUser
+                    }
                 }
 
                 response.users = users;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                return response;
+            },
+            params
+        )
     }
 
     static async updateUser(sessionToken: string, userUpdateParameters: UserUpdateParameters): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
+        const body = {
+            name: userUpdateParameters.name,
+            motd: userUpdateParameters.motd,
+            password: userUpdateParameters.password,
+            profile_picture_base64: null
         }
 
-        const response = new ApiResponse();
+        if (userUpdateParameters.profilePictureUri != null) {
+            body.profile_picture_base64 = await BackEnd.imageUriToBase64(userUpdateParameters.profilePictureUri);
+        }
 
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "update_user", {
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "update_user",
+            {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "session-token": sessionToken
                 },
-                body: JSON.stringify({
-                    name: userUpdateParameters.name,
-                    motd: userUpdateParameters.motd,
-                    profile_picture_base64: await BackEnd.imageUriToBase64(userUpdateParameters.profilePictureUri),
-                    password: userUpdateParameters.password
-                })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
+                body: JSON.stringify(body)
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async deleteUser(sessionToken: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
-
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "delete_user", {
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "delete_user",
+            {
                 method: "DELETE",
                 headers: {
                     "session-token": sessionToken
                 }
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async createThread(sessionToken: string, threadParameters: ThreadParameters): Promise<CreateThreadResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response as CreateThreadResponse;
+        const body = {
+            name: threadParameters.name,
+            description: threadParameters.description,
+            thumbnail_base64: null,
+            password: threadParameters.password
         }
 
-        const response = new CreateThreadResponse();
+        if(threadParameters.thumbnailImageUri != null){
+            body.thumbnail_base64 = await BackEnd.imageUriToBase64(threadParameters.thumbnailImageUri)
+        }
 
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "create_thread", {
+        return await this.sendApiRequest<CreateThreadResponse>(
+            new CreateThreadResponse(),
+            "create_thread",
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "session-token": sessionToken
                 },
-                body: JSON.stringify({
-                    name: threadParameters.name,
-                    description: threadParameters.description,
-                    thumbnail_base64: await BackEnd.imageUriToBase64(threadParameters.thumbnailImageUri),
-                    password: threadParameters.password
-                })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
+                body: JSON.stringify(body)
+            },
+            (body, response) => {
                 response.threadUuid = body.thread_uuid;
+                return response;
             }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+        )
     }
 
     static async searchThreads(page?: number, searchString?: string): Promise<SearchThreadsResponse> {
-        if (this.#apiUrl == null) {
-            const response = new SearchThreadsResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new SearchThreadsResponse();
         const params = new URLSearchParams();
 
         if (page != null) params.append("page", page.toFixed(0));
         if (searchString != null) params.append("search", searchString);
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "search_threads?" + params.toString(), {
+
+        return await this.sendApiRequest<SearchThreadsResponse>(
+            new SearchThreadsResponse(),
+            "search_threads",
+            {
                 method: "GET"
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
+            },
+            (body, response) => {
                 const threads = []
                 for (const thread of body.threads) {
+                    let thumbnailUri = null;
+                    if (thread.thumbnail_base64 != null){
+                        thumbnailUri = "data:image/png;base64," + thread.thumbnail_base64;
+                    }
+
                     threads.push({
                         uuid: thread.uuid,
                         name: thread.name,
                         description: thread.description,
-                        thumbnailUri: "data:image/png;base64," + thread.thumbnail_base64,
+                        thumbnailUri: thumbnailUri,
                         authorUserUuid: thread.author_user_uuid,
                         creationDate: new Date(thread.creation_date),
                         lastModifiedDate: new Date(thread.last_modified_date),
@@ -423,47 +297,35 @@ export default class BackEnd {
                 response.threads = threads;
                 response.totalThreads = body.total_threads;
                 response.page = body.page;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
 
-        return response;
+                return response
+            },
+            params
+        )
     }
 
     static async getThread(threadUuid: string): Promise<GetThreadResponse> {
-        if (this.#apiUrl == null) {
-            const response = new GetThreadResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new GetThreadResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "get_thread?" + params.toString(), {
-                method: "GET"
-            })
-            const body = await apiResponse.json();
 
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
+        return await this.sendApiRequest<GetThreadResponse>(
+            new GetThreadResponse(),
+            "get_thread",
+            {
+                method: "GET"
+            },
+            (body, response) => {
+                let thumbnailUri = null;
+                    if (body.thread.thumbnail_base64 != null){
+                        thumbnailUri = "data:image/png;base64," + body.thread.thumbnail_base64;
+                }
 
                 const thread: DisplayThread = {
                     uuid: body.thread.uuid,
                     name: body.thread.name,
                     description: body.thread.description,
-                    thumbnailUri: "data:image/png;base64," + body.thread.thumbnail_base64,
+                    thumbnailUri: thumbnailUri,
                     authorUserUuid: body.thread.author_user_uuid,
                     creationDate: new Date(body.thread.creation_date),
                     lastModifiedDate: new Date(body.thread.last_modified_date),
@@ -472,261 +334,181 @@ export default class BackEnd {
                 }
 
                 response.thread = thread;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                return response
+            },
+            params
+        )
     }
 
     static async getThreads(threadUuids: string[]): Promise<GetThreadsResponse> {
-    if (this.#apiUrl == null) {
-        const response = new GetThreadsResponse();
-
-        response.success = false;
-        response.message = "Invalid Api Url";
-        return response;
-    }
-
-    const response = new GetThreadsResponse();
-    const params = new URLSearchParams();
-
-    for (const threadUuid of threadUuids) {
-        params.append("uuid", threadUuid);
-    }
-
-    try {
-        const apiResponse = await fetch(
-            this.#apiUrl + "get_threads?" + params.toString(),
-            {
-                method: "GET"
-            }
-        );
-
-        const body = await apiResponse.json();
-
-        if (apiResponse.ok) {
-            response.success = true;
-            response.message = body.message;
-
-            const threads: Record<string, DisplayThread> = {};
-
-            for (const uuid of Object.keys(body.threads)) {
-                const thread = body.threads[uuid];
-
-                threads[uuid] = {
-                    uuid: thread.uuid,
-                    name: thread.name,
-                    description: thread.description,
-                    thumbnailUri: "data:image/png;base64," + thread.thumbnail_base64,
-                    authorUserUuid: thread.author_user_uuid,
-
-                    creationDate: new Date(thread.creation_date),
-                    lastModifiedDate: new Date(thread.last_modified_date),
-                    lastMessageDate: new Date(thread.last_message_date),
-
-                    private: thread.private === true
-                };
-            }
-
-            response.threads = threads;
-        } else {
-            response.success = false;
-            response.message = body.error;
-        }
-    } catch (error) {
-        response.success = false;
-        response.message = String(error);
-    }
-
-    return response;
-}
-
-    static async updateThread(sessionToken: string, threadUuid: string, threadUpdateParameters: ThreadUpdateParameters): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
-        params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "update_thread?" + params.toString(), {
+        for (const threadUuid of threadUuids) {
+            params.append("uuid", threadUuid);
+        }
+
+        return await this.sendApiRequest<GetThreadsResponse>(
+            new GetThreadsResponse(),
+            "get_threads",
+            {
+                method: "GET"
+            },
+            (body, response) => {
+                const threads: Record<string, DisplayThread> = {};
+
+                for (const uuid of Object.keys(body.threads)) {
+                    const thread = body.threads[uuid];
+
+                    let thumbnailUri = null;
+                    if (thread.thumbnail_base64 != null){
+                        thumbnailUri = "data:image/png;base64," + thread.thumbnail_base64;
+                    }
+
+                    threads[uuid] = {
+                        uuid: thread.uuid,
+                        name: thread.name,
+                        description: thread.description,
+                        thumbnailUri: thumbnailUri,
+                        authorUserUuid: thread.author_user_uuid,
+
+                        creationDate: new Date(thread.creation_date),
+                        lastModifiedDate: new Date(thread.last_modified_date),
+                        lastMessageDate: new Date(thread.last_message_date),
+
+                        private: thread.private === true
+                    };
+                }
+
+                response.threads = threads;
+                return response
+            },
+            params
+        )
+    }
+
+    static async updateThread(sessionToken: string, threadUuid: string, threadUpdateParameters: ThreadUpdateParameters): Promise<ApiResponse> {
+        const params = new URLSearchParams();
+
+        params.append("uuid", threadUuid);
+
+        const body = {
+            name: threadUpdateParameters.name,
+            description: threadUpdateParameters.description,
+            thumbnail_base64: null,
+            password: threadUpdateParameters.password,
+            remove_thumbnail: threadUpdateParameters.removeThumbnail
+        }
+
+        if (threadUpdateParameters.thumbnailImageUri != null) {
+            body.thumbnail_base64 = await BackEnd.imageUriToBase64(threadUpdateParameters.thumbnailImageUri)
+        }
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "update_thread",
+            {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "session-token": sessionToken
                 },
-                body: JSON.stringify({
-                    name: threadUpdateParameters.name,
-                    description: threadUpdateParameters.description,
-                    thumbnail_base64: await BackEnd.imageUriToBase64(threadUpdateParameters.thumbnailImageUri),
-                    password: threadUpdateParameters.password,
-                    remove_thumbnail: threadUpdateParameters.removeThumbnail
-                })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                body: JSON.stringify(body)
+            },
+            null,
+            params
+        )
     }
 
     static async deleteThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "delete_thread?" + params.toString(), {
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "delete_thread",
+            {
                 method: "DELETE",
                 headers: {
                     "session-token": sessionToken
                 }
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+            },
+            null,
+            params
+        )
     }
 
     static async createMessage(sessionToken: string, threadUuid: string, messageParameters: MessageParameters, threadPassword?: string): Promise<CreateMessageResponse> {
-        if (this.#apiUrl == null) {
-            const response = new CreateMessageResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new CreateMessageResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const headers = {
-                    "Content-Type": "application/json",
-                    "session-token": sessionToken
-                }
-            if (threadPassword != null) headers["thread-password"] = threadPassword;
 
-            const requestBody = {
-                message: messageParameters.message
-            }
+        const headers = {
+            "Content-Type": "application/json",
+            "session-token": sessionToken
+        }
+        if (threadPassword != null) headers["thread-password"] = threadPassword;
 
-            if (messageParameters.attachment != null){
-                requestBody["attachment"] = {
-                    data_base64: messageParameters.attachment.dataBase64,
-                    extenstion_type: messageParameters.attachment.extensionType,
-                    mdia_type: messageParameters.attachment.mediaType
-                }
+        const body = {
+            message: messageParameters.message
+        }
+
+        if (messageParameters.attachment != null) {
+            body["attachment"] = {
+                data_base64: messageParameters.attachment.dataBase64,
+                extension_type: messageParameters.attachment.extensionType,
+                media_type: messageParameters.attachment.mediaType
             }
-            const apiResponse = await fetch(this.#apiUrl + "create_message?" + params.toString(), {
+        }
+
+        return await this.sendApiRequest<CreateMessageResponse>(
+            new CreateMessageResponse(),
+            "create_message",
+            {
                 method: "POST",
                 headers: headers,
-                body: JSON.stringify(requestBody)
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
+                body: JSON.stringify(body)
+            },
+            (body, response) => {
                 response.messageUuid = body.message_uuid;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                return response;
+            },
+            params
+        )
     }
 
-    static async getThreadMessages(sessionToken: string, threadUuid: string, page?: number, threadPassword?: string): Promise<GetThreadMessagesResponse>{
-        if (this.#apiUrl == null) {
-            const response = new GetThreadMessagesResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response
-        }
-
-        const response = new GetThreadMessagesResponse();
+    static async getThreadMessages(sessionToken: string, threadUuid: string, page?: number, threadPassword?: string): Promise<GetThreadMessagesResponse> {
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
         if (page != null) params.append("page", page.toFixed(0));
 
-        try {
-            const headers = {
-                    "session-token": sessionToken
-                }
-            if (threadPassword != null) headers["thread-password"] = threadPassword;
+        const headers = {
+            "session-token": sessionToken
+        }
+        if (threadPassword != null) headers["thread-password"] = threadPassword;
 
-            const apiResponse = await fetch(this.#apiUrl + "get_thread_messages?" + params.toString(), {
+        return await this.sendApiRequest<GetThreadMessagesResponse>(
+            new GetThreadMessagesResponse(),
+            "get_thread_messages",
+            {
                 method: "GET",
                 headers: headers
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-
+            },
+            (body, response) => {
                 const messages = []
 
-                for (const message of body.messages){
+                for (const message of body.messages) {
+                    let attachment = null;
+                    if (message.attachment != null) {
+                        attachment = new Attachment(message.attachment.data_base64, message.attachment.extension_type, message.attachment.media_type);
+                    }
+
                     messages.push({
                         uuid: message.uuid,
                         authorUserUuid: message.author_user_uuid,
                         message: message.message,
-                        attachment: new Attachment(message.attachment.data_base64, message.attachment.extension_type, message.attachment.media_type),
+                        attachment: attachment,
 
                         creationDate: new Date(message.creation_date),
                         lastModifiedDate: new Date(message.last_modified_date)
@@ -736,89 +518,57 @@ export default class BackEnd {
                 response.messages = messages;
                 response.totalMessages = body.total_messages;
                 response.page = body.page;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                return response;
+            },
+            params
+        )
     }
 
     static async updateMessage(sessionToken: string, threadUuid: string, messageUuid: string, messageUpdateParameters: MessageUpdateParameters): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
-        params.append("uuid", threadUuid)
-        try {
-            const requestBody = {
-                message_uuid: messageUuid,
-                message: messageUpdateParameters.message,
-                remove_message: messageUpdateParameters.removeMessage,
-                remove_attachment: messageUpdateParameters.removeAttachment
-            }
+        params.append("uuid", threadUuid);
 
-            if (messageUpdateParameters.attachment != null){
-                requestBody["attachment"] = {
-                    data_base64: messageUpdateParameters.attachment.dataBase64,
-                    extenstion_type: messageUpdateParameters.attachment.extensionType,
-                    mdia_type: messageUpdateParameters.attachment.mediaType
-                }
-            }
+        const body = {
+            message_uuid: messageUuid,
+            message: messageUpdateParameters.message,
+            remove_message: messageUpdateParameters.removeMessage,
+            remove_attachment: messageUpdateParameters.removeAttachment
+        }
 
-            const apiResponse = await fetch(this.#apiUrl + "update_message?" + params.toString(), {
+        if (messageUpdateParameters.attachment != null) {
+            body["attachment"] = {
+                data_base64: messageUpdateParameters.attachment.dataBase64,
+                extension_type: messageUpdateParameters.attachment.extensionType,
+                media_type: messageUpdateParameters.attachment.mediaType
+            }
+        }
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "update_message",
+            {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "session-token": sessionToken
                 },
-                body: JSON.stringify(requestBody)
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+                body: JSON.stringify(body)
+            },
+            null,
+            params
+        )
     }
 
     static async deleteMessage(sessionToken: string, threadUuid: string, messageUuid: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "delete_message?" + params.toString(), {
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "delete_message",
+            {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -827,107 +577,49 @@ export default class BackEnd {
                 body: JSON.stringify({
                     message_uuid: messageUuid,
                 })
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+            },
+            null,
+            params
+        )
     }
 
     static async saveThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "save_thread?" + params.toString(), {
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "save_thread",
+            {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+            },
+            null,
+            params
+        )
     }
 
     static async unsaveThread(sessionToken: string, threadUuid: string): Promise<ApiResponse> {
-        if (this.#apiUrl == null) {
-            const response = new ApiResponse();
-
-            response.success = false;
-            response.message = "Invalid Api Url";
-            return response;
-        }
-
-        const response = new ApiResponse();
         const params = new URLSearchParams();
 
         params.append("uuid", threadUuid)
-        try {
-            const apiResponse = await fetch(this.#apiUrl + "unsave_thread?" + params.toString(), {
+
+        return await this.sendApiRequest<ApiResponse>(
+            new ApiResponse(),
+            "unsave_thread",
+            {
                 method: "POST",
                 headers: {
                     "session-token": sessionToken
                 }
-            })
-            const body = await apiResponse.json();
-
-            if (apiResponse.ok) {
-                response.success = true;
-                response.message = body.message;
-            }
-            else {
-                response.success = false;
-                response.message = body.error;
-            }
-        } catch (error) {
-            response.success = false;
-            response.message = String(error)
-        }
-
-        return response;
+            },
+            null,
+            params
+        )
     }
-
-    static async imageUriToBase64(imageUri: string): Promise<string> {
-        const file = new File(imageUri)
-
-        return await file.base64()
-    }
-
 }
 
 export interface UserProfile {
@@ -949,7 +641,7 @@ export interface DisplayThread {
     uuid: string;
     name: string;
     description: string;
-    thumbnailUri: string;
+    thumbnailUri?: string;
     authorUserUuid: string;
 
     creationDate: Date;
@@ -962,8 +654,8 @@ export interface DisplayThread {
 export interface Message {
     uuid: string;
     authorUserUuid: string;
-    message: string;
-    attachment: Attachment;
+    message?: string;
+    attachment?: Attachment;
 
     creationDate: Date;
     lastModifiedDate: Date;
@@ -976,7 +668,7 @@ export class Attachment {
     extensionType: string
     mediaType: MediaType
 
-    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment>{
+    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment> {
         const file = new File(attachmentUri);
 
         return new Attachment(await file.base64(), file.extension, mediaType)
@@ -985,18 +677,18 @@ export class Attachment {
     constructor(dataBase64: string, extenstionType: string, mediaType: MediaType) {
         this.dataBase64 = dataBase64;
         this.extensionType = extenstionType;
-        this.mediaType = mediaType;    
+        this.mediaType = mediaType;
     }
 }
 
 export interface ThreadParameters {
-    name: string;
-    description: string;
-    thumbnailImageUri: string;
-    password: string;
+    name?: string;
+    description?: string;
+    thumbnailImageUri?: string;
+    password?: string;
 }
 
-export class ThreadParametersBuilder implements ThreadParameters{
+export class ThreadParametersBuilder implements ThreadParameters {
     name: string = null;
     description: string = null;
     thumbnailImageUri: string = null;
@@ -1024,7 +716,7 @@ export class ThreadParametersBuilder implements ThreadParameters{
 }
 
 export interface ThreadUpdateParameters extends ThreadParameters {
-    removeThumbnail: boolean;
+    removeThumbnail?: boolean;
 }
 
 export class ThreadUpdateParametersBuilder extends ThreadParametersBuilder implements ThreadUpdateParameters {
@@ -1040,11 +732,11 @@ export class ThreadUpdateParametersBuilder extends ThreadParametersBuilder imple
     }
 }
 
-export interface UserUpdateParameters{
-    name: string;
-    motd: string;
-    profilePictureUri: string;
-    password: string;
+export interface UserUpdateParameters {
+    name?: string;
+    motd?: string;
+    profilePictureUri?: string;
+    password?: string;
 }
 
 export class UserUpdateParametersBuilder implements UserUpdateParameters {
@@ -1075,8 +767,8 @@ export class UserUpdateParametersBuilder implements UserUpdateParameters {
 }
 
 export interface MessageParameters {
-    message: string;
-    attachment: Attachment;
+    message?: string;
+    attachment?: Attachment;
 }
 
 export class MessageParametersBuilder implements MessageParameters {
@@ -1096,8 +788,8 @@ export class MessageParametersBuilder implements MessageParameters {
 
 
 export interface MessageUpdateParameters extends MessageParameters {
-    removeMessage: boolean;
-    removeAttachment: boolean;
+    removeMessage?: boolean;
+    removeAttachment?: boolean;
 }
 
 export class MessageUpdateParametersBuilder extends MessageParametersBuilder implements MessageUpdateParameters {
