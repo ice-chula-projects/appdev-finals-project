@@ -14,9 +14,7 @@ export default function ProfilePage() {
   const [profileDescription, setProfileDescription] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
-  const [pendingPicture, setPendingPicture] = useState<string | null>(null);
-  const [pendingBase64, setPendingBase64] = useState<string | null>(null);
-  const [pendingMimeType, setPendingMimeType] = useState<string>("image/jpeg");
+  const [pendingPictureUri, setPendingPictureUri] = useState<string | null>(null);
 
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -71,7 +69,6 @@ export default function ProfilePage() {
       
         if (response.userProfile.profilePictureUri) {
           setProfilePicture(response.userProfile.profilePictureUri);
-          await AsyncStorage.setItem("profile_picture_base64", response.userProfile.profilePictureUri);
         }
       } else {
         console.log("Failed to fetch user:", response.message);
@@ -106,47 +103,29 @@ export default function ProfilePage() {
 
     if (!result.canceled) {
         const asset = result.assets[0];
-        setPendingPicture(asset.uri);
-        setPendingBase64(asset.base64 ?? null);
-        setPendingMimeType(asset.mimeType ?? "image/jpeg");
+        setPendingPictureUri(asset.uri);
         setConfirmVisible(true);
     }
   }
 
-  const uploadProfilePicture = async (base64: String, mimeType: string) => {
+  const uploadProfilePicture = async (profilePictureUri: string) => {
     const sessionToken = await AsyncStorage.getItem("session_token");
-    const cleanedBase64 = base64.replace(/\s/g,"");
-    const imageData = `data:${mimeType};base64,${base64}`;
 
-    console.log("Sending mime type:", mimeType);
+    const response = await BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setProfilePictureUri(profilePictureUri))
 
-    const response = await fetch(GLOBAL_URL+"update_user", {
-        method: "PATCH",
-        headers: {"Content-Type": "application/json", "session-token": sessionToken ?? ''},
-        body: JSON.stringify({profile_picture_base64: imageData})
-    })
-
-    const data = await response.json();
-    console.log("Upload response:",data);
-
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Upload failed.');
+    if (!response.success) {
+      Alert.alert(response.message);
     }
-    return imageData;
   }
 
   const handleConfirmPFP = async () => {
-    if (!pendingPicture || !pendingBase64) return;
+    if (pendingPictureUri == null) return;
     setUploading(true);
     try {
-      const uploadedImage = await uploadProfilePicture(pendingBase64, pendingPicture);
+      const uploadedImage = await uploadProfilePicture(pendingPictureUri);
+      setProfilePicture(pendingPictureUri);
 
-      setProfilePicture(uploadedImage);
-
-      await AsyncStorage.setItem("profile_picture_base64",uploadedImage);
-
-      setPendingPicture(null);
-      setPendingBase64(null);
+      setPendingPictureUri(null);
       setConfirmVisible(false);
     } catch (err: any) {
       console.log(err);
@@ -157,8 +136,7 @@ export default function ProfilePage() {
   }
 
   const handleCancelPFP = () => {
-    setPendingPicture(null);
-    setPendingBase64(null);
+    setPendingPictureUri(null);
     setConfirmVisible(false);
   }
 
@@ -377,7 +355,7 @@ export default function ProfilePage() {
             <View style={styles.pickImagePopup}>
                 <Text style={styles.pickImageText}>Use this photo?</Text>
 
-            { pendingPicture && ( <Image source={{ uri: pendingPicture }} style={styles.pendingPic}/> ) }
+            { pendingPictureUri !- null && ( <Image source={{ uri: pendingPictureUri }} style={styles.pendingPic}/> ) }
 
             {uploading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
@@ -402,7 +380,7 @@ export default function ProfilePage() {
             <Text style={styles.yourProfile}>Your Profile</Text>
             <TouchableOpacity onPress={pickImage}>
               <Image
-                source={profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png")}
+                source={pendingPictureUri ? { uri: pendingPictureUri } : (profilePicture ? { uri: profilePicture } : require("../assets/images/default_profile.png"))}
                 style={styles.profilePictureIcon}
               />
             </TouchableOpacity>
