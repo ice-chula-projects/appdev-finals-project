@@ -519,12 +519,7 @@ async function favorite(){
           <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
             <Image
               source={users[threadData.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
-              style={{
-                width: 35,
-                height: 35,
-                borderRadius: 20,
-                marginRight: 10,
-              }}
+              style={{ width: 35, height: 35, borderRadius: 20, marginRight: 5, borderWidth: 1, borderColor: "#636363" }}
             />
 
             <Text style={{ fontSize: 24, marginBottom: 5, fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>"{threadData.name}"</Text>
@@ -556,13 +551,7 @@ async function favorite(){
                 <TouchableOpacity
                   onPress={() => setConfirmDelete(true)}
                   disabled={deletingThread}
-                  style={{
-                    backgroundColor: "#FF3B30",
-                    paddingVertical: 10,
-                    paddingHorizontal: 15,
-                    borderRadius: 10,
-                    opacity: deletingThread ? 0.5 : 1,
-                  }}
+                  style={{ backgroundColor: "#FF3B30", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}
                 >
                   <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
                     Delete Thread
@@ -573,13 +562,7 @@ async function favorite(){
                   <TouchableOpacity
                     onPress={deleteThread}
                     disabled={deletingThread}
-                    style={{
-                      backgroundColor: "#FF3B30",
-                      paddingVertical: 10,
-                      paddingHorizontal: 15,
-                      borderRadius: 10,
-                      opacity: deletingThread ? 0.5 : 1,
-                    }}
+                    style={{ backgroundColor: "#FF3B30", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}
                   >
                     <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
                       {deletingThread ? "Deleting..." : "Confirm?"}
@@ -589,14 +572,7 @@ async function favorite(){
                   <TouchableOpacity
                     onPress={() => setConfirmDelete(false)}
                     disabled={deletingThread}
-                    style={{
-                      backgroundColor: "#888",
-                      paddingVertical: 10,
-                      paddingHorizontal: 15,
-                      borderRadius: 10,
-                      opacity: deletingThread ? 0.5 : 1
-                    }}
-                  >
+                    style={{ backgroundColor: "#888", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}>
                     <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>Cancel</Text>
                   </TouchableOpacity>
                 </>
@@ -604,21 +580,10 @@ async function favorite(){
             </View>
           )}
 
-          <View
-            style={{
-              marginBottom: 20,
-            }}
-          >
+          <View style={{ marginBottom: 20 }}>
             <TouchableOpacity
               onPress={() => setShowPostBox(!showPostBox)}
-              style={{
-                backgroundColor: "#007AFF",
-                paddingVertical: 10,
-                paddingHorizontal: 15,
-                borderRadius: 10,
-                marginBottom: 12,
-                alignSelf: "flex-start",
-              }}
+              style={{ backgroundColor: "#007AFF", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, marginBottom: 12, alignSelf: "flex-start"}}
             >
               <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular"}}>{showPostBox ? "Close Post Box" : "Create Post"}</Text>
             </TouchableOpacity>
@@ -654,24 +619,11 @@ async function favorite(){
                   }}
                 />
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
 
                   <TouchableOpacity
                     onPress={pickAttachment}
-                    style={{
-                      width: 45,
-                      height: 45,
-                      borderRadius: 10,
-                      backgroundColor: "#333",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                    style={{ width: 45, height: 45, borderRadius: 10, backgroundColor: "#333", alignItems: "center", justifyContent: "center" }}
                   >
                     <Ionicons name="attach-outline" size={22} color="#fff"/>
                   </TouchableOpacity>
@@ -732,21 +684,13 @@ async function favorite(){
                     <Text style={{ fontSize: 13, marginBottom: 5, fontFamily: "NotoSans-Regular", color: "#5f5f5f" }}>("User id: "{message.authorUserUuid})</Text>
                   </View>
 
-                  <Text style={{ fontSize: 20, marginTop: 5 }}>
-                    {message.message}
-                  </Text>
+                  <Text style={{ fontSize: 20, marginTop: 5 }}>{message.message}</Text>
 
                   {message.attachment != null && <View style={{marginTop: 10, gap: 5 }}>
 
                     {message.attachment.mediaType == "image" && <Image
                       source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
-                      style={{
-                        width: 200,
-                        height: 200,
-                        aspectRatio: 1,
-                        borderRadius: 8,
-                        resizeMode: "stretch",
-                      }}
+                      style={{ width: 200, height: 200, aspectRatio: 1,borderRadius: 8,resizeMode: "stretch" }}
                     />}
 
                     {message.attachment.mediaType != "image" && <View style={{width:210}}>
