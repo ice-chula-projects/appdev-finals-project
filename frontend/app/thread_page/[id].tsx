@@ -18,7 +18,6 @@ import {
   UserUpdateParametersBuilder,
   Attachment,
 } from "@/components/backend";
-import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -202,21 +201,12 @@ const [threadImage, setThreadImage] =
 };
 
 
-  const pickAttachment = async () => {
-  const permission =
-    await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-  if (!permission.granted) {
-    alert("Permission required");
-    return;
-  }
-
+const pickAttachment = async () => {
   const result =
-    await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:
-        ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
-      quality: 0.7,
+    await DocumentPicker.getDocumentAsync({
+      type: "*/*",
+      copyToCacheDirectory: true,
+      multiple: false,
       base64: true,
     });
 
@@ -952,7 +942,7 @@ const [threadImage, setThreadImage] =
                       gap: 5,
                     }}
                   >
-
+                    message.attachment
                     {/* IMAGE VIEWER */}
                     {message.attachment.mediaType == "image" && <Image
                       source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
