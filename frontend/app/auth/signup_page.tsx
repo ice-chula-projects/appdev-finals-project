@@ -4,8 +4,6 @@ import { Stack, router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackEnd from '../../components/backend';
 
-const URL = "http://localhost:5000/"
-
 export const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -134,7 +132,6 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await BackEnd.setApiUrl(URL);
       const signupResponse = await BackEnd.createUser(username,password);
 
       if (!signupResponse.success) {
