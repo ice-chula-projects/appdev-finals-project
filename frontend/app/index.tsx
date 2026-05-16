@@ -54,7 +54,7 @@ export default function Index() {
       }
 
       const builder = new ThreadParametersBuilder()
-        .setName(threadTitle)
+        .setName(threadTitle || "Untitled Thread")
         .setDescription(threadDescription)
         .setThumbnailImageUri(threadImage ?? null)
 
