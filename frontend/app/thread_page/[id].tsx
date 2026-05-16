@@ -37,6 +37,7 @@ export default function Index() {
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const [threadIsPrivate, setThreadIsPrivate] = useState(false);
   const [threadData, setThreadData] = useState<DisplayThread>(null);
   const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
   const [users, setUsers] = useState<Record<string, DisplayUser>>({});
@@ -83,6 +84,8 @@ export default function Index() {
           if(Platform.OS == "web") alert(getThreadResponse.message);
           return <View><Text>Error: {getThreadResponse.message}</Text></View>;
         }
+
+        setThreadIsPrivate(getThreadResponse.thread.private);
 
         const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid));
 
@@ -434,6 +437,11 @@ export default function Index() {
     );
   }
   if (!fontsLoaded) return null;
+
+  //PUT POPUP HERE
+  if (threadIsPrivate) return <View>
+      <Text>This thread is private</Text>
+  </View>
 
   if (!threadMessageData || !threadData) {
     return (
