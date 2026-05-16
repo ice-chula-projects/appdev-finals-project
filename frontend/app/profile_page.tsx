@@ -235,6 +235,10 @@ export default function ProfilePage() {
       borderColor: "#ccc",
       borderRadius: 8,
       padding: 15,
+      elevation: 5,
+      shadowColor: "#000000",
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
       
     },
     profilePictureIcon: {
@@ -397,22 +401,14 @@ export default function ProfilePage() {
             )}
         </View>
 
-        <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "bold",
-              marginBottom: 5,
-            }}
-          >
-            Thread History
-          </Text>
+        <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 5, fontFamily: "NotoSans-Regular"}}>Thread History</Text>
             <View
             style={{
                 height: 180,
                 borderWidth: 1,
                 borderColor: "#ccc",
                 borderRadius: 8,
-                overflow: "hidden",
+                overflow: "hidden"
             }}
             >
 
@@ -425,8 +421,8 @@ export default function ProfilePage() {
                   padding: 5,
                   borderWidth: 1,
                   borderColor: "#ccc",
-                  borderRadius: 2,
-                  marginBottom: 5,
+                  borderRadius: 5,
+                  margin: 5
                 }}
               >
                 <View 
@@ -443,6 +439,7 @@ export default function ProfilePage() {
                       borderRadius: 8
                     }}
                   />}
+
               <View style={{ 
                 width: 500,
                 height: 50,
@@ -459,29 +456,14 @@ export default function ProfilePage() {
                   {thread?.name}
                 </Text>
 
-                <Text
-                  style={{
-                    color: "gray",
-                    fontSize: 14,
-                  }}
-                >
-                  {thread?.description}
-                </Text>
+                <Text style={{ color: "gray", fontSize: 14, fontFamily: "NotoSans-Regular" }}>{thread?.description}</Text>
               </View>
               </View>
               </TouchableOpacity>
             ))}
         </ScrollView>
         </View>
-                <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "bold",
-              marginBottom: 5,
-            }}
-          >
-            Saved Threads
-          </Text>
+                <Text style={{ fontSize: 20,fontWeight: "bold", marginBottom: 5, marginTop: 10, fontFamily: "NotoSans-Regular"}}>Saved Threads</Text>
             <View
             style={{
                 height: 180,
@@ -501,8 +483,8 @@ export default function ProfilePage() {
                   padding: 5,
                   borderWidth: 1,
                   borderColor: "#ccc",
-                  borderRadius: 2,
-                  marginBottom: 5,
+                  borderRadius: 5,
+                  margin: 5
                 }}
               >
                 <View 
@@ -535,22 +517,15 @@ export default function ProfilePage() {
                   {thread?.name}
                 </Text>
 
-                <Text
-                  style={{
-                    color: "gray",
-                    fontSize: 14,
-                  }}
-                >
-                  {thread?.description}
-                </Text>
+                <Text style={{ color: "gray", fontSize: 14, fontFamily: "NotoSans-Regular" }}>{thread?.description}</Text>
               </View>
-              </View>
-              </TouchableOpacity>
-            ))}
-        </ScrollView>
-        </View>
-        </View>
-      </SafeAreaView>
-    </>
+            </View>
+            </TouchableOpacity>
+          ))}
+       </ScrollView>
+      </View>
+     </View>
+    </SafeAreaView>
+   </>
   );
 }

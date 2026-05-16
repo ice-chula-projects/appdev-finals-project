@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +20,7 @@ import { File, Paths } from "expo-file-system";
 import * as LegacyFileSystem from "expo-file-system/legacy";
 
 export default function Index() {
+
   const params = useLocalSearchParams();
   const threadUuid = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -30,16 +31,19 @@ export default function Index() {
       </SafeAreaView>
     );
   }
-const [threadAttachment, setThreadAttachment] =
-  useState<any>(null);
 
-const [threadImage, setThreadImage] =
-  useState<string | null>(null);
- const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  
+  const [threadAttachment, setThreadAttachment] = useState<any>(null);
+  const [threadImage, setThreadImage] = useState<string | null>(null);
+
+  const [currentUserUuid, setCurrentUserUuid] = useState<string>(null);
   const [deletingThread, setDeletingThread] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [threadIsPrivate, setThreadIsPrivate] = useState(false);
+  const [threadIsFavorited, setThreadIsFavorited] = useState(false);
   const [threadData, setThreadData] = useState<DisplayThread>(null);
   const [threadMessageData, setThreadMessageData] = useState<Message[]>([]);
   const [users, setUsers] = useState<Record<string, DisplayUser>>({});
@@ -47,7 +51,16 @@ const [threadImage, setThreadImage] =
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
 
+  const [NewTitle, setNewTitle] = useState("");
+  const [NewDescription, setNewDescription] = useState("");
+  const [ThreadDesc, setThreadDesc] = useState(false);
+
   const [showPostBox, setShowPostBox] = useState(false);
+  const [showSecondPostBox, setShowSecondPostBox] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
+  const [volume, setVolume] = useState(0.5);
 
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
@@ -73,13 +86,13 @@ const [threadImage, setThreadImage] =
           return
       }
 
-      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 100)) 
+      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150)) 
 
       setCurrentUserUuid(userUuid);
 
       try {
         const getThreadResponse = await BackEnd.getThread(String(threadUuid));
-
+        
         if (!getThreadResponse.success) {
           Alert.alert("Error", getThreadResponse.message);
           if(Platform.OS == "web") alert(getThreadResponse.message);
@@ -90,18 +103,23 @@ const [threadImage, setThreadImage] =
         
         if(privateThread && password == null) return
         const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
-
+        
         if (!getThreadMessagesResponse.success) {
           if (privateThread) setPasswordError(getThreadMessagesResponse.message)
-          else {
-            Alert.alert("Error", getThreadMessagesResponse.message);
-            if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
-          }
-          return
+            else {
+          Alert.alert("Error", getThreadMessagesResponse.message);
+          if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
         }
-
-        setThreadData(getThreadResponse.thread);
-        setThreadMessageData(getThreadMessagesResponse.messages);
+        return
+        }
+      
+        const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
+        if (getUserProfileResponse.success){
+          setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
+        }
+        
+      setThreadData(getThreadResponse.thread);
+      setThreadMessageData(getThreadMessagesResponse.messages);
 
         const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
         const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
@@ -112,14 +130,30 @@ const [threadImage, setThreadImage] =
       } catch (err) {
         console.log("Network error:", err);
       } finally {
+        setLoading(false);
       }
     };
+
+    const submitChange = async () => {
+      const SESSION_TOKEN =
+        await AsyncStorage.getItem(
+          "session_token"
+        );
+
+      if (!newPost.trim()) return;
+
+
+    }
+    // Do Backend Here // 
 
   const submitPost = async () => {
     const SESSION_TOKEN =
       await AsyncStorage.getItem(
         "session_token"
       );
+
+    if (!newPost.trim()) return;
+
     try {
       setPosting(true);
       const params =
@@ -339,7 +373,25 @@ function getMimeType(extension: string): string {
     }
 }
 
+async function favorite(){
+  const sessionToken = await AsyncStorage.getItem("session_token");
+
+  if(sessionToken == null) return;
+
+  if(!threadIsFavorited){
+    const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
+    if(saveThreadResponse.success) setThreadIsFavorited(true)
+  } else {
+    const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
+    if(unsaveThreadResponse.success) setThreadIsFavorited(false)
+}
+}
+
   if (!fontsLoaded) return null;
+
+  if(currentUserUuid == null){
+    return <View><Text>You must be logged in to view thread messages</Text></View>
+  }
 
   if (!threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
@@ -349,7 +401,6 @@ function getMimeType(extension: string): string {
     );
   }
 
-  // Private thread w/ password requirement
   if (threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
@@ -358,11 +409,7 @@ function getMimeType(extension: string): string {
           maxWidth: 400, 
           backgroundColor: "white", 
           borderRadius: 15, 
-          padding: 25,
-          elevation: 5,
-          shadowColor: "#000000",
-          shadowOpacity: 0.5,
-          shadowRadius: 6, 
+          padding: 25 
           }}>
 
           <Text style={{
@@ -421,7 +468,11 @@ function getMimeType(extension: string): string {
               borderRadius: 8, 
               alignItems: "center" 
             }}>
-              <Text style={{ fontWeight: "bold", color: "white", fontFamily: "NotoSans-Regular" }}>
+              <Text style={{ 
+                fontWeight: "bold",
+                color: "white",
+                fontFamily: "NotoSans-Regular"
+              }}>
                 Enter
               </Text>
             </TouchableOpacity>
@@ -447,6 +498,7 @@ function getMimeType(extension: string): string {
       </SafeAreaView>
     )
   }
+
 
   return (
     <>
@@ -475,13 +527,19 @@ function getMimeType(extension: string): string {
             <Text style={{fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>by</Text>
             <Text style={{ fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>{users[threadData.authorUserUuid]?.name ?? "Unknown User"}</Text>
 
+            <View style={{ alignItems: "flex-end" }}>
+              <TouchableOpacity onPress={favorite} style={{marginLeft: 5, marginBottom: 5}}>
+                <Ionicons name={threadIsFavorited? "star" : "star-outline"} size={30} color="#ffa600ff"></Ionicons>
+              </TouchableOpacity>
           </View>
 
-          <Text style={{ fontSize: 12, marginTop: 5, fontFamily: "NotoSans-Regular" }}>
+          </View>
+
+          <Text style={{ fontSize: 12, marginTop: 5, fontFamily: "NotoSans-Regular", color: "#8d8d8d" }}>
             ("Author ID: "{threadData.authorUserUuid}) 
           </Text>
 
-          <Text style={{ fontSize: 12, marginBottom: 10, marginTop: 5, fontFamily: "NotoSans-Regular" }}>
+          <Text style={{ fontSize: 12, marginBottom: 10, marginTop: 5, fontFamily: "NotoSans-Regular", color: "#8d8d8d" }}>
             {threadData.creationDate.toString()}
             {`\n`}
           </Text>
@@ -532,7 +590,7 @@ function getMimeType(extension: string): string {
                       paddingVertical: 10,
                       paddingHorizontal: 15,
                       borderRadius: 10,
-                      opacity: deletingThread ? 0.5 : 1,
+                      opacity: deletingThread ? 0.5 : 1
                     }}
                   >
                     <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>Cancel</Text>
