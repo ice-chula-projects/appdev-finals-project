@@ -969,7 +969,34 @@ export interface Message {
     lastModifiedDate: Date;
 }
 
-export class ThreadParameters {
+export type MediaType = "image" | "audio" | "video" | "text" | "application";
+
+export class Attachment {
+    dataBase64: string
+    extensionType: string
+    mediaType: MediaType
+
+    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment>{
+        const file = new File(attachmentUri);
+
+        return new Attachment(await file.base64(), file.extension, mediaType)
+    }
+
+    constructor(dataBase64: string, extenstionType: string, mediaType: MediaType) {
+        this.dataBase64 = dataBase64;
+        this.extensionType = extenstionType;
+        this.mediaType = mediaType;    
+    }
+}
+
+export interface ThreadParameters {
+    name: string;
+    description: string;
+    thumbnailImageUri: string;
+    password: string;
+}
+
+export class ThreadParametersBuilder implements ThreadParameters{
     name: string = null;
     description: string = null;
     thumbnailImageUri: string = null;
@@ -996,7 +1023,11 @@ export class ThreadParameters {
     }
 }
 
-export class ThreadUpdateParameters extends ThreadParameters {
+export interface ThreadUpdateParameters extends ThreadParameters {
+    removeThumbnail: boolean;
+}
+
+export class ThreadUpdateParametersBuilder extends ThreadParametersBuilder implements ThreadUpdateParameters {
     removeThumbnail: boolean = false;
 
     constructor() {
@@ -1009,7 +1040,14 @@ export class ThreadUpdateParameters extends ThreadParameters {
     }
 }
 
-export class UserUpdateParameters {
+export interface UserUpdateParameters{
+    name: string;
+    motd: string;
+    profilePictureUri: string;
+    password: string;
+}
+
+export class UserUpdateParametersBuilder implements UserUpdateParameters {
     name: string = null;
     motd: string = null;
     profilePictureUri: string = null;
@@ -1036,27 +1074,12 @@ export class UserUpdateParameters {
     }
 }
 
-export type MediaType = "image" | "audio" | "video" | "text" | "application";
-
-export class Attachment {
-    dataBase64: string
-    extensionType: string
-    mediaType: MediaType
-
-    static async fromAttachmentUri(attachmentUri: string, mediaType: MediaType): Promise<Attachment>{
-        const file = new File(attachmentUri);
-
-        return new Attachment(await file.base64(), file.extension, mediaType)
-    }
-
-    constructor(dataBase64: string, extenstionType: string, mediaType: MediaType) {
-        this.dataBase64 = dataBase64;
-        this.extensionType = extenstionType;
-        this.mediaType = mediaType;    
-    }
+export interface MessageParameters {
+    message: string;
+    attachment: Attachment;
 }
 
-export class MessageParameters {
+export class MessageParametersBuilder implements MessageParameters {
     message: string = null;
     attachment: Attachment = null;
 
@@ -1071,7 +1094,13 @@ export class MessageParameters {
     }
 }
 
-export class MessageUpdateParameters extends MessageParameters {
+
+export interface MessageUpdateParameters extends MessageParameters {
+    removeMessage: boolean;
+    removeAttachment: boolean;
+}
+
+export class MessageUpdateParametersBuilder extends MessageParametersBuilder implements MessageUpdateParameters {
     removeMessage: boolean = false;
     removeAttachment: boolean = false;
 
