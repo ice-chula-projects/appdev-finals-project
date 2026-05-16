@@ -31,9 +31,6 @@ export default function Index() {
       </SafeAreaView>
     );
   }
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   
   const [threadAttachment, setThreadAttachment] = useState<any>(null);
   const [threadImage, setThreadImage] = useState<string | null>(null);
@@ -57,10 +54,6 @@ export default function Index() {
 
   const [showPostBox, setShowPostBox] = useState(false);
   const [showSecondPostBox, setShowSecondPostBox] = useState(false);
-
-  const [loading, setLoading] = useState(true);
-  const [playingAudioIndex, setPlayingAudioIndex] = useState<number | null>(null);
-  const [volume, setVolume] = useState(0.5);
 
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
@@ -130,7 +123,6 @@ export default function Index() {
       } catch (err) {
         console.log("Network error:", err);
       } finally {
-        setLoading(false);
       }
     };
 
@@ -140,11 +132,21 @@ export default function Index() {
           "session_token"
         );
 
-      if (!newPost.trim()) return;
 
+        const parameters = new ThreadUpdateParametersBuilder();
+        if(NewTitle != null && NewTitle != "") parameters.setName(NewTitle);
+        if(NewDescription != null && NewDescription != "") parameters.setDescription(NewDescription);
 
+        const updateThreadResponse =await BackEnd.updateThread(SESSION_TOKEN, threadUuid, parameters);
+
+        if(updateThreadResponse.success){
+          fetchThread(threadPassword);
+
+          setNewTitle("");
+          setNewDescription("");
+          setShowSecondPostBox(false);
+        }
     }
-    // Do Backend Here // 
 
   const submitPost = async () => {
     const SESSION_TOKEN =
@@ -492,13 +494,11 @@ async function favorite(){
               Go Back
             </Text>
             </TouchableOpacity>
-
           </View>
         </View>
       </SafeAreaView>
     )
   }
-
 
   return (
     <>
