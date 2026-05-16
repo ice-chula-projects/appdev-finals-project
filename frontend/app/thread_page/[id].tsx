@@ -21,7 +21,16 @@ import {
 
 export default function Index() {
 
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  if (!id) {
+  return (
+    <SafeAreaView>
+      <Text>Missing thread id</Text>
+    </SafeAreaView>
+  );
+  }
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -66,7 +75,7 @@ useEffect(() => {
     try {
 const threadResponse =
   await BackEnd.getThread(
-    id.toString()
+    String(id)
   );
 
 if (!threadResponse.success) {
@@ -77,7 +86,7 @@ if (!threadResponse.success) {
 const messagesResponse =
   await BackEnd.getThreadMessages(
     SESSION_TOKEN!,
-    id.toString()
+    String(id)
   );
 
 if (!messagesResponse.success) {
@@ -85,45 +94,34 @@ if (!messagesResponse.success) {
   return;
 }
 
-const data: any = threadResponse;
-const dbtb: any = messagesResponse;
+const data = threadResponse;
+const dbtb = messagesResponse; 
 
 const thread = data.thread;
 
-const creatorData =
-  await BackEnd.getUserProfile(
-    thread.author_user_uuid
-  );
 
-if (creatorData.success) {
-  thread.authorUsername = creatorData.userProfile.name;
-} else {
-  thread.authorUsername =
-    "Unknown User";
+
+
+
+
+
+
+
+let authorUsername = "Unknown User";
+
+const storedUUID = await AsyncStorage.getItem("user_uuid");
+
+if (storedUUID) {
+  const creatorData = await BackEnd.getUsers([storedUUID]);
+
+  if (creatorData.success) {
+    authorUsername =
+      creatorData.users?.[storedUUID]?.name ?? "Unknown User";
+    
+  }
 }
-
-// get usernames for messages
-const userUuids = dbtb.messages.map(
-  (msg: any) => msg.author_user_uuid
-);
-
-const usersResponse =
-  await BackEnd.getUsers(userUuids);
-
-if (usersResponse.success) {
-  const updatedMessages =
-    dbtb.messages.map((msg: any) => ({
-      ...msg,
-      authorUsername:
-        usersResponse.users[
-          msg.author_user_uuid
-        ]?.name || "Unknown User",
-    }));
-
-  dbtb.messages = updatedMessages;
-} else {
-  console.log(usersResponse.message)
-}
+thread.author_user_uuid = storedUUID
+thread.authorUsername = authorUsername;
 
 setThreadData(thread);
 setThreadMessageData(dbtb);
@@ -157,7 +155,7 @@ setThreadMessageData(dbtb);
     const response =
       await BackEnd.createMessage(
         SESSION_TOKEN!,
-        id.toString(),
+        String(id),
         params
       );
 
@@ -200,33 +198,25 @@ setThreadMessageData(dbtb);
 };
 
 const deleteThread = async () => {
-  const SESSION_TOKEN =
-    await AsyncStorage.getItem(
-      "session_token"
-    );
+  const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
+  if (!SESSION_TOKEN) return;
+
+  setDeletingThread(true);
 
   try {
-    setDeletingThread(true);
-
-    const response =
-      await BackEnd.deleteThread(
-        SESSION_TOKEN!,
-        id.toString()
-      );
+    const response = await BackEnd.deleteThread(
+      SESSION_TOKEN,
+      String(id)
+    );
 
     if (response.success) {
       router.replace("/");
-    } else {
-      console.log(
-        "Delete error:",
-        response.message
-      );
+      return;
     }
+
+    console.log("Delete error:", response.message);
   } catch (err) {
-    console.log(
-      "Network error:",
-      err
-    );
+    console.log("Network error:", err);
   } finally {
     setDeletingThread(false);
     setConfirmDelete(false);
@@ -590,31 +580,21 @@ function AudioPlayer() {
             {threadData.description}
           </Text>
 
-          {currentUserUUID ===
-            threadData.author_user_uuid && (
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 10,
-                marginBottom: 15,
-              }}
-            >
-              {!confirmDelete  ? (
+          {currentUserUUID === threadData.author_user_uuid && (
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
+              {!confirmDelete ? (
                 <TouchableOpacity
                   onPress={() => setConfirmDelete(true)}
+                  disabled={deletingThread}
                   style={{
                     backgroundColor: "#FF3B30",
                     paddingVertical: 10,
                     paddingHorizontal: 15,
                     borderRadius: 10,
+                    opacity: deletingThread ? 0.5 : 1,
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                    }}
-                  >
+                  <Text style={{ color: "white", fontWeight: "bold" }}>
                     Delete Thread
                   </Text>
                 </TouchableOpacity>
@@ -622,38 +602,32 @@ function AudioPlayer() {
                 <>
                   <TouchableOpacity
                     onPress={deleteThread}
+                    disabled={deletingThread}
                     style={{
                       backgroundColor: "#FF3B30",
                       paddingVertical: 10,
                       paddingHorizontal: 15,
                       borderRadius: 10,
+                      opacity: deletingThread ? 0.5 : 1,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Confirm Delete
+                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                      {deletingThread ? "Deleting..." : "Confirm Delete"}
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => setConfirmDelete(false)}
+                    disabled={deletingThread}
                     style={{
                       backgroundColor: "#888",
                       paddingVertical: 10,
                       paddingHorizontal: 15,
                       borderRadius: 10,
+                      opacity: deletingThread ? 0.5 : 1,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "white",
-                        fontWeight: "bold",
-                      }}
-                    >
+                    <Text style={{ color: "white", fontWeight: "bold" }}>
                       Cancel
                     </Text>
                   </TouchableOpacity>
@@ -743,7 +717,7 @@ function AudioPlayer() {
 
           <ScrollView>
             {Object.values(threadMessageData.messages).map(
-              (msg: any, index: number) => (
+              (msg, index: number) => (
                 <View
                   key={index}
                   style={{
