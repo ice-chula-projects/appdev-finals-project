@@ -135,7 +135,7 @@ export default function Index() {
       alignItems: "center",
     },
     createThreadPopup: {
-      width: Math.min(width * 0.85, 550), // 85% on mobile devices, max 550 on web
+      width: Math.min(width * 0.85, 575), // 85% on mobile devices, max 575 on web
       maxHeight: height * 0.75,
       backgroundColor: "white",
       borderRadius: 15,
@@ -252,21 +252,34 @@ export default function Index() {
       marginRight: 5,
       fontFamily: "RobotoSlab-Regular"
     },
-    visibilityOption: {
+    accessOption: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 8,
+      justifyContent: "space-between",
+      marginTop: 10,
+      marginBottom: 5,
     },
-    visibilityText: {
-      marginLeft: 8,
-      fontSize: 14
+    accessToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    accessText: {
+      marginLeft: 5,
+      fontSize: 14,
+      marginRight: 5,
+      fontFamily: "NotoSans-Regular",
+      fontWeight: "bold"
     },
     threadPasswordInput: {
+      flex: 1,
+      marginLeft: 10,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
       borderWidth: 1,
       borderColor: "#ccc",
-      borderRadius: 10,
-      padding: 10,
-      marginTop: 8,
+      borderRadius: 5,
+      fontSize: 14,
       fontFamily: "NotoSans-Regular",
     },
   })
@@ -329,23 +342,24 @@ export default function Index() {
                       multiline
                     />
                     
-                    <View style={{ marginTop: 10 }}>
-                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.visibilityOption}>
+                    <View style={styles.accessOption}>
+                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.accessToggle}>
                         <Ionicons name={isPrivateThread ? "lock-closed" : "lock-open"} size={18} color="#333" />
-                        <Text style={styles.visibilityText}>{isPrivateThread ? "Private Thread" : "Public Thread"}</Text>
-                        {isPrivateThread && (
+                        <Text style={styles.accessText}>{ isPrivateThread ? "Private" : "Public" }</Text>
+                      </TouchableOpacity>
+                      {isPrivateThread && (
                           <TextInput
                             placeholder="Thread Password"
                             value={threadPassword}
                             onChangeText={setThreadPassword}
-                            secureTextEntry
                             style={styles.threadPasswordInput}
+                            secureTextEntry
                           />
-                          )}
-                        </TouchableOpacity>
+                        )}
                     </View>
                   </View>
                 </View>
+
                 {createThreadError ? (
                 <Text style={styles.threadErrorText}>{createThreadError}</Text>
               ) : null}
