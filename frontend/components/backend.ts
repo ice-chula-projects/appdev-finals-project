@@ -74,6 +74,10 @@ export default class BackEnd {
         return await file.base64()
     }
 
+    static isApiAvailable(): boolean{
+        return this.#apiUrl != null;
+    }
+
     static async getBoardInfo(): Promise<GetBoardInfoResponse> {
         return await this.sendApiRequest(
             new GetBoardInfoResponse(),
