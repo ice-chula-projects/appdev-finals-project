@@ -233,6 +233,7 @@ export default function RootLayout() {
 
   // Logout
   const confirmLogout = async () => {
+    BackEnd.logout(await AsyncStorage.getItem("session_token"));
     await AsyncStorage.removeItem("session_token");
     await AsyncStorage.removeItem("username");
     setLoggedIn(false);
