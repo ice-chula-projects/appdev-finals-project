@@ -928,12 +928,24 @@ export const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 30,
     paddingBottom: 20,
+    ...Platform.select({
+      android: {
+        paddingTop: 0,
+        paddingBottom: 0
+      }
+    })
   },
 
   headerTitle: {
     fontSize: 40,
     fontFamily: "NotoSans-Bold",
     marginLeft: 10,
+    ...Platform.select({
+      android: {
+        color: "#ffffff",
+        fontSize: 1
+      }
+    })
   },
 
   threadHeader: {
@@ -950,6 +962,13 @@ export const styles = StyleSheet.create({
     marginRight: 5,
     borderWidth: 1,
     borderColor: "#636363",
+    ...Platform.select({
+      android: {
+        width: 30,
+        height: 30,
+        marginRight: 3
+      }
+    })
   },
 
   smallProfileImage: {
@@ -958,18 +977,34 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#636363",
+    ...Platform.select({
+      android: {
+        width: 25,
+        height: 25
+      }
+    })
   },
 
   threadTitle: {
     fontSize: 24,
     marginBottom: 5,
     fontFamily: "NotoSans-Bold",
+    ...Platform.select({
+      android: {
+        fontSize: 19
+      }
+    })
   },
 
   threadHeaderText: {
     fontSize: 24,
     marginBottom: 5,
     fontFamily: "NotoSans-Regular",
+    ...Platform.select({
+      android: {
+        fontSize: 19
+      }
+    })
   },
 
   favoriteContainer: {
@@ -986,6 +1021,11 @@ export const styles = StyleSheet.create({
     marginTop: 5,
     fontFamily: "NotoSans-Regular",
     color: "#8d8d8d",
+    ...Platform.select({
+      android: {
+        marginTop: 0
+      }
+    })
   },
 
   metadataBottomText: {
@@ -994,6 +1034,12 @@ export const styles = StyleSheet.create({
     marginBottom: 10,
     fontFamily: "NotoSans-Regular",
     color: "#8d8d8d",
+    ...Platform.select({
+      android: {
+        marginTop: 0,
+        marginBottom: -10
+      }
+    })
   },
 
   descriptionText: {
@@ -1007,6 +1053,11 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginBottom: 15,
+    ...Platform.select({
+      android: {
+        gap: 5
+      }
+    })
   },
 
   deleteButton: {
@@ -1048,6 +1099,11 @@ export const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.3,
     shadowRadius: 6,
+    ...Platform.select({
+      android: {
+        backgroundColor: "#f3f3f3",
+      }
+    })
   },
 
   editInputsRow: {
@@ -1058,7 +1114,7 @@ export const styles = StyleSheet.create({
 
   titleInput: {
     flex: 1,
-    height: 160,
+    height: 100,
     width: 200,
     borderWidth: 1,
     borderColor: "#ccc",
@@ -1071,7 +1127,7 @@ export const styles = StyleSheet.create({
 
   descriptionInput: {
     flex: 1,
-    height: 160,
+    height: 100,
     width: 1000,
     borderWidth: 1,
     borderColor: "#ccc",
@@ -1122,6 +1178,11 @@ export const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.3,
     shadowRadius: 6,
+    ...Platform.select({
+      android: {
+        backgroundColor: "#f3f3f3",
+      }
+    })
   },
 
   postInput: {
@@ -1178,6 +1239,11 @@ export const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 5,
     marginRight: 10,
+    ...Platform.select({
+      android: {
+        backgroundColor: "#f3f3f3",
+      }
+    })
   },
 
   messageHeader: {
@@ -1198,6 +1264,11 @@ export const styles = StyleSheet.create({
     marginBottom: 5,
     fontFamily: "NotoSans-Regular",
     color: "#5f5f5f",
+    ...Platform.select({
+      android: {
+        fontSize: 11
+      }
+    })
   },
 
   messageText: {
