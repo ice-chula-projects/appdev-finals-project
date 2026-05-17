@@ -419,7 +419,7 @@ export default function ProfilePage() {
       flex: 1
     },
     yourProfile: {
-      fontSize: 50,
+      fontSize: 40,
       color: "#2b2b2b",
       fontFamily: "RobotoSlab-Bold",
     },
@@ -473,12 +473,7 @@ export default function ProfilePage() {
       borderWidth: 2,
       borderColor: "#ccc",
       borderRadius: 8,
-      padding: 15,
-      elevation: 5,
-      shadowColor: "#000000",
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      
+      padding: 15
     },
     profilePictureIcon: {
       width: 100,
@@ -488,10 +483,10 @@ export default function ProfilePage() {
       borderRadius: 15,
       borderWidth: 2,
       borderColor: "#c2c2c2",
-      elevation: 5,
       shadowColor: "#000",
       shadowOpacity: 0.5,
       shadowRadius: 6,
+      overflow: "hidden"
     },
     profileUsername: {
       fontSize: 30,
@@ -502,6 +497,7 @@ export default function ProfilePage() {
       marginTop: 5,
       marginBottom: 10,
       fontFamily: "RobotoSlab-Regular",
+      fontSize: 12
     },
     editDescBox: {
       width: "50%",

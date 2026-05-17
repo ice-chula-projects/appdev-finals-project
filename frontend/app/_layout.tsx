@@ -74,11 +74,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: "#a7a7a7",
-    elevation: 5,
-    shadowColor: "#000000",
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
+    borderColor: "#a7a7a7"
   },
   popupOverlay: {
     flex: 1,
@@ -152,7 +148,7 @@ const styles = StyleSheet.create({
   apiText: {
     color: "white",
     fontFamily: "NotoSans-Bold",
-    fontSize: 14,
+    fontSize: 13,
   },
 })
 
