@@ -408,8 +408,8 @@ export default function Index() {
     addThreadButton: {
       flex: 1,
       position: "absolute",
-      bottom: 30,
-      right: 25,
+      bottom: 25,
+      right: 30,
       backgroundColor: "#003b7a",
       width: 150,
       height: 50,
