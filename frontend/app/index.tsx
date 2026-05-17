@@ -144,7 +144,7 @@ export default function Index() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
+          headerTitle: () => ((Platform.OS != "android" && Platform.OS != "ios") && <Text style={styles.pageName}>Board of Mess</Text> ),
         }}
       />
 
