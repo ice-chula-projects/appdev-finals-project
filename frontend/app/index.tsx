@@ -156,72 +156,90 @@ export default function Index() {
                 <Text style={styles.createThreadText}>Create Thread</Text>
                 <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
                 
-                <View style={styles.createThreadMargins}>
-                  <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
-                    {threadImage ? (
-                      <Image
-                      source={{ uri: threadImage }}
-                      style={{ width: "100%", height: "100%" }}
-                      />
-                    ) : (
-                    <>
-                      <Ionicons name="image-outline" size={36} color="#8f8f8f" />
-                      <Text style={styles.imagePickerText}>Select Image</Text>
-                      <Text style={styles.imagePickerText}>(.png, .jpg, .jpeg, .gif)</Text>
-                    </>
-                  )}
-                  </TouchableOpacity>
-                  
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      placeholder="Thread Title"
-                      value={threadTitle}
-                      onChangeText={setThreadTitle}
-                      style={styles.threadNameInput}
-                    />
+<View style={styles.createThreadMargins}>
+  <TouchableOpacity
+    onPress={pickThreadImage}
+    style={styles.threadImagePicker}
+  >
+    {threadImage ? (
+      <Image
+        source={{ uri: threadImage }}
+        style={{ width: "100%", height: "100%" }}
+      />
+    ) : (
+      <>
+        <Ionicons name="image-outline" size={36} color="#8f8f8f" />
+        <Text style={styles.imagePickerText}>Select Image</Text>
+        <Text style={styles.imagePickerText}>
+          (.png, .jpg, .jpeg, .gif)
+        </Text>
+      </>
+    )}
+  </TouchableOpacity>
 
-                    <TextInput
-                      placeholder="Description"
-                      value={threadDescription}
-                      onChangeText={setThreadDescription}
-                      style={styles.threadDescInput}
-                      multiline
-                    />
-                    
-                    <View style={styles.accessOption}>
-                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.accessToggle}>
-                        <Ionicons name={isPrivateThread ? "lock-closed" : "lock-open"} size={18} color="#333" />
-                        <Text style={styles.accessText}>{ isPrivateThread ? "Private" : "Public" }</Text>
-                      </TouchableOpacity>
-                      {isPrivateThread && (
-                          <TextInput
-                            placeholder="Thread Password"
-                            value={threadPassword}
-                            onChangeText={setThreadPassword}
-                            style={styles.threadPasswordInput}
-                            secureTextEntry
-                          />
-                        )}
-                    </View>
-                  </View>
-                </View>
+  <View style={styles.threadInputsContainer}>
+    <TextInput
+      placeholder="Thread Title"
+      value={threadTitle}
+      onChangeText={setThreadTitle}
+      style={styles.threadNameInput}
+    />
+
+    <TextInput
+      placeholder="Description"
+      value={threadDescription}
+      onChangeText={setThreadDescription}
+      style={styles.threadDescInput}
+      multiline
+    />
+
+    <View style={styles.accessOption}>
+      <TouchableOpacity
+        onPress={() => setIsPrivateThread(!isPrivateThread)}
+        style={styles.accessToggle}
+      >
+        <Ionicons
+          name={isPrivateThread ? "lock-closed" : "lock-open"}
+          size={18}
+          color="#333"
+        />
+        <Text style={styles.accessText}>
+          {isPrivateThread ? "Private" : "Public"}
+        </Text>
+      </TouchableOpacity>
+
+      {isPrivateThread && (
+        <TextInput
+          placeholder="Thread Password"
+          value={threadPassword}
+          onChangeText={setThreadPassword}
+          style={styles.threadPasswordInput}
+          secureTextEntry
+        />
+      )}
+    </View>
+  </View>
+</View>
+
+<View style={styles.alignButtons}>
+  <TouchableOpacity
+    onPress={handleCreateThread}
+    style={styles.confirmThreadButton}
+  >
+    <Text style={styles.threadButtonText}>Confirm</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => setCreateVisible(false)}
+    style={styles.cancelThreadButton}
+  >
+    <Text style={styles.threadButtonText}>Cancel</Text>
+  </TouchableOpacity>
+</View>
 
                 {createThreadError ? (
                 <Text style={styles.threadErrorText}>{createThreadError}</Text>
               ) : null}
-
-              <View style={styles.alignButtons}>
-                <TouchableOpacity onPress={handleCreateThread} style={styles.confirmThreadButton}>
-                  <Text style={styles.threadButtonText}>Confirm</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setCreateVisible(false)}
-                  style={styles.cancelThreadButton}
-                >
-                  <Text style={styles.threadButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         </Modal>
@@ -309,10 +327,10 @@ export default function Index() {
       flexDirection: "row",
       margin: 10,
       marginBottom: 10,
-      flex: 1,
+      alignItems: "flex-start",
     },
     threadImagePicker: {
-      width: "25%",
+      width: "35%",
       maxWidth: 160,
       aspectRatio: 1,
       borderWidth: 1,
@@ -339,7 +357,7 @@ export default function Index() {
       fontFamily: "NotoSans-Regular"
     },
     threadDescInput: {
-      flex: 1,
+      minHeight: 90,
       borderWidth: 1,
       borderColor: "#ccc",
       borderRadius: 10,
@@ -355,6 +373,7 @@ export default function Index() {
       gap: 15,
       marginLeft: 10,
       marginRight: 10,
+      marginTop: 20,
     },
     cancelThreadButton: {
       flex: 1,
@@ -517,5 +536,9 @@ export default function Index() {
       backgroundColor: "#a1a1a1",
       marginTop:-5,
       marginBottom:15,
-    }
+    },
+    threadInputsContainer: {
+      flex: 1,
+      justifyContent: "flex-start",
+    },
   })
