@@ -466,7 +466,7 @@ export default function Index() {
     threadTitleContainer: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 10,
     },
     threadsText: {
       fontSize: 24,
