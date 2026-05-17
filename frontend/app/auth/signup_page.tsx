@@ -29,16 +29,16 @@ export const styles = StyleSheet.create({
   },
   title: { 
     fontSize: 30, 
-    fontWeight: '700', 
     alignSelf: 'center',
-    fontFamily: 'RobotoSlab-Regular'
+    fontFamily: 'RobotoSlab-Bold'
   },
   subtitle: { 
     fontSize: 20, 
     color: '#666', 
     marginBottom: 30,
     alignSelf: 'center',
-    fontFamily: 'RobotoSlab-Regular'
+    fontFamily: 'RobotoSlab-Regular',
+    textAlign: "center",
   },
   form: { 
     gap: 10
@@ -69,8 +69,7 @@ export const styles = StyleSheet.create({
   link: { 
     color: '#2f5ae9', 
     fontSize: 14, 
-    fontWeight: '600',
-    fontFamily: 'RobotoSlab-Regular' 
+    fontFamily: 'RobotoSlab-Bold' 
   },
   button: {
     backgroundColor: '#2f5ae9',
@@ -89,8 +88,7 @@ export const styles = StyleSheet.create({
   buttonText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: '600',
-    fontFamily: 'RobotoSlab-Regular' 
+    fontFamily: 'RobotoSlab-Bold' 
   },
   login: { 
     flexDirection: 'row', 

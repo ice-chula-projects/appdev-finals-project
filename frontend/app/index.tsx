@@ -127,7 +127,9 @@ export default function Index() {
 
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
-    'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
+    'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf'),
+    'RobotoSlab-Bold': require('../assets/fonts/RobotoSlab-Bold.ttf'),
+    'NotoSans-Bold': require('../assets/fonts/NotoSans-Bold.ttf')
   })
 
   useEffect(() => {
@@ -290,9 +292,9 @@ export default function Index() {
   const styles = StyleSheet.create({
     pageName: {
       fontSize: 35,
-      fontWeight: "bold",
       marginLeft: 10,
-      fontFamily: "NotoSans-Regular",
+      fontFamily: "NotoSans-Bold",
+      letterSpacing: -1,
     },
     createThreadBackground: {
       flex: 1,
@@ -310,8 +312,8 @@ export default function Index() {
     },
     createThreadText: {
       fontSize: 30,
-      fontWeight: "bold",
-      fontFamily: "RobotoSlab-Regular",
+      fontFamily: "RobotoSlab-Bold",
+      letterSpacing: -1,
       marginBottom: 20,
       textAlign: "center",
     },
@@ -420,9 +422,8 @@ export default function Index() {
     addThreadButtonText: {
       color: "white",
       fontSize: 15,
-      fontWeight: "bold",
       marginRight: 5,
-      fontFamily: "RobotoSlab-Regular"
+      fontFamily: "RobotoSlab-Bold"
     },
     accessOption: {
       flexDirection: "row",
@@ -440,8 +441,7 @@ export default function Index() {
       marginLeft: 5,
       fontSize: 14,
       marginRight: 5,
-      fontFamily: "NotoSans-Regular",
-      fontWeight: "bold"
+      fontFamily: "NotoSans-Bold"
     },
     threadPasswordInput: {
       flex: 1,
@@ -467,9 +467,8 @@ export default function Index() {
     },
     threadsText: {
       fontSize: 24,
-      fontWeight: "bold",
       marginRight: 15,
-      fontFamily: "RobotoSlab-Regular"
+      fontFamily: "RobotoSlab-Bold"
     },
     threadsSearch: {
       flex: 1,

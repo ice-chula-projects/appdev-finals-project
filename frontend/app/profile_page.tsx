@@ -206,8 +206,6 @@ export default function ProfilePage() {
             <View style={styles.pickImagePopup}>
                 <Text style={styles.pickImageText}>Use this photo?</Text>
 
-            { pendingPictureUri !- null && ( <Image source={{ uri: pendingPictureUri }} style={styles.pendingPic}/> ) }
-
             {uploading ? (
                 <ActivityIndicator size="large" color="#007AFF" />
             ) : (
@@ -408,8 +406,8 @@ export default function ProfilePage() {
   const styles = StyleSheet.create({
     headerTitle: {
       fontSize: 35,
-      fontWeight: "600",
-      fontFamily: "NotoSans-Regular",
+      fontFamily: "NotoSans-Bold",
+      letterSpacing: -1,
       marginLeft: 10
     },
     container: {
@@ -422,9 +420,8 @@ export default function ProfilePage() {
     },
     yourProfile: {
       fontSize: 50,
-      fontWeight: "bold",
       color: "#2b2b2b",
-      fontFamily: "RobotoSlab-Regular",
+      fontFamily: "RobotoSlab-Bold",
     },
     pickImagePopup: {
       backgroundColor: '#ffffff',
@@ -436,9 +433,8 @@ export default function ProfilePage() {
     },
     pickImageText: {
       fontSize: 20, 
-      fontWeight: '600', 
       marginBottom: 14,
-      fontFamily: "NotoSans-Regular"
+      fontFamily: "NotoSans-Bold"
     },
     pendingPic: {
       width: 120,
@@ -469,8 +465,7 @@ export default function ProfilePage() {
     },
     buttonText: {
       color: '#ffffff', 
-      fontWeight: '600',
-      fontFamily: "NotoSans-Regular"
+      fontFamily: "NotoSans-Bold"
     },
     userProfileBox: {
       alignItems: "center",
@@ -500,8 +495,7 @@ export default function ProfilePage() {
     },
     profileUsername: {
       fontSize: 30,
-      fontWeight: "bold",
-      fontFamily: "RobotoSlab-Regular",
+      fontFamily: "RobotoSlab-Bold",
     },
     profileUUID: {
       color: "gray",

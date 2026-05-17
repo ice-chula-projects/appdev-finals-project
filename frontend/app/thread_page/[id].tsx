@@ -823,7 +823,7 @@ export default function Index() {
 );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   // Private thread screen
   privateContainer: {
     flex: 1,
@@ -846,8 +846,7 @@ const styles = StyleSheet.create({
 
   privateTitle: {
     fontSize: 30,
-    fontWeight: "bold",
-    fontFamily: "RobotoSlab-Regular",
+    fontFamily: "RobotoSlab-Bold",
     marginBottom: 6,
     textAlign: "center",
   },
@@ -915,9 +914,8 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    fontWeight: "bold",
     color: "white",
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold",
   },
 
   // Main layout
@@ -934,8 +932,7 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     fontSize: 40,
-    fontWeight: "bold",
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold",
     marginLeft: 10,
   },
 
@@ -966,8 +963,7 @@ const styles = StyleSheet.create({
   threadTitle: {
     fontSize: 24,
     marginBottom: 5,
-    fontWeight: "bold",
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold",
   },
 
   threadHeaderText: {
@@ -1047,6 +1043,11 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10,
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
 
   editInputsRow: {
@@ -1090,7 +1091,7 @@ const styles = StyleSheet.create({
 
   submitButtonText: {
     color: "white",
-    fontWeight: "bold",
+    fontFamily: "NotoSans-Bold"
   },
 
   // Create post
@@ -1109,8 +1110,7 @@ const styles = StyleSheet.create({
 
   createPostButtonText: {
     color: "white",
-    fontWeight: "bold",
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold"
   },
 
   postBox: {
@@ -1189,9 +1189,8 @@ const styles = StyleSheet.create({
 
   messageAuthor: {
     fontSize: 15,
-    fontWeight: "bold",
     marginBottom: 5,
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold",
   },
 
   messageUserId: {
@@ -1233,8 +1232,7 @@ const styles = StyleSheet.create({
 
   downloadButtonText: {
     color: "#ffffff",
-    fontWeight: "bold",
-    fontFamily: "NotoSans-Regular",
+    fontFamily: "NotoSans-Bold",
   },
 
   timestampText: {

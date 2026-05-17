@@ -30,16 +30,17 @@ export const styles = StyleSheet.create({
   },
   title: { 
     fontSize: 30, 
-    fontWeight: '700', 
+    fontFamily: 'RobotoSlab-Bold',
     alignSelf: 'center',
-    fontFamily: 'RobotoSlab-Regular'
+    textAlign: "center",
   },
   subtitle: { 
     fontSize: 20, 
     color: '#666', 
     marginBottom: 30,
     alignSelf: 'center',
-    fontFamily: 'RobotoSlab-Regular'
+    fontFamily: 'RobotoSlab-Regular',
+    textAlign: "center",
   },
   form: { 
     gap: 10, 
@@ -72,8 +73,7 @@ export const styles = StyleSheet.create({
   link: { 
     color: '#2f5ae9', 
     fontSize: 14, 
-    fontWeight: '600',
-    fontFamily: 'RobotoSlab-Regular' 
+    fontFamily: 'RobotoSlab-Bold' 
   },
   button: {
     backgroundColor: '#2f5ae9',
@@ -92,8 +92,7 @@ export const styles = StyleSheet.create({
   buttonText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: '600',
-    fontFamily: 'RobotoSlab-Regular' 
+    fontFamily: 'RobotoSlab-Bold' 
   },
   signup: { 
     flexDirection: 'row', 
@@ -108,11 +107,6 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#ffffff"
-  },
-  headerText: {
-    fontSize: 40,
-    fontWeight: "bold",
-    fontFamily: "RobotoSlab-Regular"
   },
   closeButton: {
     position: "absolute",
