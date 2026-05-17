@@ -80,7 +80,11 @@ export default function Index() {
 
   useEffect(() => {
     if (threadUuid) fetchThread(savedThreadPassword);
-  }, [threadUuid, savedThreadPassword]);
+  }, [threadUuid]);
+
+  useEffect(() => {
+    if (threadUuid && threadIsPrivate) fetchThread(savedThreadPassword);
+  }, [savedThreadPassword, threadIsPrivate]);
 
   async function fetchThread(password?: string) {
     const sessionToken = await AsyncStorage.getItem("session_token");
