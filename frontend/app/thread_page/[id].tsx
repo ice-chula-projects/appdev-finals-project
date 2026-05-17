@@ -1,17 +1,12 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button, StyleSheet } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Image, Alert, Platform, ActivityIndicator, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SplashScreen from 'expo-splash-screen';
-import { useFonts } from 'expo-font';
 import BackEnd, { DisplayThread, DisplayUser, MediaType, Message } from "@/components/backend";
 import {
   MessageParametersBuilder,
-  MessageUpdateParametersBuilder,
-  ThreadParametersBuilder,
   ThreadUpdateParametersBuilder,
-  UserUpdateParametersBuilder,
   Attachment,
 } from "@/components/backend";
 import * as DocumentPicker from "expo-document-picker";
@@ -60,16 +55,16 @@ export default function Index() {
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
   const [savedThreadPassword, setSavedThreadPassword] = useState<string | null>(null);
 
-  const [fontsLoaded] = useFonts({
-    "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
-    "NotoSans-Regular": require("../../assets/fonts/NotoSans-Regular.ttf"),
-  });
+  const [pageLoading, setPageLoading] = useState(true);
 
   const { logout } = useAccount();
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(()=>{
     (async ()=>{
@@ -439,9 +434,7 @@ export default function Index() {
     }
   }
 
-  if (!fontsLoaded) return null;
-
-  if(currentUserUuid == null){
+  if (currentUserUuid == null){
     return <View><Text>You must be logged in to view thread messages</Text></View>
   }
 
@@ -452,6 +445,14 @@ export default function Index() {
       </SafeAreaView>
     );
   }
+
+  if (pageLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2f5ae9" />
+        </View>
+      )
+    }
 
   if (threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
@@ -1312,4 +1313,11 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "NotoSans-Regular",
   },
-});
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff"
+  },
+})

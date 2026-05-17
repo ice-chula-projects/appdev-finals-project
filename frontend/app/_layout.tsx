@@ -339,6 +339,7 @@ export default function RootLayout() {
               style={styles.backendInput}
               value={apiUrl}
               onChangeText={setApiUrl}
+              placeholder='(i.e. "http://localhost:5000/") '
             />
 
             <View style={styles.popupButtons}>

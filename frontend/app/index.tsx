@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions, Platform } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions, Platform, ActivityIndicator } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,9 +29,18 @@ export default function Index() {
   const [threadPassword, setThreadPassword] = useState("");
 
   const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
-  const {logout} = useAccount();
 
+  const {logout} = useAccount();
   const {apiUrl} = useApiContext();
+
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const pickThreadImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -139,6 +148,14 @@ export default function Index() {
     if (fontsLoaded) SplashScreen.hideAsync()
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
+
+  if (pageLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2f5ae9" />
+      </View>
+    )
+  }
 
   return (
     <>
@@ -616,4 +633,10 @@ export default function Index() {
       flex: 1,
       justifyContent: "flex-start",
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#ffffff"
+    }
   })
