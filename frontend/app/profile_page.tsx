@@ -304,7 +304,7 @@ export default function ProfilePage() {
                   alignItems: "center" 
                   }}>
                     {thread?.thumbnailUri != null && <Image
-                    source={thread.thumbnailUri}
+                    source={{uri: thread.thumbnailUri}}
                     style={{ 
                       width: 75, 
                       height: 75, 
@@ -366,7 +366,7 @@ export default function ProfilePage() {
                   alignItems: "center" 
                   }}>
                     {thread?.thumbnailUri != null && <Image
-                    source={thread.thumbnailUri}
+                    source={{uri: thread.thumbnailUri}}
                     style={{ 
                       width: 75, 
                       height: 75, 

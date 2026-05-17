@@ -104,6 +104,8 @@ export default function Index() {
   }
 
   const searchThreads = async (query: string) => {
+    if(!BackEnd.isApiAvailable()) return;
+    
     try {
       setSearching(true);
       const response = await BackEnd.searchThreads(null, query);
@@ -144,7 +146,7 @@ export default function Index() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
+          headerTitle: () => ((Platform.OS != "android" && Platform.OS != "ios") && <Text style={styles.pageName}>Board of Mess</Text> ),
         }}
       />
 
@@ -268,7 +270,7 @@ export default function Index() {
                 <View
                   style={styles.threadBoxContainer}>
                   {thread.thumbnailUri != null && <Image
-                    source={thread.thumbnailUri}
+                    source={{uri: thread.thumbnailUri}}
                     style={styles.threadBoxImage}
                   />}
                   <View style={styles.threadBoxContent}>
@@ -466,7 +468,7 @@ export default function Index() {
     threadTitleContainer: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: 10,
     },
     threadsText: {
       fontSize: 24,
