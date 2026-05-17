@@ -588,6 +588,14 @@ def unsave_thread():
     user_manager.update_saved_thread(user.uuid, thread_uuid, False)
 
     return jsonify({"message": "Success."}), 200
+
+@app.route("/verify_session_token", methods=["GET"])
+def verify_session_token():
+    user, message, status_code = authenticate_header_session_token(request)
+    if user == None:
+        return jsonify({"error": message}), status_code
+    
+    return jsonify({"message": "Success."}), 200
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=False, port=int(PORT))

@@ -18,6 +18,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system";
 import * as LegacyFileSystem from "expo-file-system/legacy";
+import { useAccount } from "@/components/accountContext";
 
 export default function Index() {
 
@@ -64,6 +65,8 @@ export default function Index() {
     "NotoSans-Regular": require("../../assets/fonts/NotoSans-Regular.ttf"),
   });
 
+  const { logout } = useAccount();
+
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
@@ -88,6 +91,15 @@ export default function Index() {
     }
 
     if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150))
+
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
+
+      logout();
+      return;
+    }
+
 
     setCurrentUserUuid(userUuid);
 
@@ -135,17 +147,23 @@ export default function Index() {
   };
 
   async function submitChange() {
-    const SESSION_TOKEN =
+    const sessionToken =
       await AsyncStorage.getItem(
         "session_token"
       );
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
 
+      logout();
+      return;
+    }
 
     const parameters = new ThreadUpdateParametersBuilder();
     if (NewTitle != null && NewTitle != "") parameters.setName(NewTitle);
     if (NewDescription != null && NewDescription != "") parameters.setDescription(NewDescription);
 
-    const updateThreadResponse = await BackEnd.updateThread(SESSION_TOKEN, threadUuid, parameters);
+    const updateThreadResponse = await BackEnd.updateThread(sessionToken, threadUuid, parameters);
 
     if (updateThreadResponse.success) {
       fetchThread(savedThreadPassword);
@@ -157,12 +175,18 @@ export default function Index() {
   }
 
   async function submitPost() {
-    const SESSION_TOKEN =
+    const sessionToken =
       await AsyncStorage.getItem(
         "session_token"
       );
 
-    if (!newPost.trim()) return;
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
+
+      logout();
+      return;
+    }
 
     try {
       setPosting(true);
@@ -175,7 +199,7 @@ export default function Index() {
 
       const response =
         await BackEnd.createMessage(
-          SESSION_TOKEN!,
+          sessionToken!,
           String(threadUuid),
           params,
           threadPassword
@@ -204,14 +228,22 @@ export default function Index() {
   };
 
   async function deleteThread() {
-    const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
-    if (!SESSION_TOKEN) return;
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    if (!sessionToken) return;
+
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
+
+      logout();
+      return;
+    }
 
     setDeletingThread(true);
 
     try {
       const response = await BackEnd.deleteThread(
-        SESSION_TOKEN,
+        sessionToken,
         String(threadUuid)
       );
 
@@ -384,8 +416,15 @@ export default function Index() {
 
   async function favorite() {
     const sessionToken = await AsyncStorage.getItem("session_token");
-
     if (sessionToken == null) return;
+
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
+
+      logout();
+      return;
+    }
 
     if (!threadIsFavorited) {
       const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from "expo-file-system";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useFonts } from 'expo-font';
 import { randomCreateThreadSubtitles } from '../components/randomSubtitles';
 import BackEnd, { ThreadParametersBuilder, DisplayThread } from "../components/backend";
+import { useAccount } from "@/components/accountContext";
 
 export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
@@ -27,6 +28,7 @@ export default function Index() {
   const [threadPassword, setThreadPassword] = useState("");
 
   const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
+  const {logout} = useAccount()
 
   const pickThreadImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -50,6 +52,14 @@ export default function Index() {
       const sessionToken = await AsyncStorage.getItem("session_token");
       if (!sessionToken) {
         setCreateThreadError("Only registered users can create threads.");
+        return;
+      }
+
+      if(!(await BackEnd.verifySessionToken(sessionToken)).success){
+        Alert.alert("session token expired");
+        if(Platform.OS == "web") alert("sesson token expired");
+
+        logout();
         return;
       }
 

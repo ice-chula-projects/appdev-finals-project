@@ -3,7 +3,7 @@ import { Text, View, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInpu
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 import BackEnd from "../components/backend";
-import { ProfileContext } from "@/components/profileContext";
+import { AccountContext } from "@/components/accountContext";
 
 const styles = StyleSheet.create({
   homeIcon: {
@@ -253,7 +253,7 @@ export default function RootLayout() {
 };
 
   return (
-    <ProfileContext.Provider value={{ reloadProfile }}>
+    <AccountContext.Provider value={{ reloadProfile: reloadProfile, logout: confirmLogout }}>
       <View style={{ flex: 1 }}>
 
       <Stack
@@ -347,6 +347,6 @@ export default function RootLayout() {
         </View>
       </Modal>
     </View>
-    </ProfileContext.Provider>
+    </AccountContext.Provider>
   )
 }

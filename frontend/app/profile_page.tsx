@@ -7,7 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import BackEnd, { DisplayThread, UserUpdateParametersBuilder } from "@/components/backend";
-import { useProfile } from "@/components/profileContext";
+import { useAccount } from "@/components/accountContext";
 
 export default function ProfilePage() {
   const [profileName, setProfileName] = useState('');
@@ -28,7 +28,7 @@ export default function ProfilePage() {
 
   const [pageLoading, setPageLoading] = useState(true);
 
-  const { reloadProfile } = useProfile();
+  const { reloadProfile, logout } = useAccount();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -106,6 +106,14 @@ export default function ProfilePage() {
   const uploadProfilePicture = async (profilePictureUri: string) => {
     const sessionToken = await AsyncStorage.getItem("session_token");
 
+    if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+      Alert.alert("session token expired");
+      if (Platform.OS == "web") alert("sesson token expired");
+
+      logout();
+      return;
+    }
+
     const response = await BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setProfilePictureUri(profilePictureUri))
 
     if (!response.success) {
@@ -139,6 +147,15 @@ export default function ProfilePage() {
   const updateDescription = async () => {
     try {
         const sessionToken = await AsyncStorage.getItem("session_token");
+
+      if (!(await BackEnd.verifySessionToken(sessionToken)).success) {
+        Alert.alert("session token expired");
+        if (Platform.OS == "web") alert("sesson token expired");
+
+        logout();
+        return;
+      }
+
         const response = BackEnd.updateUser(sessionToken, new UserUpdateParametersBuilder().setMotd(tempDescription))
 
         if (!(await response).success) Alert.alert((await response).message);

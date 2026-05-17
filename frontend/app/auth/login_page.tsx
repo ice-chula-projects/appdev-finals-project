@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomLoginSubtitles } from '../../components/randomSubtitles';
 import BackEnd from '../../components/backend';
-import { useProfile } from '@/components/profileContext';
+import { useAccount } from '@/components/accountContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export const styles = StyleSheet.create({
@@ -132,7 +132,7 @@ export default function LoginPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
   const [subtitle] = useState(() => randomLoginSubtitles());
-  const { reloadProfile } = useProfile();
+  const { reloadProfile } = useAccount();
   
   // Initial loading screen
   useEffect(() => {

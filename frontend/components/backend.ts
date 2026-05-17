@@ -659,6 +659,19 @@ export default class BackEnd {
             params
         )
     }
+
+    static async verifySessionToken(sessionToken: string): Promise<ApiResponse>{
+        return await this.sendApiRequest(
+            new ApiResponse(),
+            "verify_session_token",
+            {
+                method: "GET",
+                headers: {
+                    "session-token": sessionToken
+                }
+            }
+        )
+    }
 }
 
 export interface UserProfile {
