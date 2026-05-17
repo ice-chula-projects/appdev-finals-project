@@ -57,6 +57,7 @@ export default function Index() {
 
   const [passwordError, setPasswordError] = useState("");
   const [threadPassword, setThreadPassword] = useState<string | null>(null);
+  const [savedThreadPassword, setSavedThreadPassword] = useState<string | null>(null);
 
   const [fontsLoaded] = useFonts({
     "RobotoSlab-Regular": require("../../assets/fonts/RobotoSlab-Regular.ttf"),
@@ -67,88 +68,95 @@ export default function Index() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
+  useEffect(()=>{
+    (async ()=>{
+      const password = await AsyncStorage.getItem("last_password")
+      if(password != null) setSavedThreadPassword(password);
+    })()
+  }, [])
+
   useEffect(() => {
-    if (threadUuid) fetchThread(threadPassword);
-  }, [threadUuid]);
+    if (threadUuid) fetchThread(savedThreadPassword);
+  }, [threadUuid, savedThreadPassword]);
 
-  const fetchThread = async (password?: string) => {
-      const sessionToken = await AsyncStorage.getItem("session_token");
-      const userUuid = await AsyncStorage.getItem("user_uuid");
-      
-      if (sessionToken == null || userUuid == null){
-          return
+  async function fetchThread(password?: string) {
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    const userUuid = await AsyncStorage.getItem("user_uuid");
+
+    if (sessionToken == null || userUuid == null) {
+      return
+    }
+
+    if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150))
+
+    setCurrentUserUuid(userUuid);
+
+    try {
+      const getThreadResponse = await BackEnd.getThread(String(threadUuid));
+
+      if (!getThreadResponse.success) {
+        Alert.alert("Error", getThreadResponse.message);
+        if (Platform.OS == "web") alert(getThreadResponse.message);
+        return <View><Text>Error: {getThreadResponse.message}</Text></View>;
       }
+      const privateThread = getThreadResponse.thread.private;
+      setThreadIsPrivate(privateThread);
 
-      if (!BackEnd.isApiAvailable()) await new Promise((resolve) => setTimeout(resolve, 150)) 
+      if (privateThread && password == null) return
+      const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken, String(threadUuid), null, password);
 
-      setCurrentUserUuid(userUuid);
-
-      try {
-        const getThreadResponse = await BackEnd.getThread(String(threadUuid));
-        
-        if (!getThreadResponse.success) {
-          Alert.alert("Error", getThreadResponse.message);
-          if(Platform.OS == "web") alert(getThreadResponse.message);
-          return <View><Text>Error: {getThreadResponse.message}</Text></View>;
-        }
-        const privateThread = getThreadResponse.thread.private;
-        setThreadIsPrivate(privateThread);
-        
-        if(privateThread && password == null) return
-        const getThreadMessagesResponse = await BackEnd.getThreadMessages(sessionToken,String(threadUuid), null, password);
-        
-        if (!getThreadMessagesResponse.success) {
-          if (privateThread) setPasswordError(getThreadMessagesResponse.message)
-            else {
+      if (!getThreadMessagesResponse.success) {
+        if (privateThread) setPasswordError(getThreadMessagesResponse.message)
+        else {
           Alert.alert("Error", getThreadMessagesResponse.message);
           if (Platform.OS == "web") alert(getThreadMessagesResponse.message);
         }
         return
-        }
-      
-        const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
-        if (getUserProfileResponse.success){
-          setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
-        }
-        
+      }
+
+      const getUserProfileResponse = await BackEnd.getUserProfile(userUuid);
+      if (getUserProfileResponse.success) {
+        setThreadIsFavorited(getUserProfileResponse.userProfile.savedThreads.includes(threadUuid))
+      }
+
       setThreadData(getThreadResponse.thread);
       setThreadMessageData(getThreadMessagesResponse.messages);
 
-        const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ... getThreadMessagesResponse.messages.map(x=>x.authorUserUuid)])]
-        const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
+      const uniqueUserUuids = [... new Set([getThreadResponse.thread.authorUserUuid, ...getThreadMessagesResponse.messages.map(x => x.authorUserUuid)])]
+      const getUsersResponse = await BackEnd.getUsers(uniqueUserUuids);
 
-        if (getUsersResponse.success){
-          setUsers(getUsersResponse.users);
-        }
-      } catch (err) {
-        console.log("Network error:", err);
-      } finally {
+      if (getUsersResponse.success) {
+        setUsers(getUsersResponse.users);
       }
-    };
-
-    const submitChange = async () => {
-      const SESSION_TOKEN =
-        await AsyncStorage.getItem(
-          "session_token"
-        );
-
-
-        const parameters = new ThreadUpdateParametersBuilder();
-        if(NewTitle != null && NewTitle != "") parameters.setName(NewTitle);
-        if(NewDescription != null && NewDescription != "") parameters.setDescription(NewDescription);
-
-        const updateThreadResponse =await BackEnd.updateThread(SESSION_TOKEN, threadUuid, parameters);
-
-        if(updateThreadResponse.success){
-          fetchThread(threadPassword);
-
-          setNewTitle("");
-          setNewDescription("");
-          setShowSecondPostBox(false);
-        }
+    } catch (err) {
+      console.log("Network error:", err);
+    } finally {
     }
+  };
 
-  const submitPost = async () => {
+  async function submitChange() {
+    const SESSION_TOKEN =
+      await AsyncStorage.getItem(
+        "session_token"
+      );
+
+
+    const parameters = new ThreadUpdateParametersBuilder();
+    if (NewTitle != null && NewTitle != "") parameters.setName(NewTitle);
+    if (NewDescription != null && NewDescription != "") parameters.setDescription(NewDescription);
+
+    const updateThreadResponse = await BackEnd.updateThread(SESSION_TOKEN, threadUuid, parameters);
+
+    if (updateThreadResponse.success) {
+      fetchThread(savedThreadPassword);
+
+      setNewTitle("");
+      setNewDescription("");
+      setShowSecondPostBox(false);
+    }
+  }
+
+  async function submitPost() {
     const SESSION_TOKEN =
       await AsyncStorage.getItem(
         "session_token"
@@ -162,8 +170,8 @@ export default function Index() {
         new MessageParametersBuilder()
           .setMessage(newPost);
 
-        if(threadAttachment != null)
-          params.setAttachment(threadAttachment);
+      if (threadAttachment != null)
+        params.setAttachment(threadAttachment);
 
       const response =
         await BackEnd.createMessage(
@@ -177,7 +185,7 @@ export default function Index() {
         setNewPost("");
         setThreadAttachment(null);
         setShowPostBox(false);
-        fetchThread(threadPassword);
+        fetchThread(savedThreadPassword);
 
       } else {
         console.log(
@@ -195,7 +203,7 @@ export default function Index() {
     }
   };
 
-  const deleteThread = async () => {
+  async function deleteThread() {
     const SESSION_TOKEN = await AsyncStorage.getItem("session_token");
     if (!SESSION_TOKEN) return;
 
@@ -212,124 +220,123 @@ export default function Index() {
         return;
       }
 
-    console.log("Delete error:", response.message);
-  } catch (err) {
-    console.log("Network error:", err);
-  } finally {
-    setDeletingThread(false);
-    setConfirmDelete(false);
-  }
-};
+      console.log("Delete error:", response.message);
+    } catch (err) {
+      console.log("Network error:", err);
+    } finally {
+      setDeletingThread(false);
+      setConfirmDelete(false);
+    }
+  };
 
+  async function pickAttachment() {
+    const result =
+      await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+        multiple: false,
+        base64: true,
+      });
 
-const pickAttachment = async () => {
-  const result =
-    await DocumentPicker.getDocumentAsync({
-      type: "*/*",
-      copyToCacheDirectory: true,
-      multiple: false,
-      base64: true,
-    });
+    if (result.canceled) return;
 
-  if (result.canceled) return;
+    const asset = result.assets[0];
+    const uri = asset.uri;
 
-  const asset = result.assets[0];
-  const uri = asset.uri;
+    let mediaType: MediaType = "application";
 
-  let mediaType: MediaType = "application";
+    console.log(asset.mimeType)
+    if (asset.mimeType?.startsWith("image")) {
+      mediaType = "image";
+    } else if (
+      asset.mimeType?.startsWith("audio")
+    ) {
+      mediaType = "audio";
+    } else if (
+      asset.mimeType?.startsWith("video")
+    ) {
+      mediaType = "video";
+    }
 
-  console.log(asset.mimeType)
-  if (asset.mimeType?.startsWith("image")) {
-    mediaType = "image";
-  } else if (
-    asset.mimeType?.startsWith("audio")
-  ) {
-    mediaType = "audio";
-  } else if (
-    asset.mimeType?.startsWith("video")
-  ) {
-    mediaType = "video";
-  }
+    setThreadImage(
+      mediaType === "image"
+        ? uri
+        : null
+    );
+    setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
+  };
 
-  setThreadImage(
-    mediaType === "image"
-      ? uri
-      : null
-  );
-  setThreadAttachment(await Attachment.fromAttachmentUri(uri, mediaType, asset.mimeType?.split("/")[1]));
-};
-
-async function saveAttachmentAs(
+  async function saveAttachmentAs(
     attachment: Attachment,
     defaultFileName: string = "attachment"
-) {
+  ) {
     const fileName =
-        `${defaultFileName}.${attachment.extensionType}`;
+      `${defaultFileName}.${attachment.extensionType}`;
 
     //
     // WEB
     //
     if (Platform.OS === "web") {
-        // Convert base64 -> bytes
-        const binaryString = atob(attachment.dataBase64);
+      // Convert base64 -> bytes
+      const binaryString = atob(attachment.dataBase64);
 
-        const bytes = new Uint8Array(binaryString.length);
+      const bytes = new Uint8Array(binaryString.length);
 
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
-        // Create blob
-        const blob = new Blob([bytes]);
+      // Create blob
+      const blob = new Blob([bytes]);
 
-        // Create download link
-        const url = URL.createObjectURL(blob);
+      // Create download link
+      const url = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-        URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
 
-        return;
+      return;
     }
 
     //
     // ANDROID
     //
     if (Platform.OS === "android") {
-        const permissions =
-            await LegacyFileSystem.StorageAccessFramework
-                .requestDirectoryPermissionsAsync();
+      const permissions =
+        await LegacyFileSystem.StorageAccessFramework
+          .requestDirectoryPermissionsAsync();
 
-        if (!permissions.granted) {
-            return;
-        }
-
-        const mimeType =
-            getMimeType(attachment.extensionType);
-
-        const uri =
-            await LegacyFileSystem.StorageAccessFramework
-                .createFileAsync(
-                    permissions.directoryUri,
-                    defaultFileName,
-                    mimeType
-                );
-
-        await LegacyFileSystem.writeAsStringAsync(
-            uri,
-            attachment.dataBase64,
-            {
-                encoding: LegacyFileSystem.EncodingType.Base64,
-            }
-        );
-
+      if (!permissions.granted) {
         return;
+      }
+
+      const mimeType =
+        getMimeType(attachment.extensionType);
+
+      const uri =
+        await LegacyFileSystem.StorageAccessFramework
+          .createFileAsync(
+            permissions.directoryUri,
+            defaultFileName,
+            mimeType
+          );
+
+      await LegacyFileSystem.writeAsStringAsync(
+        uri,
+        attachment.dataBase64,
+        {
+          encoding: LegacyFileSystem.EncodingType.Base64,
+        }
+      );
+
+      return;
     }
 
     //
@@ -340,54 +347,54 @@ async function saveAttachmentAs(
     const file = new File(Paths.document, fileName);
 
     file.write(attachment.dataBase64, {
-        encoding: "base64",
+      encoding: "base64",
     });
 
     return file;
-}
+  }
 
-function getMimeType(extension: string): string {
+  function getMimeType(extension: string): string {
     switch (extension.toLowerCase()) {
-        case "png":
-            return "image/png";
+      case "png":
+        return "image/png";
 
-        case "jpg":
-        case "jpeg":
-            return "image/jpeg";
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
 
-        case "gif":
-            return "image/gif";
+      case "gif":
+        return "image/gif";
 
-        case "pdf":
-            return "application/pdf";
+      case "pdf":
+        return "application/pdf";
 
-        case "txt":
-            return "text/plain";
+      case "txt":
+        return "text/plain";
 
-        case "mp4":
-            return "video/mp4";
+      case "mp4":
+        return "video/mp4";
 
-        case "mp3":
-            return "audio/mpeg";
+      case "mp3":
+        return "audio/mpeg";
 
-        default:
-            return "application/octet-stream";
+      default:
+        return "application/octet-stream";
     }
-}
+  }
 
-async function favorite(){
-  const sessionToken = await AsyncStorage.getItem("session_token");
+  async function favorite() {
+    const sessionToken = await AsyncStorage.getItem("session_token");
 
-  if(sessionToken == null) return;
+    if (sessionToken == null) return;
 
-  if(!threadIsFavorited){
-    const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
-    if(saveThreadResponse.success) setThreadIsFavorited(true)
-  } else {
-    const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
-    if(unsaveThreadResponse.success) setThreadIsFavorited(false)
-}
-}
+    if (!threadIsFavorited) {
+      const saveThreadResponse = await BackEnd.saveThread(sessionToken, threadUuid);
+      if (saveThreadResponse.success) setThreadIsFavorited(true)
+    } else {
+      const unsaveThreadResponse = await BackEnd.unsaveThread(sessionToken, threadUuid);
+      if (unsaveThreadResponse.success) setThreadIsFavorited(false)
+    }
+  }
 
   if (!fontsLoaded) return null;
 
@@ -444,7 +451,8 @@ async function favorite(){
 
           <TouchableOpacity
             onPress={() => {
-              fetchThread(threadPassword);
+              AsyncStorage.setItem("last_password", threadPassword);
+              setSavedThreadPassword(threadPassword);
             }}
             style={styles.primaryButton}
           >
