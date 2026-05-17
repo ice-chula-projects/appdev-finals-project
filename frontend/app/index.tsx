@@ -104,6 +104,8 @@ export default function Index() {
   }
 
   const searchThreads = async (query: string) => {
+    if(!BackEnd.isApiAvailable()) return;
+    
     try {
       setSearching(true);
       const response = await BackEnd.searchThreads(null, query);
