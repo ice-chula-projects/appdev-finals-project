@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Modal, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { File, Paths } from "expo-file-system";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -104,8 +104,6 @@ export default function Index() {
   }
 
   const searchThreads = async (query: string) => {
-    if(!BackEnd.isApiAvailable()) return;
-    
     try {
       setSearching(true);
       const response = await BackEnd.searchThreads(null, query);
@@ -146,7 +144,7 @@ export default function Index() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: () => ((Platform.OS != "android" && Platform.OS != "ios") && <Text style={styles.pageName}>Board of Mess</Text> ),
+          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
         }}
       />
 
@@ -177,9 +175,7 @@ export default function Index() {
       <>
         <Ionicons name="image-outline" size={36} color="#8f8f8f" />
         <Text style={styles.imagePickerText}>Select Image</Text>
-        <Text style={styles.imagePickerText}>
-          (.png, .jpg, .jpeg, .gif)
-        </Text>
+        {Platform.OS === "web" && ( <Text style={styles.imagePickerText}>(.png, .jpg, .jpeg, .gif)</Text> )}
       </>
     )}
   </TouchableOpacity>
@@ -228,6 +224,10 @@ export default function Index() {
   </View>
 </View>
 
+{createThreadError ? (
+                <Text style={styles.threadErrorText}>{createThreadError}</Text>
+              ) : null}
+
 <View style={styles.alignButtons}>
   <TouchableOpacity
     onPress={handleCreateThread}
@@ -243,10 +243,6 @@ export default function Index() {
     <Text style={styles.threadButtonText}>Cancel</Text>
   </TouchableOpacity>
 </View>
-
-                {createThreadError ? (
-                <Text style={styles.threadErrorText}>{createThreadError}</Text>
-              ) : null}
             </View>
           </View>
         </Modal>
@@ -270,7 +266,7 @@ export default function Index() {
                 <View
                   style={styles.threadBoxContainer}>
                   {thread.thumbnailUri != null && <Image
-                    source={{uri: thread.thumbnailUri}}
+                    source={thread.thumbnailUri}
                     style={styles.threadBoxImage}
                   />}
                   <View style={styles.threadBoxContent}>
@@ -296,10 +292,17 @@ export default function Index() {
 
   const styles = StyleSheet.create({
     pageName: {
-      fontSize: 35,
-      marginLeft: 10,
-      fontFamily: "NotoSans-Bold",
-      letterSpacing: -1,
+      ...Platform.select({
+        web: {
+          fontSize: 35,
+          marginLeft: 10,
+          fontFamily: "NotoSans-Bold",
+          letterSpacing: -1,
+        },
+        android: {
+          color: "white"
+        }
+      })
     },
     createThreadBackground: {
       flex: 1,
@@ -314,6 +317,11 @@ export default function Index() {
       backgroundColor: "white",
       borderRadius: 15,
       padding: 25,
+      ...Platform.select({
+        android: {
+          padding: 15
+        }
+      })
     },
     createThreadText: {
       fontSize: 30,
@@ -321,6 +329,11 @@ export default function Index() {
       letterSpacing: -1,
       marginBottom: 20,
       textAlign: "center",
+      ...Platform.select({
+        android: {
+          fontSize: 25
+        }
+      })
     },
     createThreadSubtitle: {
       textAlign: "center",
@@ -332,13 +345,13 @@ export default function Index() {
     },
     createThreadMargins: {
       flexDirection: "row",
-      margin: 10,
       marginBottom: 10,
       alignItems: "flex-start",
+      marginTop: 5
     },
     threadImagePicker: {
-      width: "35%",
-      maxWidth: 160,
+      width: "40%",
+      maxWidth: 175,
       aspectRatio: 1,
       borderWidth: 1,
       borderColor: "#ccc",
@@ -361,7 +374,17 @@ export default function Index() {
       borderRadius: 10,
       padding: 10,
       marginBottom: 10,
-      fontFamily: "NotoSans-Regular"
+      fontFamily: "NotoSans-Regular",
+      ...Platform.select({
+        android: {
+          paddingTop: 2,
+          paddingBottom: 2,
+          paddingLeft: 5,
+          paddingRight: 2,
+          borderRadius: 5,
+          fontSize: 10
+        }
+      })
     },
     threadDescInput: {
       minHeight: 90,
@@ -372,6 +395,16 @@ export default function Index() {
       height: 65,
       textAlignVertical: "top",
       fontFamily: "NotoSans-Regular",
+      ...Platform.select({
+        android: {
+          paddingTop: 2,
+          paddingBottom: 2,
+          paddingLeft: 5,
+          paddingRight: 2,
+          borderRadius: 5,
+          fontSize: 10
+        }
+      })
     },
 
     alignButtons: {
@@ -404,8 +437,15 @@ export default function Index() {
     threadErrorText: {
       color: "#ff0000",
       textAlign: "center",
-      marginBottom: 15,
+      marginBottom: 2,
       fontFamily: "NotoSans-Regular",
+      ...Platform.select({
+        android: {
+          marginTop: 20,
+          marginBottom: -12,
+          fontSize: 12
+        }
+      })
     },
     addThreadButton: {
       flex: 1,
@@ -416,6 +456,8 @@ export default function Index() {
       width: 150,
       height: 50,
       borderRadius: 15,
+      borderColor: "#191e6e",
+      borderWidth: 2,
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
@@ -423,6 +465,12 @@ export default function Index() {
       shadowColor: "#000",
       shadowOpacity: 0.5,
       shadowRadius: 6,
+      ...Platform.select({
+        android: {
+          bottom: 10,
+          right: 15,
+        }
+      })
     },
     addThreadButtonText: {
       color: "white",
@@ -435,7 +483,11 @@ export default function Index() {
       alignItems: "center",
       justifyContent: "space-between",
       marginTop: 10,
-      marginBottom: 5,
+      ...Platform.select({
+        android: {
+          marginLeft: -130
+        }
+      })
     },
     accessToggle: {
       flexDirection: "row",
@@ -458,17 +510,26 @@ export default function Index() {
       borderRadius: 5,
       fontSize: 14,
       fontFamily: "NotoSans-Regular",
+      ...Platform.select({
+        android: {
+          fontSize: 10
+        }
+      })
     },
     homepageContainer: {
       flex: 1,
-      paddingTop: 30,
       paddingHorizontal: 30,
       paddingBottom: 20,
+      ...Platform.select({
+        web: {
+          paddingTop: 20
+        }
+      })
     },
     threadTitleContainer: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 10,
+      marginBottom: 15,
     },
     threadsText: {
       fontSize: 24,
@@ -488,6 +549,12 @@ export default function Index() {
       shadowColor: "#000",
       shadowOpacity: 0.3,
       shadowRadius: 6,
+      ...Platform.select({
+        android: {
+          backgroundColor: "#f3f3f3",
+          paddingVertical: 5
+        }
+      })
     },
     threadBox: {
       padding: 15,
@@ -502,6 +569,11 @@ export default function Index() {
       shadowColor: "#000",
       shadowOpacity: 0.5,
       shadowRadius: 6,
+      ...Platform.select({
+        android: {
+          backgroundColor: "#f3f3f3",
+        }
+      })
     },
     threadBoxContainer: {
       flexDirection: "row",
@@ -538,7 +610,6 @@ export default function Index() {
       height: 2,
       width: "100%",
       backgroundColor: "#a1a1a1",
-      marginTop:-5,
       marginBottom:15,
     },
     threadInputsContainer: {

@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     borderColor: "#550101",
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: "RobotoSlab-Bold",
     elevation: 5,
     shadowColor: "#000",
@@ -138,18 +138,23 @@ const styles = StyleSheet.create({
     bottom: 25,
     left: 20,
     backgroundColor: "#333",
-    paddingHorizontal: 14,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 30,
     elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.5,
     shadowRadius: 6,
+    ...Platform.select({
+      android: {
+        marginBottom: 10
+      }
+    })
   },
   apiText: {
     color: "white",
     fontFamily: "NotoSans-Bold",
-    fontSize: 13,
+    fontSize: 12,
   },
 })
 
