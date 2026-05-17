@@ -157,13 +157,12 @@ export default function SignupPage() {
         return;
       }
 
-      const loginResponse = await BackEnd.login(username, password);
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (loginResponse.success) {
+      if (signupResponse.success) {
         console.log("Backend connected.");
-        await AsyncStorage.setItem("session_token", loginResponse.sessionToken);
-        await AsyncStorage.setItem("user_uuid", loginResponse.userUuid);
+        await AsyncStorage.setItem("session_token", signupResponse.sessionToken);
+        await AsyncStorage.setItem("user_uuid", signupResponse.userUuid);
         await AsyncStorage.setItem("username", username);
         reloadProfile();
 
