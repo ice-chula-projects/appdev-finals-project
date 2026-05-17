@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button } from "react-native";
+import { Text, View, TouchableOpacity, TextInput, ScrollView, Linking, Image, Alert, Platform, Button, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -405,321 +405,791 @@ async function favorite(){
 
   if (threadIsPrivate && (threadData == null || threadMessageData == null)) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <View style={{ 
-          width: "100%", 
-          maxWidth: 400, 
-          backgroundColor: "white", 
-          borderRadius: 15, 
-          padding: 25,
-          elevation: 5,
-          shadowColor: "#000000",
-          shadowOpacity: 0.5,
-          shadowRadius: 6,
-          }}>
+    <SafeAreaView style={styles.privateContainer}>
+      <View style={styles.privateCard}>
 
-          <Text style={{
-            fontSize: 30, 
-            fontWeight: "bold", 
-            fontFamily: "RobotoSlab-Regular", 
-            marginBottom: 6, 
-            textAlign: "center" 
-          }}>
-            Private Thread
+        <Text style={styles.privateTitle}>
+          Private Thread
+        </Text>
+
+        <Text style={styles.privateSubtitle}>
+          A password is required to access this thread.
+        </Text>
+
+        <TextInput
+          placeholder="Enter password"
+          value={threadPassword}
+          onChangeText={(text) => {
+            setThreadPassword(text);
+            setPasswordError("");
+          }}
+          secureTextEntry
+          style={[
+            styles.passwordInput,
+            passwordError
+              ? styles.passwordErrorInput
+              : styles.passwordNormalInput,
+          ]}
+        />
+
+        {passwordError ? (
+          <Text style={styles.passwordErrorText}>
+            {passwordError}
           </Text>
+        ) : (
+          <View style={styles.passwordSpacer} />
+        )}
 
-          <Text style={{ 
-            textAlign: "center", 
-            fontFamily: "NotoSans-Regular", 
-            fontSize: 14, 
-            color: "#505050", 
-            marginBottom: 20 
-          }}>
-            A password is required to access this thread.
-          </Text>
+        <View style={styles.buttonRow}>
 
-          <TextInput
-            placeholder="Enter password"
-            value={threadPassword}
-            onChangeText={(text) => { setThreadPassword(text); setPasswordError(""); }}
-            secureTextEntry
-            style={{ 
-              borderWidth: 1, 
-              borderColor: passwordError ? "#ff0000" : "#ccc",
-              borderRadius: 10, 
-              padding: 10, 
-              marginBottom: 6, 
-              fontFamily: "NotoSans-Regular", 
-              fontSize: 14 
-          }} />
-
-          {passwordError ? (
-            <Text style={{ 
-              color: "#ff0000", 
-              fontFamily: "NotoSans-Regular", 
-              fontSize: 13, 
-              textAlign: "center", 
-              marginBottom: 10 
-            }}>
-              {passwordError}
+          <TouchableOpacity
+            onPress={() => {
+              fetchThread(threadPassword);
+            }}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.buttonText}>
+              Enter
             </Text>
-          ) : <View style={{ marginBottom: 16 }} />}
+          </TouchableOpacity>
 
-          <View style={{ flexDirection: "row", gap: 15 }}>
-
-            <TouchableOpacity onPress={()=>{fetchThread(threadPassword)}} style={{ 
-              flex: 1, 
-              backgroundColor: "#0057b4", 
-              paddingVertical: 14, 
-              borderRadius: 8, 
-              alignItems: "center" 
-            }}>
-              <Text style={{ 
-                fontWeight: "bold",
-                color: "white",
-                fontFamily: "NotoSans-Regular"
-              }}>
-                Enter
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => router.replace("/")} style={{ 
-              flex: 1, 
-              backgroundColor: "#8b8b8b", 
-              paddingVertical: 14, 
-              borderRadius: 8, 
-              alignItems: "center"
-            }}>
-              <Text style={{ 
-                fontWeight: "bold", 
-                color: "white", 
-                fontFamily: "NotoSans-Regular" 
-              }}>
+          <TouchableOpacity
+            onPress={() => router.replace("/")}
+            style={styles.secondaryButton}
+          >
+            <Text style={styles.buttonText}>
               Go Back
             </Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+
         </View>
-      </SafeAreaView>
-    )
+      </View>
+    </SafeAreaView>
+  );
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: () => (
-            <Text style={{ fontSize: 40, fontWeight: "bold", fontFamily: "NotoSans-Regular", marginLeft: 10 }}>Threads</Text>
-          ),
-        }}
-      />
+  <>
+    <Stack.Screen
+      options={{
+        headerTitle: () => (
+          <Text style={styles.headerTitle}>
+            Threads
+          </Text>
+        ),
+      }}
+    />
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ flex: 1, paddingTop: 20, paddingHorizontal: 30, paddingBottom: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-            <Image
-              source={users[threadData.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
-              style={{ width: 35, height: 35, borderRadius: 20, marginRight: 5, borderWidth: 1, borderColor: "#636363" }}
-            />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
 
-            <Text style={{ fontSize: 24, marginBottom: 5, fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>"{threadData.name}"</Text>
-            <Text style={{fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>by</Text>
-            <Text style={{ fontSize: 24, marginBottom: 5, fontFamily: "NotoSans-Regular" }}>{users[threadData.authorUserUuid]?.name ?? "Unknown User"}</Text>
+        <View style={styles.threadHeader}>
 
-            <View style={{ alignItems: "flex-end" }}>
-              <TouchableOpacity onPress={favorite} style={{marginLeft: 5, marginBottom: 5}}>
-                <Ionicons name={threadIsFavorited? "star" : "star-outline"} size={30} color="#ffa600ff"></Ionicons>
+          <Image
+            source={
+              users[threadData.authorUserUuid]?.profilePictureUri ??
+              require("../../assets/images/default_profile.png")
+            }
+            style={styles.profileImage}
+          />
+
+          <Text style={styles.threadTitle}>
+            "{threadData.name}"
+          </Text>
+
+          <Text style={styles.threadHeaderText}>
+            by
+          </Text>
+
+          <Text style={styles.threadHeaderText}>
+            {users[threadData.authorUserUuid]?.name ?? "Unknown User"}
+          </Text>
+
+          <View style={styles.favoriteContainer}>
+            <TouchableOpacity
+              onPress={favorite}
+              style={styles.favoriteButton}
+            >
+              <Ionicons
+                name={threadIsFavorited ? "star" : "star-outline"}
+                size={30}
+                color="#ffa600ff"
+              />
+            </TouchableOpacity>
+          </View>
+
+        </View>
+
+        <Text style={styles.metadataText}>
+          ("Author ID: "{threadData.authorUserUuid})
+        </Text>
+
+        <Text style={styles.metadataBottomText}>
+          {threadData.creationDate.toString()}
+          {`\n`}
+        </Text>
+
+        <Text style={styles.descriptionText}>
+          {threadData.description}
+        </Text>
+
+        {currentUserUuid === threadData.authorUserUuid && (
+          <View style={styles.actionRow}>
+
+            {!confirmDelete ? (
+              <TouchableOpacity
+                onPress={() => setConfirmDelete(true)}
+                disabled={deletingThread}
+                style={[
+                  styles.deleteButton,
+                  deletingThread && styles.disabledButton,
+                ]}
+              >
+                <Text style={styles.buttonText}>
+                  Delete Thread
+                </Text>
               </TouchableOpacity>
-          </View>
+            ) : (
+              <>
 
-          </View>
-
-          <Text style={{ fontSize: 12, marginTop: 5, fontFamily: "NotoSans-Regular", color: "#8d8d8d" }}>
-            ("Author ID: "{threadData.authorUserUuid}) 
-          </Text>
-
-          <Text style={{ fontSize: 12, marginBottom: 10, marginTop: 5, fontFamily: "NotoSans-Regular", color: "#8d8d8d" }}>
-            {threadData.creationDate.toString()}
-            {`\n`}
-          </Text>
-
-          <Text style={{ fontSize: 16,marginBottom: 10, fontFamily: "NotoSans-Regular" }}>{threadData.description}</Text>
-
-          {currentUserUuid === threadData.authorUserUuid && (
-            <View style={{ flexDirection: "row", gap: 10, marginBottom: 15 }}>
-              {!confirmDelete ? (
                 <TouchableOpacity
-                  onPress={() => setConfirmDelete(true)}
+                  onPress={deleteThread}
                   disabled={deletingThread}
-                  style={{ backgroundColor: "#FF3B30", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}
+                  style={[
+                    styles.deleteButton,
+                    deletingThread && styles.disabledButton,
+                  ]}
                 >
-                  <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
-                    Delete Thread
+                  <Text style={styles.buttonText}>
+                    {deletingThread ? "Deleting..." : "Confirm?"}
                   </Text>
                 </TouchableOpacity>
-              ) : (
-                <>
-                  <TouchableOpacity
-                    onPress={deleteThread}
-                    disabled={deletingThread}
-                    style={{ backgroundColor: "#FF3B30", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}
-                  >
-                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>
-                      {deletingThread ? "Deleting..." : "Confirm?"}
-                    </Text>
-                  </TouchableOpacity>
 
-                  <TouchableOpacity
-                    onPress={() => setConfirmDelete(false)}
-                    disabled={deletingThread}
-                    style={{ backgroundColor: "#888", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, opacity: deletingThread ? 0.5 : 1 }}>
-                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular" }}>Cancel</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          )}
+                <TouchableOpacity
+                  onPress={() => setConfirmDelete(false)}
+                  disabled={deletingThread}
+                  style={[
+                    styles.cancelButton,
+                    deletingThread && styles.disabledButton,
+                  ]}
+                >
+                  <Text style={styles.buttonText}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
 
-          <View style={{ marginBottom: 20 }}>
+              </>
+            )}
+          </View>
+        )}
+
+        {currentUserUuid === threadData.authorUserUuid && (
+          <>
             <TouchableOpacity
-              onPress={() => setShowPostBox(!showPostBox)}
-              style={{ backgroundColor: "#007AFF", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, marginBottom: 12, alignSelf: "flex-start"}}
+              onPress={() =>
+                setShowSecondPostBox(!showSecondPostBox)
+              }
+              style={styles.editButton}
             >
-              <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular"}}>{showPostBox ? "Close Post Box" : "Create Post"}</Text>
+              <Text style={styles.buttonText}>
+                {showSecondPostBox
+                  ? "Cancel"
+                  : "Edit Thread"}
+              </Text>
             </TouchableOpacity>
 
-            {showPostBox && (
-              <View
-                style={{
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 10,
-                  elevation: 5,
-                  shadowColor: "#000000",
-                  shadowOpacity: 0.3,
-                  shadowRadius: 6,
-                }}
-              >
-                <TextInput
-                  placeholder="Write a message..."
-                  value={newPost}
-                  onChangeText={setNewPost}
-                  multiline
-                  style={{
-                    height: 80,
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 8,
-                    padding: 10,
-                    textAlignVertical: "top",
-                    marginBottom: 10,
-                    fontSize: 14,
-                    fontFamily: "NotoSans-Regular"
-                  }}
-                />
+            {showSecondPostBox && (
+              <View style={styles.editContainer}>
 
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View style={styles.editInputsRow}>
 
-                  <TouchableOpacity
-                    onPress={pickAttachment}
-                    style={{ width: 45, height: 45, borderRadius: 10, backgroundColor: "#333", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <Ionicons name="attach-outline" size={22} color="#fff"/>
-                  </TouchableOpacity>
+                  <TextInput
+                    placeholder="Title"
+                    multiline
+                    value={NewTitle}
+                    onChangeText={setNewTitle}
+                    style={styles.titleInput}
+                  />
 
-                  <TouchableOpacity
-                    onPress={submitPost}
-                    disabled={posting}
-                    style={{
-                      flex: 1,
-                      backgroundColor: "#34C759",
-                      paddingVertical: 12,
-                      borderRadius: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: posting ? 0.6 : 1,
-                    }}
-                  >
-                    <Text style={{ color: "white", fontWeight: "bold", fontFamily: "NotoSans-Regular"}}>{posting ? "Posting..." : "Post Message"}</Text>
-                  </TouchableOpacity>
+                  <TextInput
+                    placeholder="Description"
+                    multiline
+                    value={NewDescription}
+                    onChangeText={setNewDescription}
+                    style={styles.descriptionInput}
+                  />
 
                 </View>
+
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={submitChange}
+                  disabled={ThreadDesc}
+                >
+                  <Text style={styles.submitButtonText}>
+                    Submit Change
+                  </Text>
+                </TouchableOpacity>
 
               </View>
             )}
-          </View>
+          </>
+        )}
 
-          <ScrollView>
-            {Object.values(threadMessageData).map(
-              (message: Message, index: number) => (
-                <View
-                  key={index}
-                  style={{
-                    padding: 15,
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    borderRadius: 8,
-                    marginBottom: 15,
-                    elevation: 5,
-                    shadowColor: "#000000",
-                    shadowOpacity: 0.3,
-                    shadowRadius: 6,
-                    marginTop: 10,
-                    marginLeft: 5,
-                    marginRight: 10
-                  }}
+        <View style={styles.postSection}>
+
+          <TouchableOpacity
+            onPress={() => setShowPostBox(!showPostBox)}
+            style={styles.createPostButton}
+          >
+            <Text style={styles.createPostButtonText}>
+              {showPostBox ? "Close Post Box" : "Create Post"}
+            </Text>
+          </TouchableOpacity>
+
+          {showPostBox && (
+            <View style={styles.postBox}>
+
+              <TextInput
+                placeholder="Write a message..."
+                value={newPost}
+                onChangeText={setNewPost}
+                multiline
+                style={styles.postInput}
+              />
+
+              <View style={styles.attachmentRow}>
+
+                <TouchableOpacity
+                  onPress={pickAttachment}
+                  style={styles.attachButton}
                 >
+                  <Ionicons
+                    name="attach-outline"
+                    size={22}
+                    color="#fff"
+                  />
+                </TouchableOpacity>
 
-                  <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-
-                    <Image
-                      source={users[message.authorUserUuid]?.profilePictureUri ?? require("../../assets/images/default_profile.png")}
-                      style={{ width: 30, height: 30, borderRadius: 20, borderWidth: 1, borderColor: "#636363" }}
-                    />
-                    <Text style={{ fontSize: 15, fontWeight: "bold", marginBottom: 5, fontFamily: "NotoSans-Regular" }}>
-                      {users[message.authorUserUuid]?.name ?? "Unknown User"}
-                    </Text>
-
-                    <Text style={{ fontSize: 13, marginBottom: 5, fontFamily: "NotoSans-Regular", color: "#5f5f5f" }}>("User id: "{message.authorUserUuid})</Text>
-                  </View>
-
-                  <Text style={{ fontSize: 20, marginTop: 5 }}>{message.message}</Text>
-
-                  {message.attachment != null && <View style={{marginTop: 10, gap: 5 }}>
-
-                    {message.attachment.mediaType == "image" && <Image
-                      source={`data:image/${message.attachment.extensionType == ""? "png" : message.attachment.extensionType};base64,${message.attachment.dataBase64}`}
-                      style={{ width: 200, height: 200, aspectRatio: 1,borderRadius: 8,resizeMode: "stretch" }}
-                    />}
-
-                    {message.attachment.mediaType != "image" && <View style={{width:210}}>
-                      <TouchableOpacity onPress={()=>{saveAttachmentAs(message.attachment)}} 
-                      style={{
-                        fontFamily: "NotoSans-Regular",
-                        backgroundColor: "#0099ff",
-                        color: "#ffffff",
-                        fontWeight: "bold",
-                        alignItems: "center",
-                        paddingVertical: 5,
-                        paddingHorizontal: 10,
-                        borderRadius: 5,
-                        }}>
-                        Download Attachment
-                      </TouchableOpacity>
-                    </View>}
-
-                  </View>}
-
-                  <Text style={{color: "gray", marginTop: 7, fontSize: 12, fontFamily: "NotoSans-Regular"}}>
-                    {message.creationDate.toString()}
+                <TouchableOpacity
+                  onPress={submitPost}
+                  disabled={posting}
+                  style={[
+                    styles.postButton,
+                    posting && styles.postButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.createPostButtonText}>
+                    {posting ? "Posting..." : "Post Message"}
                   </Text>
-                </View>
-              )
-            )}
-          </ScrollView>
+                </TouchableOpacity>
+
+              </View>
+
+            </View>
+          )}
         </View>
-      </SafeAreaView>
-    </>
-  );
+
+        <ScrollView>
+          {Object.values(threadMessageData).map(
+            (message: Message, index: number) => (
+              <View
+                key={index}
+                style={styles.messageCard}
+              >
+
+                <View style={styles.messageHeader}>
+
+                  <Image
+                    source={
+                      users[message.authorUserUuid]?.profilePictureUri ??
+                      require("../../assets/images/default_profile.png")
+                    }
+                    style={styles.smallProfileImage}
+                  />
+
+                  <Text style={styles.messageAuthor}>
+                    {users[message.authorUserUuid]?.name ??
+                      "Unknown User"}
+                  </Text>
+
+                  <Text style={styles.messageUserId}>
+                    ("User id: "{message.authorUserUuid})
+                  </Text>
+
+                </View>
+
+                <Text style={styles.messageText}>
+                  {message.message}
+                </Text>
+
+                {message.attachment != null && (
+                  <View style={styles.attachmentContainer}>
+
+                    {message.attachment.mediaType == "image" && (
+                      <Image
+                        source={`data:image/${
+                          message.attachment.extensionType == ""
+                            ? "png"
+                            : message.attachment.extensionType
+                        };base64,${message.attachment.dataBase64}`}
+                        style={styles.attachmentImage}
+                      />
+                    )}
+
+                    {message.attachment.mediaType != "image" && (
+                      <View style={styles.downloadContainer}>
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            saveAttachmentAs(message.attachment);
+                          }}
+                          style={styles.downloadButton}
+                        >
+                          <Text style={styles.downloadButtonText}>
+                            Download Attachment
+                          </Text>
+                        </TouchableOpacity>
+
+                      </View>
+                    )}
+
+                  </View>
+                )}
+
+                <Text style={styles.timestampText}>
+                  {message.creationDate.toString()}
+                </Text>
+
+              </View>
+            )
+          )}
+        </ScrollView>
+
+      </View>
+    </SafeAreaView>
+  </>
+);
 }
+
+const styles = StyleSheet.create({
+  // Private thread screen
+  privateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  privateCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 25,
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+  },
+
+  privateTitle: {
+    fontSize: 30,
+    fontWeight: "bold",
+    fontFamily: "RobotoSlab-Regular",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+
+  privateSubtitle: {
+    textAlign: "center",
+    fontFamily: "NotoSans-Regular",
+    fontSize: 14,
+    color: "#505050",
+    marginBottom: 20,
+  },
+
+  passwordInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 6,
+    fontFamily: "NotoSans-Regular",
+    fontSize: 14,
+  },
+
+  passwordErrorInput: {
+    borderColor: "#ff0000",
+  },
+
+  passwordNormalInput: {
+    borderColor: "#ccc",
+  },
+
+  passwordErrorText: {
+    color: "#ff0000",
+    fontFamily: "NotoSans-Regular",
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
+  passwordSpacer: {
+    marginBottom: 16,
+  },
+
+  row: {
+    flexDirection: "row",
+  },
+
+  buttonRow: {
+    flexDirection: "row",
+    gap: 15,
+  },
+
+  primaryButton: {
+    flex: 1,
+    backgroundColor: "#0057b4",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: "#8b8b8b",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+
+  buttonText: {
+    fontWeight: "bold",
+    color: "white",
+    fontFamily: "NotoSans-Regular",
+  },
+
+  // Main layout
+  safeArea: {
+    flex: 1,
+  },
+
+  container: {
+    flex: 1,
+    paddingTop: 20,
+    paddingHorizontal: 30,
+    paddingBottom: 20,
+  },
+
+  headerTitle: {
+    fontSize: 40,
+    fontWeight: "bold",
+    fontFamily: "NotoSans-Regular",
+    marginLeft: 10,
+  },
+
+  threadHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+
+  profileImage: {
+    width: 35,
+    height: 35,
+    borderRadius: 20,
+    marginRight: 5,
+    borderWidth: 1,
+    borderColor: "#636363",
+  },
+
+  smallProfileImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#636363",
+  },
+
+  threadTitle: {
+    fontSize: 24,
+    marginBottom: 5,
+    fontWeight: "bold",
+    fontFamily: "NotoSans-Regular",
+  },
+
+  threadHeaderText: {
+    fontSize: 24,
+    marginBottom: 5,
+    fontFamily: "NotoSans-Regular",
+  },
+
+  favoriteContainer: {
+    alignItems: "flex-end",
+  },
+
+  favoriteButton: {
+    marginLeft: 5,
+    marginBottom: 5,
+  },
+
+  metadataText: {
+    fontSize: 12,
+    marginTop: 5,
+    fontFamily: "NotoSans-Regular",
+    color: "#8d8d8d",
+  },
+
+  metadataBottomText: {
+    fontSize: 12,
+    marginTop: 5,
+    marginBottom: 10,
+    fontFamily: "NotoSans-Regular",
+    color: "#8d8d8d",
+  },
+
+  descriptionText: {
+    fontSize: 16,
+    marginBottom: 10,
+    fontFamily: "NotoSans-Regular",
+  },
+
+  // Action buttons
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 15,
+  },
+
+  deleteButton: {
+    backgroundColor: "#FF3B30",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+  },
+
+  cancelButton: {
+    backgroundColor: "#888",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+  },
+
+  editButton: {
+    backgroundColor: "#248aca",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignSelf: "flex-start",
+  },
+
+  disabledButton: {
+    opacity: 0.5,
+  },
+
+  // Edit box
+  editContainer: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    marginTop: 10,
+  },
+
+  editInputsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  titleInput: {
+    flex: 1,
+    height: 160,
+    width: 200,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: "top",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+
+  descriptionInput: {
+    flex: 1,
+    height: 160,
+    width: 1000,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: "top",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+
+  submitButton: {
+    backgroundColor: "#2d635a",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+
+  submitButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+
+  // Create post
+  postSection: {
+    marginBottom: 20,
+  },
+
+  createPostButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    marginBottom: 12,
+    alignSelf: "flex-start",
+  },
+
+  createPostButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontFamily: "NotoSans-Regular",
+  },
+
+  postBox: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+
+  postInput: {
+    height: 80,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: "top",
+    marginBottom: 10,
+    fontSize: 14,
+    fontFamily: "NotoSans-Regular",
+  },
+
+  attachmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  attachButton: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+    backgroundColor: "#333",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  postButton: {
+    flex: 1,
+    backgroundColor: "#34C759",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  postButtonDisabled: {
+    opacity: 0.6,
+  },
+
+  // Message cards
+  messageCard: {
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    marginBottom: 15,
+    elevation: 5,
+    shadowColor: "#000000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    marginTop: 10,
+    marginLeft: 5,
+    marginRight: 10,
+  },
+
+  messageHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  messageAuthor: {
+    fontSize: 15,
+    fontWeight: "bold",
+    marginBottom: 5,
+    fontFamily: "NotoSans-Regular",
+  },
+
+  messageUserId: {
+    fontSize: 13,
+    marginBottom: 5,
+    fontFamily: "NotoSans-Regular",
+    color: "#5f5f5f",
+  },
+
+  messageText: {
+    fontSize: 20,
+    marginTop: 5,
+  },
+
+  attachmentContainer: {
+    marginTop: 10,
+    gap: 5,
+  },
+
+  attachmentImage: {
+    width: 200,
+    height: 200,
+    aspectRatio: 1,
+    borderRadius: 8,
+    resizeMode: "stretch",
+  },
+
+  downloadContainer: {
+    width: 210,
+  },
+
+  downloadButton: {
+    backgroundColor: "#0099ff",
+    alignItems: "center",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+
+  downloadButtonText: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    fontFamily: "NotoSans-Regular",
+  },
+
+  timestampText: {
+    color: "gray",
+    marginTop: 7,
+    fontSize: 12,
+    fontFamily: "NotoSans-Regular",
+  },
+});

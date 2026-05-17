@@ -120,7 +120,145 @@ export default function Index() {
     'NotoSans-Regular': require('../assets/fonts/NotoSans-Regular.ttf')
   })
 
-  const { width, height } = useWindowDimensions();
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded]);
+  if (!fontsLoaded) return null;
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
+        }}
+      />
+
+      <SafeAreaView style={{ flex: 1 }}>
+
+        <Modal
+          visible={createVisible}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setCreateVisible(false)}
+        >
+            <View style={styles.createThreadBackground}>
+              <View style={styles.createThreadPopup}>
+                <Text style={styles.createThreadText}>Create Thread</Text>
+                <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
+                
+                <View style={styles.createThreadMargins}>
+                  <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
+                    {threadImage ? (
+                      <Image
+                      source={{ uri: threadImage }}
+                      style={{ width: "100%", height: "100%" }}
+                      />
+                    ) : (
+                    <>
+                      <Ionicons name="image-outline" size={36} color="#8f8f8f" />
+                      <Text style={styles.imagePickerText}>Select Image</Text>
+                      <Text style={styles.imagePickerText}>(.png, .jpg, .jpeg, .gif)</Text>
+                    </>
+                  )}
+                  </TouchableOpacity>
+                  
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      placeholder="Thread Title"
+                      value={threadTitle}
+                      onChangeText={setThreadTitle}
+                      style={styles.threadNameInput}
+                    />
+
+                    <TextInput
+                      placeholder="Description"
+                      value={threadDescription}
+                      onChangeText={setThreadDescription}
+                      style={styles.threadDescInput}
+                      multiline
+                    />
+                    
+                    <View style={styles.accessOption}>
+                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.accessToggle}>
+                        <Ionicons name={isPrivateThread ? "lock-closed" : "lock-open"} size={18} color="#333" />
+                        <Text style={styles.accessText}>{ isPrivateThread ? "Private" : "Public" }</Text>
+                      </TouchableOpacity>
+                      {isPrivateThread && (
+                          <TextInput
+                            placeholder="Thread Password"
+                            value={threadPassword}
+                            onChangeText={setThreadPassword}
+                            style={styles.threadPasswordInput}
+                            secureTextEntry
+                          />
+                        )}
+                    </View>
+                  </View>
+                </View>
+
+                {createThreadError ? (
+                <Text style={styles.threadErrorText}>{createThreadError}</Text>
+              ) : null}
+
+              <View style={styles.alignButtons}>
+                <TouchableOpacity onPress={handleCreateThread} style={styles.confirmThreadButton}>
+                  <Text style={styles.threadButtonText}>Confirm</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setCreateVisible(false)}
+                  style={styles.cancelThreadButton}
+                >
+                  <Text style={styles.threadButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <View style={styles.homepageContainer}>
+          <View style={styles.threadTitleContainer}>
+            <Text style={styles.threadsText}>Threads</Text>
+            <TextInput
+              placeholder="🔍︎ Search threads..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.threadsSearch}
+            />
+          </View>
+
+          <View style={styles.divider}/>
+
+          <ScrollView>
+            {threads.map((thread: DisplayThread) => (
+              <TouchableOpacity key={thread.uuid} onPress={() => router.push(`/thread_page/${thread.uuid}`)} style={styles.threadBox}>
+                <View
+                  style={styles.threadBoxContainer}>
+                  {thread.thumbnailUri != null && <Image
+                    source={thread.thumbnailUri}
+                    style={styles.threadBoxImage}
+                  />}
+                  <View style={styles.threadBoxContent}>
+                    <Text style={styles.threadBoxTitle}>{thread == null || thread.name == "" ? "Untitled Thread" : thread.name}</Text>
+                    <Text style={styles.threadBoxDescription}>{thread.description ?? ""}</Text>
+                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private ? "\nPrivate 🔒" : "\nPublic 🔓" }</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
+            <Text style={styles.addThreadButtonText}>Add Thread</Text>
+            <Ionicons name="add-circle" size={40} color="white" />
+          </TouchableOpacity>
+
+        </View>
+      </SafeAreaView>
+    </>
+  )
+}
+
   const styles = StyleSheet.create({
     pageName: {
       fontSize: 35,
@@ -135,8 +273,9 @@ export default function Index() {
       alignItems: "center",
     },
     createThreadPopup: {
-      width: Math.min(width * 0.85, 575), // 85% on mobile devices, max 575 on web
-      maxHeight: height * 0.75,
+      width: "85%", // 85% on mobile devices, max 575 on web
+      maxWidth: 575,
+      maxHeight: "75%",
       backgroundColor: "white",
       borderRadius: 15,
       padding: 25,
@@ -163,7 +302,8 @@ export default function Index() {
       flex: 1,
     },
     threadImagePicker: {
-      width: Math.min(width * 0.25, 160),
+      width: "25%",
+      maxWidth: 160,
       aspectRatio: 1,
       borderWidth: 1,
       borderColor: "#ccc",
@@ -369,143 +509,3 @@ export default function Index() {
       marginBottom:15,
     }
   })
-
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync()
-  }, [fontsLoaded]);
-  if (!fontsLoaded) return null;
-
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: () => (<Text style={styles.pageName}>Board of Mess</Text>),
-        }}
-      />
-
-      <SafeAreaView style={{ flex: 1 }}>
-
-        <Modal
-          visible={createVisible}
-          animationType="fade"
-          transparent
-          onRequestClose={() => setCreateVisible(false)}
-        >
-            <View style={styles.createThreadBackground}>
-              <View style={styles.createThreadPopup}>
-                <Text style={styles.createThreadText}>Create Thread</Text>
-                <Text style={styles.createThreadSubtitle}>{createThreadSubtitle}</Text>
-                
-                <View style={styles.createThreadMargins}>
-                  <TouchableOpacity onPress={pickThreadImage} style={styles.threadImagePicker}>
-                    {threadImage ? (
-                      <Image
-                      source={{ uri: threadImage }}
-                      style={{ width: "100%", height: "100%" }}
-                      />
-                    ) : (
-                    <>
-                      <Ionicons name="image-outline" size={36} color="#8f8f8f" />
-                      <Text style={styles.imagePickerText}>Select Image</Text>
-                      <Text style={styles.imagePickerText}>(.png, .jpg, .jpeg, .gif)</Text>
-                    </>
-                  )}
-                  </TouchableOpacity>
-                  
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      placeholder="Thread Title"
-                      value={threadTitle}
-                      onChangeText={setThreadTitle}
-                      style={styles.threadNameInput}
-                    />
-
-                    <TextInput
-                      placeholder="Description"
-                      value={threadDescription}
-                      onChangeText={setThreadDescription}
-                      style={styles.threadDescInput}
-                      multiline
-                    />
-                    
-                    <View style={styles.accessOption}>
-                      <TouchableOpacity onPress={() => setIsPrivateThread(!isPrivateThread)} style={styles.accessToggle}>
-                        <Ionicons name={isPrivateThread ? "lock-closed" : "lock-open"} size={18} color="#333" />
-                        <Text style={styles.accessText}>{ isPrivateThread ? "Private" : "Public" }</Text>
-                      </TouchableOpacity>
-                      {isPrivateThread && (
-                          <TextInput
-                            placeholder="Thread Password"
-                            value={threadPassword}
-                            onChangeText={setThreadPassword}
-                            style={styles.threadPasswordInput}
-                            secureTextEntry
-                          />
-                        )}
-                    </View>
-                  </View>
-                </View>
-
-                {createThreadError ? (
-                <Text style={styles.threadErrorText}>{createThreadError}</Text>
-              ) : null}
-
-              <View style={styles.alignButtons}>
-                <TouchableOpacity onPress={handleCreateThread} style={styles.confirmThreadButton}>
-                  <Text style={styles.threadButtonText}>Confirm</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setCreateVisible(false)}
-                  style={styles.cancelThreadButton}
-                >
-                  <Text style={styles.threadButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        <View style={styles.homepageContainer}>
-
-          <View style={styles.threadTitleContainer}>
-            <Text style={styles.threadsText}>Threads</Text>
-            <TextInput
-              placeholder="🔍︎ Search threads..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.threadsSearch}
-            />
-          </View>
-
-          <View style={styles.divider}/>
-
-          <ScrollView>
-            {threads.map((thread: DisplayThread) => (
-              <TouchableOpacity key={thread.uuid} onPress={() => router.push(`/thread_page/${thread.uuid}`)} style={styles.threadBox}>
-                <View
-                  style={styles.threadBoxContainer}>
-                  {thread.thumbnailUri != null && <Image
-                    source={thread.thumbnailUri}
-                    style={styles.threadBoxImage}
-                  />}
-                  <View style={styles.threadBoxContent}>
-                    <Text style={styles.threadBoxTitle}>{thread == null || thread.name == "" ? "Untitled Thread" : thread.name}</Text>
-                    <Text style={styles.threadBoxDescription}>{thread.description ?? ""}</Text>
-                    <Text style={styles.threadBoxPublicPrivateDescription}>{thread.private ? "\nPrivate 🔒" : "\nPublic 🔓" }</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <TouchableOpacity onPress={() => setCreateVisible(true)} style={styles.addThreadButton}>
-            <Text style={styles.addThreadButtonText}>Add Thread</Text>
-            <Ionicons name="add-circle" size={40} color="white" />
-          </TouchableOpacity>
-
-        </View>
-      </SafeAreaView>
-    </>
-  )
-}

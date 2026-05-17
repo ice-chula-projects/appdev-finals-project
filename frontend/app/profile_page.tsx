@@ -161,148 +161,6 @@ export default function ProfilePage() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null;
 
-  const styles = StyleSheet.create({
-    headerTitle: {
-      fontSize: 35,
-      fontWeight: "600",
-      fontFamily: "NotoSans-Regular",
-      marginLeft: 10
-    },
-    container: {
-      flex: 1,
-      paddingTop: 50,
-      paddingHorizontal: 30,
-    },
-    safeView: {
-      flex: 1
-    },
-    yourProfile: {
-      fontSize: 50,
-      fontWeight: "bold",
-      color: "#2b2b2b",
-      fontFamily: "RobotoSlab-Regular",
-    },
-    pickImagePopup: {
-      backgroundColor: '#ffffff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 20,
-      alignItems: 'center',
-      paddingBottom: 20,
-    },
-    pickImageText: {
-      fontSize: 20, 
-      fontWeight: '600', 
-      marginBottom: 14,
-      fontFamily: "NotoSans-Regular"
-    },
-    pendingPic: {
-      width: 120,
-      height: 120,
-      borderRadius: 14,
-      marginBottom: 20,
-    },
-    alignPopupButtons: { 
-      flexDirection: 'row', 
-      gap: 12, 
-      width: '100%' 
-    },
-    cancelButton: {
-      flex: 1,
-      paddingVertical: 10,
-      borderRadius: 8,
-      borderWidth: 1,
-      backgroundColor: "#8f8f8f",
-      borderColor: '#ccc',
-      alignItems: 'center',
-    },
-    confirmButton: {
-      flex: 1,
-      paddingVertical: 10,
-      borderRadius: 8,
-      backgroundColor: '#007AFF',
-      alignItems: 'center',
-    },
-    buttonText: {
-      color: '#ffffff', 
-      fontWeight: '600',
-      fontFamily: "NotoSans-Regular"
-    },
-    userProfileBox: {
-      alignItems: "center",
-      marginBottom: 10,
-      borderWidth: 2,
-      borderColor: "#ccc",
-      borderRadius: 8,
-      padding: 15,
-      elevation: 5,
-      shadowColor: "#000000",
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      
-    },
-    profilePictureIcon: {
-      width: 100,
-      height: 100,
-      marginTop: 15,
-      marginBottom: 5,
-      borderRadius: 15,
-      borderWidth: 2,
-      borderColor: "#c2c2c2",
-      elevation: 5,
-      shadowColor: "#000",
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
-    },
-    profileUsername: {
-      fontSize: 30,
-      fontWeight: "bold",
-      fontFamily: "RobotoSlab-Regular",
-    },
-    profileUUID: {
-      color: "gray",
-      marginTop: 5,
-      marginBottom: 10,
-      fontFamily: "RobotoSlab-Regular",
-    },
-    editDescBox: {
-      width: "50%",
-      borderWidth: 1,
-      borderColor: "#ccc",
-      padding: 10,
-      borderRadius: 5,
-      fontFamily: "RobotoSlab-Regular"
-    },
-    descButtons: { 
-      flexDirection: "row", 
-      marginTop: 10 ,
-    },
-    descSave: {
-      color: "#00b652", 
-      marginRight: 15, 
-      fontFamily: "RobotoSlab-Regular",
-    },
-    descCancel: {
-      color: "red", 
-      fontFamily: "RobotoSlab-Regular",
-    },
-    profileDesc: { 
-      textAlign: "center", 
-      fontFamily: "RobotoSlab-Regular" 
-    },
-    editDesc: { 
-      color: "#007AFF", 
-      marginTop: 8, 
-      fontFamily: "RobotoSlab-Regular" 
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#ffffff"
-    }
-  })
-
   if (pageLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -529,3 +387,145 @@ export default function ProfilePage() {
    </>
   );
 }
+
+  const styles = StyleSheet.create({
+    headerTitle: {
+      fontSize: 35,
+      fontWeight: "600",
+      fontFamily: "NotoSans-Regular",
+      marginLeft: 10
+    },
+    container: {
+      flex: 1,
+      paddingTop: 50,
+      paddingHorizontal: 30,
+    },
+    safeView: {
+      flex: 1
+    },
+    yourProfile: {
+      fontSize: 50,
+      fontWeight: "bold",
+      color: "#2b2b2b",
+      fontFamily: "RobotoSlab-Regular",
+    },
+    pickImagePopup: {
+      backgroundColor: '#ffffff',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      alignItems: 'center',
+      paddingBottom: 20,
+    },
+    pickImageText: {
+      fontSize: 20, 
+      fontWeight: '600', 
+      marginBottom: 14,
+      fontFamily: "NotoSans-Regular"
+    },
+    pendingPic: {
+      width: 120,
+      height: 120,
+      borderRadius: 14,
+      marginBottom: 20,
+    },
+    alignPopupButtons: { 
+      flexDirection: 'row', 
+      gap: 12, 
+      width: '100%' 
+    },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      backgroundColor: "#8f8f8f",
+      borderColor: '#ccc',
+      alignItems: 'center',
+    },
+    confirmButton: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      backgroundColor: '#007AFF',
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#ffffff', 
+      fontWeight: '600',
+      fontFamily: "NotoSans-Regular"
+    },
+    userProfileBox: {
+      alignItems: "center",
+      marginBottom: 10,
+      borderWidth: 2,
+      borderColor: "#ccc",
+      borderRadius: 8,
+      padding: 15,
+      elevation: 5,
+      shadowColor: "#000000",
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      
+    },
+    profilePictureIcon: {
+      width: 100,
+      height: 100,
+      marginTop: 15,
+      marginBottom: 5,
+      borderRadius: 15,
+      borderWidth: 2,
+      borderColor: "#c2c2c2",
+      elevation: 5,
+      shadowColor: "#000",
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+    },
+    profileUsername: {
+      fontSize: 30,
+      fontWeight: "bold",
+      fontFamily: "RobotoSlab-Regular",
+    },
+    profileUUID: {
+      color: "gray",
+      marginTop: 5,
+      marginBottom: 10,
+      fontFamily: "RobotoSlab-Regular",
+    },
+    editDescBox: {
+      width: "50%",
+      borderWidth: 1,
+      borderColor: "#ccc",
+      padding: 10,
+      borderRadius: 5,
+      fontFamily: "RobotoSlab-Regular"
+    },
+    descButtons: { 
+      flexDirection: "row", 
+      marginTop: 10 ,
+    },
+    descSave: {
+      color: "#00b652", 
+      marginRight: 15, 
+      fontFamily: "RobotoSlab-Regular",
+    },
+    descCancel: {
+      color: "red", 
+      fontFamily: "RobotoSlab-Regular",
+    },
+    profileDesc: { 
+      textAlign: "center", 
+      fontFamily: "RobotoSlab-Regular" 
+    },
+    editDesc: { 
+      color: "#007AFF", 
+      marginTop: 8, 
+      fontFamily: "RobotoSlab-Regular" 
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#ffffff"
+    }
+  })
