@@ -412,21 +412,21 @@ export default function ProfilePage() {
     },
     container: {
       flex: 1,
-      paddingTop: 50,
-      paddingHorizontal: 30,
+      paddingTop: 10,
+      paddingHorizontal: 20,
     },
     safeView: {
       flex: 1
     },
     yourProfile: {
-      fontSize: 40,
+      fontSize: 20,
       color: "#2b2b2b",
       fontFamily: "RobotoSlab-Bold",
     },
     pickImagePopup: {
       backgroundColor: '#ffffff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      borderTopLeftRadius: 10,
+      borderTopRightRadius: 10,
       padding: 20,
       alignItems: 'center',
       paddingBottom: 20,
@@ -476,9 +476,9 @@ export default function ProfilePage() {
       padding: 15
     },
     profilePictureIcon: {
-      width: 100,
-      height: 100,
-      marginTop: 15,
+      width: 80,
+      height: 80,
+      marginTop: 10,
       marginBottom: 5,
       borderRadius: 15,
       borderWidth: 2,
