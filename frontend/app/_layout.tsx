@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useCallback } from "react";
 import BackEnd from "../components/backend";
 import { AccountContext } from "@/components/accountContext";
+import { ApiContext } from "@/components/ApiContext";
 
 const styles = StyleSheet.create({
   homeIcon: {
@@ -162,6 +163,7 @@ export default function RootLayout() {
   const [logoutPopupVisible, setLogoutPopupVisible ] = useState(false);
 
   const [apiUrl, setApiUrl] = useState("");
+  const [savedApiUrl, setSavedApiUrl] = useState("");
   const [showApiPopup, setShowApiPopup] = useState(false);
 
   const pathname = usePathname();
@@ -176,16 +178,15 @@ export default function RootLayout() {
         setShowApiPopup(true);
         return;
       }
-
-      setApiUrl(savedUrl);
-
+      
       const response = await BackEnd.setApiUrl(savedUrl);
-
+      
       if (!response.success) {
         setShowApiPopup(true);
         Alert.alert(response.message);
       } else {
         setShowApiPopup(false);
+        setSavedApiUrl(savedUrl);
         const sessionToken = await AsyncStorage.getItem("session_token");
         const loggedIn = sessionToken != null;
         setLoggedIn(loggedIn);
@@ -210,6 +211,7 @@ export default function RootLayout() {
       const response = await BackEnd.setApiUrl(cleanedUrl);
       if(response.success){
         await AsyncStorage.setItem("api_url", cleanedUrl);
+        setSavedApiUrl(cleanedUrl);
         setShowApiPopup(false);
         Alert.alert("Success", "Backend connected!");
 
@@ -255,7 +257,8 @@ export default function RootLayout() {
 };
 
   return (
-    <AccountContext.Provider value={{ reloadProfile: reloadProfile, logout: confirmLogout }}>
+    <ApiContext.Provider value={{apiUrl:savedApiUrl}}>
+      <AccountContext.Provider value={{ reloadProfile: reloadProfile, logout: confirmLogout }}>
       <View style={{ flex: 1 }}>
 
       <Stack
@@ -350,5 +353,6 @@ export default function RootLayout() {
       </Modal>
     </View>
     </AccountContext.Provider>
+    </ApiContext.Provider>
   )
 }

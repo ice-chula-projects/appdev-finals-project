@@ -11,6 +11,7 @@ import { useFonts } from 'expo-font';
 import { randomCreateThreadSubtitles } from '../components/randomSubtitles';
 import BackEnd, { ThreadParametersBuilder, DisplayThread } from "../components/backend";
 import { useAccount } from "@/components/accountContext";
+import { useApiContext } from "@/components/ApiContext";
 
 export default function Index() {
   const [createVisible, setCreateVisible] = useState(false);
@@ -28,7 +29,9 @@ export default function Index() {
   const [threadPassword, setThreadPassword] = useState("");
 
   const [createThreadSubtitle] = useState(() => randomCreateThreadSubtitles());
-  const {logout} = useAccount()
+  const {logout} = useAccount();
+
+  const {apiUrl} = useApiContext();
 
   const pickThreadImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -120,10 +123,10 @@ export default function Index() {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       searchThreads(searchQuery);
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
+  }, [searchQuery, apiUrl]);
 
   const [fontsLoaded] = useFonts({
     'RobotoSlab-Regular': require('../assets/fonts/RobotoSlab-Regular.ttf'),
