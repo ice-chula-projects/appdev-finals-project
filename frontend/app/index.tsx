@@ -537,9 +537,10 @@ export default function Index() {
       flex: 1,
       paddingHorizontal: 30,
       paddingBottom: 20,
+      paddingTop: 20,
       ...Platform.select({
-        web: {
-          paddingTop: 20
+        android: {
+          paddingTop: 0
         }
       })
     },

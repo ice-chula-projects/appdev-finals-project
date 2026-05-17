@@ -265,6 +265,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: !hideHeader,
+          headerTitle: "",
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.push("/")} style={{ marginLeft: 15 }}>
               <Image source={require("../assets/images/message_logo.png")} style={styles.homeIcon} />

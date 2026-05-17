@@ -405,12 +405,14 @@ export default function ProfilePage() {
 
   const styles = StyleSheet.create({
     headerTitle: {
+      fontSize: 35,
+      fontFamily: "NotoSans-Bold",
+      letterSpacing: -1,
+      marginLeft: 10,
       ...Platform.select({
-        web: {
-          fontSize: 35,
-          fontFamily: "NotoSans-Bold",
-          letterSpacing: -1,
-          marginLeft: 10
+        android: {
+          color: "#ffffff",
+          fontSize: 1
         }
       })
     },
