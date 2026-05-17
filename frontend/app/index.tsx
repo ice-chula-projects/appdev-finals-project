@@ -268,7 +268,7 @@ export default function Index() {
                 <View
                   style={styles.threadBoxContainer}>
                   {thread.thumbnailUri != null && <Image
-                    source={thread.thumbnailUri}
+                    source={{uri: thread.thumbnailUri}}
                     style={styles.threadBoxImage}
                   />}
                   <View style={styles.threadBoxContent}>

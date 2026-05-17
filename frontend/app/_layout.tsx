@@ -271,7 +271,7 @@ export default function RootLayout() {
               <View style={styles.userSection}>
                 <TouchableOpacity onPress={() => router.push("/profile_page")}>
                   <Image
-                    source={profileImageUri != null? profileImageUri : require("../assets/images/default_profile.png")}
+                    source={profileImageUri != null? {uri:profileImageUri} : require("../assets/images/default_profile.png")}
                     style={styles.profileIcon}
                   />
                 </TouchableOpacity>

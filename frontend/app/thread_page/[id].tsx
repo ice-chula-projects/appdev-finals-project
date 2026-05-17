@@ -538,7 +538,7 @@ export default function Index() {
 
           <Image
             source={
-              users[threadData.authorUserUuid]?.profilePictureUri ??
+              users[threadData.authorUserUuid]?.profilePictureUri != null ? {uri: users[threadData.authorUserUuid]?.profilePictureUri} :
               require("../../assets/images/default_profile.png")
             }
             style={styles.profileImage}
@@ -753,7 +753,7 @@ export default function Index() {
 
                   <Image
                     source={
-                      users[message.authorUserUuid]?.profilePictureUri ??
+                      users[message.authorUserUuid]?.profilePictureUri != null ? {uri: users[message.authorUserUuid]?.profilePictureUri} :
                       require("../../assets/images/default_profile.png")
                     }
                     style={styles.smallProfileImage}
@@ -779,11 +779,11 @@ export default function Index() {
 
                     {message.attachment.mediaType == "image" && (
                       <Image
-                        source={`data:image/${
+                        source={{uri:`data:image/${
                           message.attachment.extensionType == ""
                             ? "png"
                             : message.attachment.extensionType
-                        };base64,${message.attachment.dataBase64}`}
+                        };base64,${message.attachment.dataBase64}`}}
                         style={styles.attachmentImage}
                       />
                     )}
