@@ -26,13 +26,17 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     borderColor: "#0067c7",
-    fontWeight: "600",
     fontSize: 18,
-    fontFamily: "RobotoSlab-Regular",
+    fontFamily: "RobotoSlab-Bold",
     elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.5,
     shadowRadius: 6,
+    ...Platform.select({
+      android: {
+        fontSize: 17
+      }
+    })
   },
   signupButton: {
     color: "white",
@@ -48,6 +52,11 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.5,
     shadowRadius: 6,
+    ...Platform.select({
+      android: {
+        fontSize: 17
+      }
+    })
   },
   logoutButton: {
     color: "white",
