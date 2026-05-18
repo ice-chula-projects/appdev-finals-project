@@ -164,6 +164,11 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: "NotoSans-Bold",
     fontSize: 12,
+    ...Platform.select({
+      android: {
+        fontSize: 11
+      }
+    })
   },
 })
 
