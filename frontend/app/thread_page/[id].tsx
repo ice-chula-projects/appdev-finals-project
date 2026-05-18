@@ -525,7 +525,7 @@ export default function Index() {
     <Stack.Screen
       options={{
         headerTitle: () => (
-          <Text style={styles.headerTitle}>
+          (Platform.OS != "android" && Platform.OS != "ios") && <Text style={styles.headerTitle}>
             Threads
           </Text>
         ),
